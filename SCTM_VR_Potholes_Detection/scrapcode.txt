@@ -1,0 +1,206 @@
+const int MAX_VALUE = 255;
+const int MAX_TYPE = 4;
+const int MAX_BINARY_VALUE = 255;
+const int BIN_THS_VALUE = 100;
+
+//int threshold_value = 100;
+//Mat BW = Mat();
+//cvtColor(image, BW, COLOR_RGB2GRAY);
+//Mat bin = Mat();
+//threshold(BW, bin, 100, MAX_BINARY_VALUE , BINARY);
+//Mat mid = Mat();
+//medianBlur(bin, mid, 3);
+//Mat dilated = Mat();
+//Mat str_el = getStructuringElement(MORPH_ELLIPSE, Size(2 * 1 + 1, 2 * 1 + 1), Point(1, 1));
+//dilate(mid, dilated, str_el);
+//namedWindow("display window", WINDOW_AUTOSIZE);    // create a window for display.
+//imshow("display window", dilated);                     // show our image inside it.
+//waitKey(0);
+//bilateralFilter(tmp1, tmp2, blur_strength, blur_strength*2, blur_strength*0.5);
+
+
+struct Box {
+	Point2i bottom_right;
+	Point2i top_left;
+
+	bool contains(Point2i);
+};
+
+struct Annotation {
+
+	string image_path;
+	string image_name;
+	vector<Box> objects;
+
+};
+
+bool Box::contains(Point2i p) {
+	return p.x <= this->bottom_right.x && p.x >= this->top_left.x && p.y <= this->bottom_right.y && p.y >= this->top_left.y;
+}
+
+void set_format(string & of_file_name_path, string to_new_format, bool use_separator = true) {
+	size_t image_format_offset_begin = of_file_name_path.find_last_of(".");
+	string image_format = of_file_name_path.substr(image_format_offset_begin);
+	size_t image_format_offset_end = image_format.length() + image_format_offset_begin;
+
+	of_file_name_path.replace(image_format_offset_begin, image_format_offset_end, (use_separator ? "." : "") + to_new_format);
+}
+
+void images_load(const vector<Annotation> & annotations, vector< Mat > & loaded_images)
+{
+	for (size_t i = 0; i < annotations.size(); ++i)
+	{
+		Mat img = imread(annotations[i].image_path, IMREAD_COLOR);
+		if (img.empty())
+		{
+			cout << annotations[i].image_path << " is invalid!" << endl;
+		}
+		else {
+			loaded_images.push_back(img);
+		}
+	}
+}
+
+void load_from_annotations(const string & filename, vector<Annotation> & annotations) 
+{
+	ifstream infile(filename);
+	string line;
+	while (std::getline(infile, line))
+	{
+
+		istringstream iss(line);
+		vector<string> results(istream_iterator<string>{iss}, istream_iterator<string>());
+		vector<Box> locators;
+
+		for (size_t i = 2; i < results.size(); i += 4) 
+		{
+
+			Point2i bottom_right(stoi(results[i]), stoi(results[i + 1]));
+			Point2i top_left(stoi(results[i + 2]), stoi(results[i + 3]));
+
+			Box b = { bottom_right, top_left };
+
+			locators.push_back(b);
+		}
+
+		string image_name = results[0].substr(results[0].find_last_of("\\")+1);
+
+		clog << image_name << endl;
+
+		struct Annotation a = {results[0], image_name, locators };
+
+		annotations.push_back(a);
+	}
+}
+
+void build_training_structures(const vector<Mat> & images, const vector<Annotation> & annotations, vector<Mat> & training_set, vector<Mat> & probability_mask) {
+	
+	vector<Mat> bin_masks;
+	build_binaries(images, annotations, bin_masks);
+
+	for (size_t i = 0; i < images.size(); ++i) 
+	{
+
+		Mat img = images[i];
+		training_set.push_back(img.reshape(img.rows*img.cols, 1));
+
+		vector<Box> boxes = annotations[i].objects;
+		Mat mask(img.rows, img.cols, CV_32SC1);
+
+		for (size_t row = 0; row < mask.rows; ++row) 
+		{
+			for (size_t col = 0; col < mask.cols; ++col) 
+			{
+				for (size_t j = 0; j < boxes.size(); ++j) 
+				{
+					if (boxes[j].isInside(Point2i(row, col))) //  && bin_masks[i].at<int>(row, col) == 255
+					{
+						mask.at<int>(row, col) = 255;
+					}
+					else {
+						mask.at<int>(row, col) = 0;
+					}
+				}
+			}
+		}
+
+		probability_mask.push_back(mask.reshape(mask.rows*mask.cols, 1));
+
+		string image_path	= annotations[i].image_path;
+		string mask_path	= image_path.insert(image_path.find_last_of("\\") + 1, "masks\\");
+		mask_path			= mask_path.insert(mask_path.find_last_of("."), "_mask");
+
+		size_t image_format_offset_begin	= mask_path.find_last_of(".");
+		string image_format					= mask_path.substr(image_format_offset_begin);
+		size_t image_format_offset_end		= image_format.length() + image_format_offset_begin;
+
+		string mask_name = mask_path.replace(image_format_offset_begin, image_format_offset_end, ".bmp");
+
+		imwrite(mask_name, mask);
+
+		clog << "Saved mask of " << annotations[i].image_path << " as " << mask_name << endl;
+	}
+}
+
+/*
+Mat BW = Mat();
+cvtColor(image, BW, COLOR_RGB2GRAY);
+
+Mat bin = Mat();
+threshold(BW, bin, BIN_THS_VALUE, MAX_BINARY_VALUE , THRESH_BINARY_INV | THRESH_OTSU);
+*/
+/*****************************************************************************************************************/
+
+//Ptr<AKAZE> akaze_descr = AKAZE::create();
+//vector<KeyPoint> kps;
+//Mat descriptor = Mat();
+//string akaze_descr_save_path = data_root_path + "keypoints/akaze/" + image_name;
+//set_format(akaze_descr_save_path, "yml");
+//FlannBasedMatcher flann_matcher= FlannBasedMatcher();
+//clog << "Compuing Akaze descritor for " << image_name << " ... ";
+//akaze_descr->detectAndCompute(image, Mat(), kps, descriptor);
+//clog << akaze_descr_save_path << endl;
+//akaze_descr->write(akaze_descr_save_path);
+//clog << "Saved akaze descriptor of " << image_name << " as " << akaze_descr_save_path << endl;
+
+//Mat kps_image;
+//drawKeypoints(image, kps, kps_image, Scalar::all(-1), DrawMatchesFlags::DEFAULT);
+//imshow("Keypoints", kps_image);
+//waitKey(0);
+
+void labeling(const vector<Mat> & images, Mat & training_set, Mat & classes_set, const vector<Annotation> & annotations = vector<Annotation>(), bool use_annotations = false)
+{
+	for (size_t i = 0; i < images.size(); ++i)
+	{
+
+		Mat image = images[i];
+		vector<Box> windows = annotations[i].objects;
+		Mat classes(image.rows, image.cols, CV_32FC1);
+
+		for (size_t row = 0; row < image.rows; ++row)
+		{
+
+			for (size_t col = 0; col < image.cols; ++col)
+			{
+
+				for (size_t w = 0; w < windows.size(); ++w)
+				{
+
+					if (windows[w].contains(Point2i(row, col)))
+					{
+						classes.at<int>(row, col) = CLASSES::POTHOLE;
+					}
+					else
+					{
+						classes.at<int>(row, col) = CLASSES::BACKGROUND;
+					}
+				}
+			}
+		}
+
+		image.convertTo(image, CV_32FC1);
+
+		training_set.push_back(image.reshape(1, 1));
+		classes_set.push_back(classes.reshape(1, 1));
+	}
+}

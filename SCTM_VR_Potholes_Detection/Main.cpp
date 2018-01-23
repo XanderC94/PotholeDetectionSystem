@@ -65,127 +65,47 @@ void load_from_directory(const string & directory, vector<string> & ids, vector<
 	}
 }
 
-void create_training_set_by_row(const vector<Mat> & set, Mat & training_set) {
+int resize_all_in(const string parent, const string folder, const int width = 1280, const int height = 720) {
 
-	for (int i = 0; i < set.size(); ++i) {
-		Mat img;
-		set[i].convertTo(img, CV_32FC1);
-		training_set.push_back(img.reshape(0, 1));
-	}
-}
+	vector<String> fn;
+	glob(folder + "/*", fn);
 
-void Bayes() {
+	cout << "Found " << fn.size() << " images..." << endl;
 
-	vector<Mat> set;
-	Mat training_set, classes, tmp;
-	vector<string> ids;
+	for (int i = 0; i < fn.size(); i++)
+	{
+		string file_name = fn[i];
+		Mat img = imread(file_name, IMREAD_COLOR);
 
-	load_from_directory(positive_training_set_directory, ids, set, classes, CLASSES::POTHOLE, IMREAD_GRAYSCALE);
-	load_from_directory(negative_training_set_directory, ids, set, classes, CLASSES::NORMAL, IMREAD_GRAYSCALE);
+		if (img.empty())
+		{
+			cerr << "invalid image: " << file_name << endl;
+			continue;
+		}
+		else
+		{
+			cout << "Loaded image " << file_name << endl;
 
-	create_training_set_by_row(set, tmp);
+			Mat dst;
+			resize(img, dst, Size(width, height));
 
-	cout << tmp.size() << " --- " << classes.size() << endl;
-
-	Ptr<NormalBayesClassifier> Bayes = NormalBayesClassifier::create();
-
-	cout << "Starting training... ";
-	
-	tmp.convertTo(training_set, CV_32FC1);
-	
-	cout << training_set.type() << endl;
-
-	Bayes->train(training_set, SampleTypes::ROW_SAMPLE, classes);
-
-	cout << "Saved Trained Classifier @ " << classifier64 << endl;
-
-	Bayes->save(classifier64);
-}
-
-// All the values are reffered top-down for verticals and right to left for horizontals
-void ApplyFixedRoadLinesAndHorizon(const double V_offset = 0.95, const double H_offset = 0.00, const double Cutline_offset = 0.50, const double VP_offset_X = 0.50, const double VP_offset_Y = 0.30) {
-	
-	vector<Mat> set;
-	Mat classes;
-	vector<string> ids;
-	
-	Scalar filling_color(0, 0, 0);
-	Size window(90, 60);
-	double blur_strength = 7.0;
-
-	load_from_directory(positive_directory, ids, set, classes, CLASSES::POTHOLE);
-	load_from_directory(negative_directory, ids, set, classes, CLASSES::NORMAL);
-
-	for (int i = 0; i < set.size(); ++i) {
-		
-		Mat tmp0, tmp1;
-		vector<Vec2f> lines;
-
-		set[i].copyTo(tmp0);
-
-		cvtColor(tmp0, tmp0, CV_RGB2GRAY);
-
-		// Fill roadside with mask
-		Point left_roadside[1][3] = {
-			{Point(0, 0), Point(tmp0.cols*VP_offset_X, tmp0.rows*VP_offset_Y), Point(0, tmp0.rows*V_offset)}
-		};
-
-		Point right_roadside[1][3] = {
-			{Point(tmp0.cols*VP_offset_X, tmp0.rows*VP_offset_Y), Point(tmp0.cols - 1, tmp0.rows*V_offset), Point(tmp0.cols - 1, 0)}
-		};
-
-		fillConvexPoly(tmp0, left_roadside[0], 3, filling_color);
-		fillConvexPoly(tmp0, right_roadside[0], 3, filling_color);
-
-		cout << "Cutting @ horizon..." << endl;
-
-		tmp0 = tmp0(Rect(Point(0, tmp0.rows*Cutline_offset), Point(tmp0.cols - 1, tmp0.rows - 1)));	
-
-		resize(tmp0, tmp1, window);
-		
-		string masks_save_location = train_home_directory + (classes.at<int>(i) == 1 ? "Train\\Positive\\" : "Train\\Negative\\") + "Masks\\" + ids[i];
-
-		set_format(masks_save_location, "bmp");
-
-		imwrite(masks_save_location, tmp1);
-
-		cout << "Saved Roadmask @ " << masks_save_location << endl;
-
-		/************************************************************************************************************************************/
-
-		//Canny(tmp0, tmp1, 50, 150);
-
-		threshold(tmp1, tmp1, 150, 255, THRESH_OTSU | THRESH_BINARY_INV);
-
-		string bin_save_location = train_home_directory + (classes.at<int>(i) == 1 ? "Train\\Positive\\" : "Train\\Negative\\") + "Masks\\" + ids[i];
-
-		set_format(bin_save_location, "bmp");
-
-		imwrite(bin_save_location, tmp1);
-
-		cout << "Saved ths @ " << bin_save_location << endl;
-
-		tmp0.release();
-		tmp1.release();
-
-		set[i].release();
-
-		/************************************************************************************************************************************/
+			imwrite(parent + "/scaled/" + file_name.substr(file_name.find_last_of("\\")), dst);
+		}
 	}
 
-	classes.release();
+	return 1;
 }
 
-int main(int argc, char*argv[]) {
+int MyCascadeClassifier() {
 
-	const double V_offset = 0.95;
-	const double H_offset = 0.00; 
-	const double Cutline_offset = 0.50; 
-	const double VP_offset_X = 0.50; 
-	const double VP_offset_Y = 0.30;
+	const double V_offset = 1.00;
+	const double H_offset = 0.00;
+	const double Cutline_offset = 0.60;
+	const double VP_offset_X = 0.50;
+	const double VP_offset_Y = 0.55;
 
-	//String img_path = "D:\\Xander_C\\Downloads\\test_rec1.jpg";
-	String img_path = "D:\\Xander_C\\Downloads\\sctm\\Dataset_Orig\\Train\\Positive\\Images\\G0011474.JPG";
+	String img_path = "D:\\Xander_C\\Downloads\\test_rec7.jpg";
+	//String img_path = "D:\\Xander_C\\Downloads\\sctm\\Dataset_Orig\\Train\\Positive\\Images\\G0011474.JPG";
 
 	string cls = classifier64;
 
@@ -194,11 +114,14 @@ int main(int argc, char*argv[]) {
 
 	Mat img0 = imread(img_path, IMREAD_COLOR), img1;
 
-	img0.convertTo(img1, CV_8UC3);
+	cvtColor(img0, img0, CV_RGB2GRAY);
+
+	img0.convertTo(img1, CV_8U);
 
 	resize(img1, img0, scale);
 
 	/*
+	
 	Point left_roadside[1][3] = {
 		{ Point(0, 0), Point(img0.cols*VP_offset_X, img0.rows*VP_offset_Y), Point(0, img0.rows*V_offset) }
 	};
@@ -208,10 +131,12 @@ int main(int argc, char*argv[]) {
 	};
 
 	fillConvexPoly(img0, left_roadside[0], 3, Scalar(0, 0, 0));
+
 	fillConvexPoly(img0, right_roadside[0], 3, Scalar(0, 0, 0));
+	
 	*/
 
-	img0 = img0(Rect(Point(0, img0.rows*0.5), Point(img0.cols - 1, img0.rows - 1)));
+	img0 = img0(Rect(Point(0, img0.rows*Cutline_offset), Point(img0.cols - 1, img0.rows - 1)));
 
 	CascadeClassifier cascade;
 	bool b = cascade.load(cls);
@@ -231,4 +156,11 @@ int main(int argc, char*argv[]) {
 	waitKey();
 
 	return 1;
+}
+
+int main(int argc, char*argv[]) {
+
+	//return resize_all_in("D:/Xander_C/Downloads/DatasetNostro/Positivi/", "D:/Xander_C/Downloads/DatasetNostro/Positivi/imgs", 1920, 1080);
+
+	return MyCascadeClassifier();
 }

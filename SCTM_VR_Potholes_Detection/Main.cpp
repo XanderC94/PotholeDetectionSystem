@@ -7,6 +7,7 @@
 #include <opencv2/features2d.hpp>
 #include <opencv2/objdetect.hpp>
 #include <opencv2/ml.hpp>
+#include <opencv2/ximgproc.hpp>
 #include <iostream>
 #include <fstream>
 #include <iterator>
@@ -14,6 +15,7 @@
 using namespace cv;
 using namespace std;
 using namespace cv::ml;
+using namespace cv::ximgproc;
 
 const string data_root_path = "D:/Xander_C/Downloads/sctm/";
 const string train_home_directory = data_root_path + "Dataset/";
@@ -104,7 +106,7 @@ int MyCascadeClassifier() {
 	const double VP_offset_X = 0.50;
 	const double VP_offset_Y = 0.55;
 
-	String img_path = "D:\\Xander_C\\Downloads\\test_rec7.jpg";
+	String img_path = "D:\\Xander_C\\Downloads\\test_rec1.jpg";
 	//String img_path = "D:\\Xander_C\\Downloads\\sctm\\Dataset_Orig\\Train\\Positive\\Images\\G0011474.JPG";
 
 	string cls = classifier64;
@@ -158,9 +160,112 @@ int MyCascadeClassifier() {
 	return 1;
 }
 
+double GaussianEllipseFunction3D(cv::Point P, cv::Point O = cv::Point(0.0, 0.0), double SigmaX = 1.0, double SigmaY = 1.0, double A = 1.0, double Theta = 0.0) {
+
+	double a = cos(Theta)*cos(Theta) / (2 * SigmaX*SigmaX) + sin(Theta)*sin(Theta) / (2 * SigmaY*SigmaY);
+	double b = -sin(2 * Theta) / (2 * SigmaX*SigmaX) + sin(2 * Theta) / (2 * SigmaY*SigmaY);
+	double c = sin(Theta)*sin(Theta) / (2 * SigmaX*SigmaX) + cos(Theta)*cos(Theta) / (2 * SigmaY*SigmaY);
+
+	double x = a * (P.x - O.x)*(P.x - O.x) + 2 * b*(P.x - O.x)*(P.y - O.y) + c * (P.y - O.y)*(P.y - O.y);
+
+	return A * exp(-x);
+
+}
+
+int PotholeSegmentation() {
+
+	const double V_offset = 1.00;
+	const double H_offset = 0.00;
+	const double Cutline_offset = 0.60;
+	const double VP_offset_X = 0.50;
+	const double VP_offset_Y = 0.55;
+	const int W = 640;
+	const int H = 480;
+
+	const double Gauss_RoadThreshold = 0.5;
+
+	String img_path = "D:\\Xander_C\\Downloads\\test_rec6.jpg";
+
+	Size scale(W, H);
+	Point2d translation_((double) -W / 2.0, (double) -H / 1.0), shrink_(3.0 / (double) W, 5.0 / (double) H);
+
+	Mat src = imread(img_path, IMREAD_COLOR), tmp, imgCIELab, contour, labels;
+
+	resize(src, src, scale);
+
+	GaussianBlur(src, tmp, Size(3, 3), 0.0);
+
+	cvtColor(tmp, imgCIELab, COLOR_BGR2Lab);
+
+	// Linear Spectral Clustering
+	Ptr<SuperpixelLSC> superpixels = cv::ximgproc::createSuperpixelLSC(imgCIELab, 64);
+	//Ptr<SuperpixelSLIC> superpixelSegmentation = cv::ximgproc::createSuperpixelSLIC(img1, SLIC::MSLIC, 32, 50.0);
+
+	superpixels->iterate(12);
+
+	superpixels->getLabelContourMask(contour);
+
+	superpixels->getLabels(labels);
+
+	int N_SP = superpixels->getNumberOfSuperpixels(); cout << N_SP << endl;
+
+	src.copyTo(tmp);
+
+	tmp.setTo(Scalar(0, 0, 0), contour);
+	
+	imshow("Contours", tmp);
+
+	Mat out, mask, res; 
+	src.copyTo(out); src.copyTo(mask); mask.setTo(Scalar(255, 255, 255));
+
+	for (int l = 0; l < N_SP; ++l) {
+
+		Mat1b LabelMask = (labels == l);
+
+		// How to evaluate the thresholds in order to separate road super pixels?
+		// Or directly identify RoI where a pothole willl be more likely detected?
+		// ...
+		// Possibilities => Gaussian 3D function
+
+		vector<cv::Point> PixelsLabel;
+		cv::Point SuperPixel(0.0, 0.0);
+
+		findNonZero(LabelMask, PixelsLabel);
+		for (auto p : PixelsLabel) SuperPixel += p;
+		SuperPixel /= (double)PixelsLabel.size();
+		
+		Point translated_((SuperPixel.x + translation_.x), (SuperPixel.y + translation_.y));
+		Point shrinked_(translated_.x*shrink_.x, translated_.x*shrink_.y);
+
+		//cout << "Superpixel center @ " << SuperPixel << ", translated @ " << translated_ << ", shrinked @ " << shrinked_ << endl;
+
+		bool isRoad = GaussianEllipseFunction3D(shrinked_) > Gauss_RoadThreshold;
+		bool isOverHorizon = SuperPixel.y < H / 2;
+
+		Scalar mc = isRoad && !isOverHorizon ? mean(src, LabelMask) : Scalar(0, 0, 0);
+		Scalar cm = isRoad && !isOverHorizon ? Scalar(255, 255, 255) : Scalar(0, 0, 0);
+
+		out.setTo(mc, LabelMask);
+		mask.setTo(cm, LabelMask);
+	}
+
+	imshow("Segmentation", out);
+	
+	imshow("Mask", mask);
+
+	src.copyTo(res, mask);
+
+	imshow("Result", res);
+	waitKey();
+
+	return 1;
+}
+
 int main(int argc, char*argv[]) {
 
 	//return resize_all_in("D:/Xander_C/Downloads/DatasetNostro/Positivi/", "D:/Xander_C/Downloads/DatasetNostro/Positivi/imgs", 1920, 1080);
 
-	return MyCascadeClassifier();
+	//return MyCascadeClassifier();
+
+	return PotholeSegmentation();
 }

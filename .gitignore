@@ -39,3 +39,11 @@ x64/*
 *.vcxproj
 *.filters
 */x64/*
+
+.vs
+
+packages/
+packages/*
+packages.config
+CppProperties.json
+CMakeLists.txt

@@ -182,7 +182,7 @@ int PotholeSegmentation() {
 	const int W = 640;
 	const int H = 480;
 
-	const double Gauss_RoadThreshold = 0.5;
+	const double Gauss_RoadThreshold = 0.5999;
 
 	String img_path = "/Volumes/Macintosh HD/Users/matteogabellini/Documents/Materiale Università/MAGISTRALE/2 ANNO/Visione Artificiale e Riconoscimento/MaterialePerProgetto/Downloads/test_rec6.jpg";//"D:\\Xander_C\\Downloads\\test_rec6.jpg";
 
@@ -241,8 +241,12 @@ int PotholeSegmentation() {
 
 		//cout << "Superpixel center @ " << SuperPixel << ", translated @ " << translated_ << ", shrinked @ " << shrinked_ << endl;
 
-		bool isRoad = GaussianEllipseFunction3D(shrinked_) > Gauss_RoadThreshold;
-		bool isOverHorizon = SuperPixel.y < H / 2;
+		auto gVal = GaussianEllipseFunction3D(shrinked_);
+
+		printf("Superpixel %d =====>\t %2f\n", l, gVal);
+
+		bool isRoad = gVal > Gauss_RoadThreshold;
+		bool isOverHorizon = SuperPixel.y < (1 - Cutline_offset)*H;
 
 		Scalar mean_color_value = isRoad && !isOverHorizon ? mean(src, LabelMask) : Scalar(0, 0, 0);
 		Scalar color_mask_value = isRoad && !isOverHorizon ? Scalar(255, 255, 255) : Scalar(0, 0, 0);
@@ -268,6 +272,9 @@ int PotholeSegmentation() {
 	src.copyTo(res, outMask);
 
 	imshow("Result", res);
+
+	// Cut the image in order to resize it to the smalled square/rectangle possible
+
 	waitKey();
 
 	return 1;

@@ -184,7 +184,7 @@ int PotholeSegmentation() {
 
 	const double Gauss_RoadThreshold = 0.5;
 
-	String img_path = "D:\\Xander_C\\Downloads\\test_rec6.jpg";
+	String img_path = "/Volumes/Macintosh HD/Users/matteogabellini/Documents/Materiale Università/MAGISTRALE/2 ANNO/Visione Artificiale e Riconoscimento/MaterialePerProgetto/Downloads/test_rec6.jpg";//"D:\\Xander_C\\Downloads\\test_rec6.jpg";
 
 	Size scale(W, H);
 	Point2d translation_((double) -W / 2.0, (double) -H / 1.0), shrink_(3.0 / (double) W, 5.0 / (double) H);

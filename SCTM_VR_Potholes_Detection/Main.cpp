@@ -193,8 +193,10 @@ int PotholeSegmentation() {
 
 	resize(src, src, scale);
 
+	// Apply gaussian blur in order to smooth edges and gaining cleaner superpixels
 	GaussianBlur(src, tmp, Size(3, 3), 0.0);
 
+	// Switch spazio colore da RGB CieLAB
 	cvtColor(tmp, imgCIELab, COLOR_BGR2Lab);
 
 	// Linear Spectral Clustering
@@ -242,18 +244,28 @@ int PotholeSegmentation() {
 		bool isRoad = GaussianEllipseFunction3D(shrinked_) > Gauss_RoadThreshold;
 		bool isOverHorizon = SuperPixel.y < H / 2;
 
-		Scalar mc = isRoad && !isOverHorizon ? mean(src, LabelMask) : Scalar(0, 0, 0);
-		Scalar cm = isRoad && !isOverHorizon ? Scalar(255, 255, 255) : Scalar(0, 0, 0);
+		Scalar mean_color_value = isRoad && !isOverHorizon ? mean(src, LabelMask) : Scalar(0, 0, 0);
+		Scalar color_mask_value = isRoad && !isOverHorizon ? Scalar(255, 255, 255) : Scalar(0, 0, 0);
 
-		out.setTo(mc, LabelMask);
-		mask.setTo(cm, LabelMask);
+		out.setTo(mean_color_value, LabelMask);
+		mask.setTo(color_mask_value, LabelMask);
 	}
 
 	imshow("Segmentation", out);
-	
-	imshow("Mask", mask);
 
-	src.copyTo(res, mask);
+	Mat outMask;
+
+	// Dilate to clean possible small black dots into the image "center"
+	auto dilateElem = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
+	// Remove smal white dots outside the image "center" 
+	auto erodeElem = getStructuringElement(MORPH_ELLIPSE, Size(9, 9));
+
+	dilate(mask, outMask, dilateElem);
+	erode(outMask, outMask, erodeElem);
+	
+	imshow("Mask", outMask);
+
+	src.copyTo(res, outMask);
 
 	imshow("Result", res);
 	waitKey();

@@ -172,22 +172,16 @@ double GaussianEllipseFunction3D(cv::Point P, cv::Point O = cv::Point(0.0, 0.0),
 
 }
 
-int PotholeSegmentation(String img_path) {
-
-	const double V_offset = 1.00;
-	const double H_offset = 0.00;
-	const double Cutline_offset = 0.60;
-	const double VP_offset_X = 0.50;
-	const double VP_offset_Y = 0.55;
-	const int W = 640;
-	const int H = 480;
-
-	const double Gauss_RoadThreshold = 0.5999;
-
-	Size scale(W, H);
-	Point2d translation_((double) -W / 2.0, (double) -H / 1.0), shrink_(3.0 / (double) W, 5.0 / (double) H);
+int PotholeSegmentation(String img_path, const int SuperPixelEdge = 32, const double Cutline_offset = 0.40,
+	const double Density_Threshold = 0.80, const double Variance_Threshold = 0.35, const double Gauss_RoadThreshold = 0.60) {
 
 	Mat src = imread(img_path, IMREAD_COLOR), tmp, imgCIELab, contour, labels;
+
+	const int W = 640;
+	const int H = 480;
+	
+	Size scale(W, H);
+	Point2d translation_((double)-W / 2.0, (double)-H / 1.0), shrink_(3.0 / (double)W, 5.0 / (double)H);
 
 	resize(src, src, scale);
 
@@ -198,68 +192,79 @@ int PotholeSegmentation(String img_path) {
 	cvtColor(tmp, imgCIELab, COLOR_BGR2Lab);
 
 	// Linear Spectral Clustering
-	Ptr<SuperpixelLSC> superpixels = cv::ximgproc::createSuperpixelLSC(imgCIELab, 32);
+	Ptr<SuperpixelLSC> superpixels = cv::ximgproc::createSuperpixelLSC(imgCIELab, SuperPixelEdge);
 	//Ptr<SuperpixelSLIC> superpixelSegmentation = cv::ximgproc::createSuperpixelSLIC(img1, SLIC::MSLIC, 32, 50.0);
 
 	superpixels->iterate(10);
-
 	superpixels->getLabelContourMask(contour);
-
 	superpixels->getLabels(labels);
-
-	int N_SP = superpixels->getNumberOfSuperpixels(); cout << N_SP << endl;
-
+/*
 	src.copyTo(tmp);
-
 	tmp.setTo(Scalar(0, 0, 0), contour);
-	
 	imshow("Contours", tmp);
-
+*/
 	Mat out, mask, res; 
 	src.copyTo(out); src.copyTo(mask); mask.setTo(Scalar(255, 255, 255));
 
-	for (int l = 0; l < N_SP; ++l) {
+	cout << "SP, Size, Area, Variance, Density" << endl;
+
+	for (int l = 0; l < superpixels->getNumberOfSuperpixels(); ++l) {
 
 		Mat1b LabelMask = (labels == l);
 
+		vector<cv::Point> PixelsInLabel;
+		cv::Point Center(0.0, 0.0);
+		cv::Point2d Variance(0.0, 0.0);
+		double Density = 0.0;
+
+		findNonZero(LabelMask, PixelsInLabel);
+
+		for (auto p : PixelsInLabel) Center += p;
+		Center /= (double)PixelsInLabel.size();
+		
+		Point translated_((Center.x + translation_.x), (Center.y + translation_.y));
+		Point shrinked_(translated_.x*shrink_.x, translated_.x*shrink_.y);
+
+		//cout << "Superpixel center @ " << SuperPixel << ", translated @ " << translated_ << ", shrinked @ " << shrinked_ << endl;
+		
 		// How to evaluate the thresholds in order to separate road super pixels?
 		// Or directly identify RoI where a pothole willl be more likely detected?
 		// ...
 		// Possibilities => Gaussian 3D function
-
-		vector<cv::Point> PixelsLabel;
-		cv::Point SuperPixelCenter(0.0, 0.0);
-		cv::Point2d SuperPixelVariance(0.0, 0.0);
-
-		findNonZero(LabelMask, PixelsLabel);
-		for (auto p : PixelsLabel) SuperPixelCenter += p;
-		SuperPixelCenter /= (double)PixelsLabel.size();
-		
-		Point translated_((SuperPixelCenter.x + translation_.x), (SuperPixelCenter.y + translation_.y));
-		Point shrinked_(translated_.x*shrink_.x, translated_.x*shrink_.y);
-
-		//cout << "Superpixel center @ " << SuperPixel << ", translated @ " << translated_ << ", shrinked @ " << shrinked_ << endl;
-
 		auto gVal = GaussianEllipseFunction3D(shrinked_);
 
 		//cout << "Superpixel " << l << " =====>\tRoadProb.: " << gVal << endl;
 
 		bool isRoad = gVal > Gauss_RoadThreshold;
-		bool isOverHorizon = SuperPixelCenter.y < (1 - Cutline_offset)*H;
+		bool isOverHorizon = Center.y < (1 - Cutline_offset)*H;
 
-		Scalar mean_color_value = isRoad && !isOverHorizon ? mean(src, LabelMask) : Scalar(0, 0, 0);
-		Scalar color_mask_value = isRoad && !isOverHorizon ? Scalar(255, 255, 255) : Scalar(0, 0, 0);
+		Scalar mean_color_value = mean(src, LabelMask);
+		Scalar color_mask_value = Scalar(0, 0, 0);
 
 		if (isRoad && !isOverHorizon) {
 
-			for (Point2d p : PixelsLabel) {
-				SuperPixelVariance = p - (Point2d)SuperPixelCenter;
-				SuperPixelVariance = Point(SuperPixelVariance.x*SuperPixelVariance.x, SuperPixelVariance.y*SuperPixelVariance.y);
+			for (Point2d p : PixelsInLabel) {
+				Variance = p - (Point2d)Center;
+				Variance = Point(Variance.x*Variance.x, Variance.y*Variance.y);
 			}
 
-			SuperPixelVariance /= (double)PixelsLabel.size();
+			Variance /= (double)PixelsInLabel.size();
+			Point2f verts[4];
+			minAreaRect(PixelsInLabel).points(verts);
+			// Shoelace Area Formula
+			double Area = 
+				((verts[0].x*verts[1].y - verts[1].x*verts[0].y) + 
+				(verts[1].x*verts[2].y - verts[2].x*verts[1].y) + 
+				(verts[2].x*verts[3].y - verts[3].x*verts[2].y) + 
+				(verts[3].x*verts[0].y - verts[0].x*verts[3].y))*0.5;
+			Density = (double)PixelsInLabel.size() / Area;
+			
+			if (Density < Density_Threshold && (Variance.x > Variance_Threshold || Variance.y > Variance_Threshold)) {
+				cout << l << ", " << PixelsInLabel.size() << ", " << Area << ", \"" << Variance << "\", " << Density << endl;
 
-			cout << "Superpixel " << l << " =====>\tVariance: " << SuperPixelVariance << endl;
+				// mean_color_value = mean(src, LabelMask);
+				color_mask_value = Scalar(255, 255, 255);
+			}
 		}
 
 		out.setTo(mean_color_value, LabelMask);
@@ -268,19 +273,17 @@ int PotholeSegmentation(String img_path) {
 
 	imshow("Segmentation", out);
 
-	Mat outMask;
-
 	// Dilate to clean possible small black dots into the image "center"
-	auto dilateElem = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
+	auto dilateElem = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));
 	// Remove smal white dots outside the image "center" 
-	auto erodeElem = getStructuringElement(MORPH_ELLIPSE, Size(9, 9));
+	auto erodeElem = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));
 
-	dilate(mask, outMask, dilateElem);
-	erode(outMask, outMask, erodeElem);
+	//dilate(mask, mask, dilateElem);
+	erode(mask, mask, erodeElem);
 	
-	imshow("Mask", outMask);
+	//imshow("Mask", mask);
 
-	src.copyTo(res, outMask);
+	src.copyTo(res, mask);
 
 	imshow("Result", res);
 
@@ -301,7 +304,6 @@ int main(int argc, char*argv[]) {
 		return 0;
 	}
 	else {
-		printf(argv[1]);
-		return PotholeSegmentation(argv[1]);
+		return PotholeSegmentation(argv[1], 32, 0.45, 0.8);
 	}
 }

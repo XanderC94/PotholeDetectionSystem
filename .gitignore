@@ -47,3 +47,4 @@ packages/*
 packages.config
 CppProperties.json
 CMakeLists.txt
+*.user

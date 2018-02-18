@@ -303,6 +303,5 @@ int main(int argc, char*argv[]) {
 	else {
 		printf(argv[1]);
 		return PotholeSegmentation(argv[1]);
-		while (true) {};
 	}
 }

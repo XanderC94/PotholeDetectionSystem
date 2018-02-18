@@ -172,7 +172,7 @@ double GaussianEllipseFunction3D(cv::Point P, cv::Point O = cv::Point(0.0, 0.0),
 
 }
 
-int PotholeSegmentation() {
+int PotholeSegmentation(String img_path) {
 
 	const double V_offset = 1.00;
 	const double H_offset = 0.00;
@@ -183,8 +183,6 @@ int PotholeSegmentation() {
 	const int H = 480;
 
 	const double Gauss_RoadThreshold = 0.5999;
-
-	String img_path = "D:\\Xander_C\\Downloads\\test_rec8.jpg";
 
 	Size scale(W, H);
 	Point2d translation_((double) -W / 2.0, (double) -H / 1.0), shrink_(3.0 / (double) W, 5.0 / (double) H);
@@ -200,10 +198,10 @@ int PotholeSegmentation() {
 	cvtColor(tmp, imgCIELab, COLOR_BGR2Lab);
 
 	// Linear Spectral Clustering
-	Ptr<SuperpixelLSC> superpixels = cv::ximgproc::createSuperpixelLSC(imgCIELab, 64);
+	Ptr<SuperpixelLSC> superpixels = cv::ximgproc::createSuperpixelLSC(imgCIELab, 32);
 	//Ptr<SuperpixelSLIC> superpixelSegmentation = cv::ximgproc::createSuperpixelSLIC(img1, SLIC::MSLIC, 32, 50.0);
 
-	superpixels->iterate(12);
+	superpixels->iterate(10);
 
 	superpixels->getLabelContourMask(contour);
 
@@ -230,26 +228,39 @@ int PotholeSegmentation() {
 		// Possibilities => Gaussian 3D function
 
 		vector<cv::Point> PixelsLabel;
-		cv::Point SuperPixel(0.0, 0.0);
+		cv::Point SuperPixelCenter(0.0, 0.0);
+		cv::Point2d SuperPixelVariance(0.0, 0.0);
 
 		findNonZero(LabelMask, PixelsLabel);
-		for (auto p : PixelsLabel) SuperPixel += p;
-		SuperPixel /= (double)PixelsLabel.size();
+		for (auto p : PixelsLabel) SuperPixelCenter += p;
+		SuperPixelCenter /= (double)PixelsLabel.size();
 		
-		Point translated_((SuperPixel.x + translation_.x), (SuperPixel.y + translation_.y));
+		Point translated_((SuperPixelCenter.x + translation_.x), (SuperPixelCenter.y + translation_.y));
 		Point shrinked_(translated_.x*shrink_.x, translated_.x*shrink_.y);
 
 		//cout << "Superpixel center @ " << SuperPixel << ", translated @ " << translated_ << ", shrinked @ " << shrinked_ << endl;
 
 		auto gVal = GaussianEllipseFunction3D(shrinked_);
 
-		printf("Superpixel %d =====>\t %2f\n", l, gVal);
+		//cout << "Superpixel " << l << " =====>\tRoadProb.: " << gVal << endl;
 
 		bool isRoad = gVal > Gauss_RoadThreshold;
-		bool isOverHorizon = SuperPixel.y < (1 - Cutline_offset)*H;
+		bool isOverHorizon = SuperPixelCenter.y < (1 - Cutline_offset)*H;
 
 		Scalar mean_color_value = isRoad && !isOverHorizon ? mean(src, LabelMask) : Scalar(0, 0, 0);
 		Scalar color_mask_value = isRoad && !isOverHorizon ? Scalar(255, 255, 255) : Scalar(0, 0, 0);
+
+		if (isRoad && !isOverHorizon) {
+
+			for (Point2d p : PixelsLabel) {
+				SuperPixelVariance = p - (Point2d)SuperPixelCenter;
+				SuperPixelVariance = Point(SuperPixelVariance.x*SuperPixelVariance.x, SuperPixelVariance.y*SuperPixelVariance.y);
+			}
+
+			SuperPixelVariance /= (double)PixelsLabel.size();
+
+			cout << "Superpixel " << l << " =====>\tVariance: " << SuperPixelVariance << endl;
+		}
 
 		out.setTo(mean_color_value, LabelMask);
 		mask.setTo(color_mask_value, LabelMask);
@@ -286,5 +297,10 @@ int main(int argc, char*argv[]) {
 
 	//return MyCascadeClassifier();
 
-	return PotholeSegmentation();
+	if (argc == 0) {
+		return 0;
+	}
+	else {
+		return PotholeSegmentation(argv[0]);
+	}
 }

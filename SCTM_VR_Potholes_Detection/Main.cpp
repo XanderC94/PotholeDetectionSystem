@@ -297,10 +297,12 @@ int main(int argc, char*argv[]) {
 
 	//return MyCascadeClassifier();
 
-	if (argc == 0) {
+	if (argc < 2) {
 		return 0;
 	}
 	else {
-		return PotholeSegmentation(argv[0]);
+		printf(argv[1]);
+		return PotholeSegmentation(argv[1]);
+		while (true) {};
 	}
 }

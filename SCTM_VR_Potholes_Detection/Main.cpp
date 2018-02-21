@@ -172,8 +172,16 @@ double GaussianEllipseFunction3D(cv::Point P, cv::Point O = cv::Point(0.0, 0.0),
 
 }
 
-int PotholeSegmentation(String img_path, const int SuperPixelEdge = 32, const double Cutline_offset = 0.40,
-	const double Density_Threshold = 0.80, const double Variance_Threshold = 0.35, const double Gauss_RoadThreshold = 0.60) {
+double AnalyticRect2D(cv::Point from, cv::Point to, cv::Point evaluationPoint) {
+
+	return ((double) evaluationPoint.x - (double) from.x) / ((double) to.x - (double) from.x) - 
+		((double) evaluationPoint.y - (double) from.y) / ((double)to.y - (double)from.y);
+
+}
+
+int PotholeSegmentation(String img_path, const int SuperPixelEdge = 32, const double Cutline_offset = 0.50,
+	const double Density_Threshold = 0.80, const double Variance_Threshold = 0.35, const double Gauss_RoadThreshold = 0.60,
+	const double Rects_X_Offset = 0.0, const double Rects_Y_Offset = 0.9) {
 
 	Mat src = imread(img_path, IMREAD_COLOR), tmp, imgCIELab, contour, labels;
 
@@ -220,28 +228,31 @@ int PotholeSegmentation(String img_path, const int SuperPixelEdge = 32, const do
 		findNonZero(LabelMask, PixelsInLabel);
 
 		for (auto p : PixelsInLabel) Center += p;
-		Center /= (double)PixelsInLabel.size();
+		Center /= (double) PixelsInLabel.size();
 		
-		Point translated_((Center.x + translation_.x), (Center.y + translation_.y));
-		Point shrinked_(translated_.x*shrink_.x, translated_.x*shrink_.y);
+		//Point translated_((Center.x + translation_.x), (Center.y + translation_.y));
+		//Point shrinked_(translated_.x*shrink_.x, translated_.x*shrink_.y);
 
 		//cout << "Superpixel center @ " << SuperPixel << ", translated @ " << translated_ << ", shrinked @ " << shrinked_ << endl;
 		
 		// How to evaluate the thresholds in order to separate road super pixels?
 		// Or directly identify RoI where a pothole willl be more likely detected?
 		// ...
-		// Possibilities => Gaussian 3D function
-		auto gVal = GaussianEllipseFunction3D(shrinked_);
+		// Possibilities 
+		// => Gaussian 3D function
+		//auto gVal = GaussianEllipseFunction3D(shrinked_) > Gauss_RoadThreshold;
 
-		//cout << "Superpixel " << l << " =====>\tRoadProb.: " << gVal << endl;
+		// => Evaluates the pixels through an Analytic Rect Function : F(x) > 0 is over the rect, F(x) < 0 is under, F(x) = 0 it lies on. 
 
-		bool isRoad = gVal > Gauss_RoadThreshold;
-		bool isOverHorizon = Center.y < (1 - Cutline_offset)*H;
+		bool isRoad = AnalyticRect2D(Point(W*Rects_X_Offset, H*Rects_Y_Offset), Point(W*0.5, H*(Cutline_offset-0.1)), Center) >= 0 && 
+			AnalyticRect2D(Point(W*(1.0 - Rects_X_Offset), H*Rects_Y_Offset), Point(W*0.5, H*(Cutline_offset - 0.1)), Center) >= 0;
+
+		bool isNotOverHorizon = Center.y >= (1 - Cutline_offset)*H;
 
 		Scalar mean_color_value = mean(src, LabelMask);
 		Scalar color_mask_value = Scalar(0, 0, 0);
 
-		if (isRoad && !isOverHorizon) {
+		if (isRoad && isNotOverHorizon) {
 
 			for (Point2d p : PixelsInLabel) {
 				Variance = p - (Point2d)Center;
@@ -270,6 +281,8 @@ int PotholeSegmentation(String img_path, const int SuperPixelEdge = 32, const do
 		out.setTo(mean_color_value, LabelMask);
 		mask.setTo(color_mask_value, LabelMask);
 	}
+
+	out.setTo(Scalar(0, 0, 0), contour);
 
 	imshow("Segmentation", out);
 

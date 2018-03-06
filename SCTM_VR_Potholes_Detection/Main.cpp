@@ -1,5 +1,4 @@
 #include <cstdio>
-#include <cstdlib>
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
@@ -8,9 +7,7 @@
 #include <opencv2/objdetect.hpp>
 #include <opencv2/ml.hpp>
 #include <opencv2/ximgproc.hpp>
-#include <iostream>
-#include <fstream>
-#include <iterator>
+#include "HistogramElaboration.h"
 
 using namespace cv;
 using namespace std;
@@ -31,72 +28,6 @@ enum CLASSES {
 	NORMAL, // 0
 	POTHOLE	// 1
 };
-
-void set_format(string & of_file_name_path, string to_new_format, bool use_separator = true) {
-	int image_format_offset_begin = of_file_name_path.find_last_of(".");
-	string image_format = of_file_name_path.substr(image_format_offset_begin);
-	int image_format_offset_end = image_format.length() + image_format_offset_begin;
-
-	of_file_name_path.replace(image_format_offset_begin, image_format_offset_end, (use_separator ? "." : "") + to_new_format);
-}
-
-void load_from_directory(const string & directory, vector<string> & ids, vector<Mat> & set, Mat & labels, int label = -1, int image_type = IMREAD_COLOR) {
-
-	vector<String> fn;
-	glob(directory, fn);
-
-	cout << "Found " << fn.size() << " images..." << endl;
-
-	for (auto &i : fn) {
-		string file_name = i;
-
-		Mat img = imread(file_name, image_type);
-
-		if (img.empty())
-		{
-			cerr << "invalid image: " << file_name << endl;
-			continue;
-		}
-		else 
-		{
-			cout << "Loaded image " << file_name << endl;
-			set.push_back(img);
-			labels.push_back(label);
-			ids.push_back(file_name.substr(file_name.find_last_of("\\")+1));
-		}
-	}
-}
-
-int resize_all_in(const string parent, const string folder, const int width = 1280, const int height = 720) {
-
-	vector<String> fn;
-	glob(folder + "/*", fn);
-
-	cout << "Found " << fn.size() << " images..." << endl;
-
-	for (int i = 0; i < fn.size(); i++)
-	{
-		string file_name = fn[i];
-		Mat img = imread(file_name, IMREAD_COLOR);
-
-		if (img.empty())
-		{
-			cerr << "invalid image: " << file_name << endl;
-			continue;
-		}
-		else
-		{
-			cout << "Loaded image " << file_name << endl;
-
-			Mat dst;
-			resize(img, dst, Size(width, height));
-
-			imwrite(parent + "/scaled/" + file_name.substr(file_name.find_last_of("\\")), dst);
-		}
-	}
-
-	return 1;
-}
 
 int MyCascadeClassifier() {
 
@@ -161,7 +92,6 @@ int MyCascadeClassifier() {
 }
 
 double GaussianEllipseFunction3D(cv::Point P, cv::Point O = cv::Point(0.0, 0.0), double SigmaX = 1.0, double SigmaY = 1.0, double A = 1.0, double Theta = 0.0) {
-
 	double a = cos(Theta)*cos(Theta) / (2 * SigmaX*SigmaX) + sin(Theta)*sin(Theta) / (2 * SigmaY*SigmaY);
 	double b = -sin(2 * Theta) / (2 * SigmaX*SigmaX) + sin(2 * Theta) / (2 * SigmaY*SigmaY);
 	double c = sin(Theta)*sin(Theta) / (2 * SigmaX*SigmaX) + cos(Theta)*cos(Theta) / (2 * SigmaY*SigmaY);
@@ -184,26 +114,50 @@ int PotholeSegmentation() {
 
 	const double Gauss_RoadThreshold = 0.5999;
 
-	String img_path = "/Volumes/Macintosh HD/Users/matteogabellini/Documents/Materiale Università/MAGISTRALE/2 ANNO/Visione Artificiale e Riconoscimento/MaterialePerProgetto/Downloads/test_rec6.jpg";//"D:\\Xander_C\\Downloads\\test_rec6.jpg";
+    String img_path = "/Volumes/Macintosh HD/Users/matteogabellini/Documents/Materiale Università/MAGISTRALE/2 ANNO/Visione Artificiale e Riconoscimento/MaterialePerProgetto/DatasetNostro/Positivi/P_20180117_101915.jpg";
+    /*
+     * "Downloads/test_rec6.jpg";
+     * */
+    //"D:\\Xander_C\\Downloads\\test_rec6.jpg";
 
 	Size scale(W, H);
 	Point2d translation_((double) -W / 2.0, (double) -H / 1.0), shrink_(3.0 / (double) W, 5.0 / (double) H);
 
-	Mat src = imread(img_path, IMREAD_COLOR), tmp, imgCIELab, contour, labels;
+    Mat src = imread(img_path, IMREAD_COLOR);
+    Mat tmp;
+    Mat imgWithGaussianBlur;
+    Mat imgCIELab;
+    Mat imgGrayScale;
+    Mat contour;
+    Mat labels;
 
 	resize(src, src, scale);
 
+    //ExtractHistograms(src);
 	// Apply gaussian blur in order to smooth edges and gaining cleaner superpixels
 	GaussianBlur(src, tmp, Size(3, 3), 0.0);
 
+    //Show the result of the blur operation
+    tmp.copyTo(imgWithGaussianBlur);
+    imshow("GaussianBlur", imgWithGaussianBlur);
+
+
 	// Switch spazio colore da RGB CieLAB
 	cvtColor(tmp, imgCIELab, COLOR_BGR2Lab);
+    //imshow("CieLab color space", imgCIELab);
+
+    // Switch spazio di colore da RGB a GreayScale
+    cvtColor(tmp, imgGrayScale, CV_BGR2GRAY);
+    //imshow("Grey scale", imgGrayScale);
+    ExtractHistograms(imgGrayScale);
 
 	// Linear Spectral Clustering
-	Ptr<SuperpixelLSC> superpixels = cv::ximgproc::createSuperpixelLSC(imgCIELab, 64);
+    Ptr<SuperpixelLSC> superpixels = cv::ximgproc::createSuperpixelLSC(imgCIELab, 32);
+    //Ptr<SuperpixelLSC> superpixels = cv::ximgproc::createSuperpixelLSC(imgCIELab, 64);
 	//Ptr<SuperpixelSLIC> superpixelSegmentation = cv::ximgproc::createSuperpixelSLIC(img1, SLIC::MSLIC, 32, 50.0);
 
-	superpixels->iterate(12);
+    superpixels->iterate(30);
+    //superpixels->iterate(12);
 
 	superpixels->getLabelContourMask(contour);
 
@@ -233,6 +187,7 @@ int PotholeSegmentation() {
 		cv::Point SuperPixel(0.0, 0.0);
 
 		findNonZero(LabelMask, PixelsLabel);
+        //Calcolo il punto medio del super pixel (centro del sp)
 		for (auto p : PixelsLabel) SuperPixel += p;
 		SuperPixel /= (double)PixelsLabel.size();
 		

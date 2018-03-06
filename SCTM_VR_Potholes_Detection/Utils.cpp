@@ -1,4 +1,7 @@
 #include "Utils.h"
+#include <opencv2/imgproc.hpp>
+#include <iostream>
+
 
 void set_format(string &of_file_name_path, string to_new_format, bool use_separator) {
     int image_format_offset_begin = of_file_name_path.find_last_of(".");

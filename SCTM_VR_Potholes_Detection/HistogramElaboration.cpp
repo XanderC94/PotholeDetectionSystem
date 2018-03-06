@@ -1,5 +1,11 @@
 #include "HistogramElaboration.h"
 
+#include <opencv2/imgproc.hpp>
+#include <opencv2/highgui.hpp>
+
+using namespace std;
+
+
 Mat ExtractHistograms(Mat src) {
     /// Separate the image in 3 places ( B, G and R )
     vector<Mat> bgr_planes;

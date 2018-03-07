@@ -4,6 +4,7 @@
 #include <opencv2/objdetect.hpp>
 #include <opencv2/ml.hpp>
 #include "Segmentation.h"
+#include "HistogramElaboration.h"
 
 using namespace cv;
 using namespace std;
@@ -89,13 +90,40 @@ int MyCascadeClassifier() {
 int main(int argc, char*argv[]) {
 
 	//return resize_all_in("D:/Xander_C/Downloads/DatasetNostro/Positivi/", "D:/Xander_C/Downloads/DatasetNostro/Positivi/imgs", 1920, 1080);
-
 	//return MyCascadeClassifier();
+
     //String gaboPath = "/Volumes/Macintosh HD/Users/matteogabellini/Documents/Materiale Università/MAGISTRALE/2 ANNO/Visione Artificiale e Riconoscimento/MaterialePerProgetto/DatasetNostro/Positivi/P_20180117_101915.jpg";
+	//"Downloads/test_rec6.jpg";
+	//"D:\\Xander_C\\Downloads\\test_rec6.jpg";
+	
 	if (argc < 2) {
 		return 0;
 	}
 	else {
-		return PotholeSegmentation(argv[1], 32, 0.45, 0.8);
+
+		auto candidates = vector<Point>();
+		Mat imgWithGaussianBlur;
+		Mat imgGrayScale;
+
+		Mat src = imread(argv[1], IMREAD_COLOR), tmp;
+
+		/*
+			The src image will be:
+			1. Resized to 640 * 480
+			2. Cropped under the Horizon Line
+			3. Blurred with a Gaussian Function
+
+			in Candidates will be placed the set on centroids that survived segmentation
+		*/
+		PotholeSegmentation(src, candidates, 32, 0.45, 0.8);
+
+		// Switch spazio di colore da RGB a GreayScale
+		cvtColor(src, imgGrayScale, CV_BGR2GRAY);
+		imshow("Grey scale", imgGrayScale);
+		ExtractHistograms(imgGrayScale);
+
+		waitKey();
+
+		return 1;
 	}
 }

@@ -101,9 +101,11 @@ int main(int argc, char*argv[]) {
 	}
 	else {
 
-		auto candidates = vector<Point>();
-		Mat imgWithGaussianBlur;
+		auto centroids = vector<Point>();
+		auto candidates = vector<Mat>();
 		Mat imgGrayScale;
+
+		auto candidate_size = Size(128, 128);
 
 		Mat src = imread(argv[1], IMREAD_COLOR), tmp;
 
@@ -115,14 +117,30 @@ int main(int argc, char*argv[]) {
 
 			in Candidates will be placed the set on centroids that survived segmentation
 		*/
-		PotholeSegmentation(src, candidates, 32, 0.45, 0.8);
+		PotholeSegmentation(src, centroids, 32, 0.45, 0.8);
 
-		// Switch spazio di colore da RGB a GreayScale
-		cvtColor(src, imgGrayScale, CV_BGR2GRAY);
-		imshow("Grey scale", imgGrayScale);
-		ExtractHistograms(imgGrayScale);
+		// Candidate Extraction
+		for (auto c : centroids) {
 
-		waitKey();
+			auto tlc_x = c.x - candidate_size.width*0.5;
+			auto tlc_y = c.y - candidate_size.height*0.5;
+			auto brc_x = c.x + candidate_size.width*0.5;
+			auto brc_y = c.y + candidate_size.height*0.5;
+
+			auto tlc = Point(tlc_x < 0 ? 0 : tlc_x, tlc_y < 0 ? 0 : tlc_y);
+			auto brc = Point(brc_x > src.cols - 1 ? src.cols : brc_x, brc_y > src.rows - 1 ? src.rows : brc_y);
+
+			auto candidate = src(Rect(tlc, brc));
+
+			candidates.push_back(candidate);
+
+			// Switch spazio di colore da RGB a GreayScale
+			cvtColor(candidate, imgGrayScale, CV_BGR2GRAY);
+			imshow("Grey scale", imgGrayScale);
+
+			ExtractHistograms(imgGrayScale);
+			waitKey();
+		}
 
 		return 1;
 	}

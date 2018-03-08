@@ -111,6 +111,9 @@ int PotholeSegmentation(Mat &src,
 				cout << l << ", " << PixelsInLabel.size() << ", " << Area << ", \"" << Variance << "\", " << Density << endl;
 
                 color_mask_value = Scalar(255, 255, 255);
+
+				// Add the center of the superpixel to the candidates.
+				candidates.push_back(Center);
             }
         }
 

@@ -33,6 +33,8 @@ int PotholeSegmentation(Mat &src,
 
 	src = src(Rect(Point(0, H*Cutline_offset), Point(W - 1, H - 1)));
 
+	imshow("Crop", src);
+
     // Apply gaussian blur in order to smooth edges and gaining cleaner superpixels
     GaussianBlur(src, src, Size(3, 3), 0.0);
 	

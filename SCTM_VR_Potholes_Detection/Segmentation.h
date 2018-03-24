@@ -9,11 +9,11 @@ using namespace std;
 int PotholeSegmentation(Mat& src,
 						vector<Point> &candidates,
                         const int SuperPixelEdge = 32,
-						const double Cutline_offset = 0.60,
+						const double Horizon_Offset = 0.60,
 						const double Density_Threshold = 0.80,
 						const double Variance_Threshold = 0.35,
 						const double Gauss_RoadThreshold = 0.60,
-						const double Rects_X_Offset = 0.0,
-						const double Rects_Y_Offset = 0.8);
+						const double SLine_X_Offset = 0.0,
+						const double SLine_Y_Offset = 0.8);
 
 #endif //POTHOLEDETENCTIONSYSTEM_SEGMENTATION_H

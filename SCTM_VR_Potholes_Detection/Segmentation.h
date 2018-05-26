@@ -2,18 +2,15 @@
 #define POTHOLEDETENCTIONSYSTEM_SEGMENTATION_H
 
 #include <opencv2/core.hpp>
+#include "DataStructures.h"
 
 using namespace cv;
 using namespace std;
 
 int PotholeSegmentation(Mat& src,
-						vector<Point> &candidates,
+                        vector<Point> &candidates,
                         const int SuperPixelEdge = 32,
-						const double Horizon_Offset = 0.60,
-						const double Density_Threshold = 0.80,
-						const double Variance_Threshold = 0.35,
-						const double Gauss_RoadThreshold = 0.60,
-						const double SLine_X_Offset = 0.0,
-						const double SLine_Y_Offset = 0.8);
+                        const ExtractionThresholds thresholds = defaultThresholds,
+                        const Offsets offsets = defaultOffsets);
 
 #endif //POTHOLEDETENCTIONSYSTEM_SEGMENTATION_H

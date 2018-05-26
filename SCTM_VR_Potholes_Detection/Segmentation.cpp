@@ -10,49 +10,44 @@ using namespace cv;
 using namespace std;
 using namespace cv::ximgproc;
 
+const int RESIZING_WIDTH = 640;
+const int RESIZING_HEIGHT = 480;
 
-int PotholeSegmentation(Mat &src,
-						vector<Point> &candidates,
-						const int SuperPixelEdge,
-						const double Horizon_Offset,
-						const double Density_Threshold,
-						const double Variance_Threshold,
-						const double Gauss_RoadThreshold,
-						const double SLine_X_Offset,
-						const double SLine_Y_Offset) {
+void printThresholds(ExtractionThresholds thresholds) {
+    cout << "THRESHOLDS" << endl;
+    cout << "Density_Threshold: " << thresholds.Density_Threshold << endl;
+    cout << "Variance_Threshold: " << thresholds.Variance_Threshold << endl;
+    cout << "Gauss_RoadThreshold: " << thresholds.Gauss_RoadThreshold << endl;
+}
 
-    Mat tmp, imgCIELab, contour, labels;
+void printOffsets(Offsets of) {
+    cout << "OFFSETS" << endl;
+    cout << "Horizon_Offset: " << of.Horizon_Offset << endl;
+    cout << "SLine_X_Offset: " << of.SLine_X_Offset << endl;
+    cout << "SLine_Y_Offset: " << of.SLine_Y_Offset << endl;
+}
 
-    const int W = 640;
-    const int H = 480;
-	
-    Size scale(W, H);
+void resize_image(Mat &src, Mat &resizedImage, const double Horizon_Offset) {
+
+
+    Size scale(RESIZING_WIDTH, RESIZING_HEIGHT);
 //    Point2d translation_((double) -W / 2.0, (double) -H / 1.0), shrink_(3.0 / (double) W, 5.0 / (double) H);
 
-    resize(src, src, scale);
+    resize(src, resizedImage, scale);
 
-	src = src(Rect(Point2d(0, H*Horizon_Offset), Point2d(W - 1, H - 1)));
+    resizedImage = resizedImage(
+            Rect(Point2d(0, RESIZING_HEIGHT * Horizon_Offset), Point2d(RESIZING_WIDTH - 1, RESIZING_HEIGHT - 1)));
+}
 
-//	imshow("Crop", src);
-	
-	// Switch color space from RGB to CieLAB
-	cvtColor(src, imgCIELab, COLOR_BGR2Lab);
-//	imshow("CieLab color space", imgCIELab);
-
-    // Linear Spectral Clustering
-    Ptr<SuperpixelLSC> superpixels = cv::ximgproc::createSuperpixelLSC(imgCIELab, SuperPixelEdge);
-//    Ptr<SuperpixelSLIC> superpixelSegmentation = cv::ximgproc::createSuperpixelSLIC(imgCIELab, SLIC::MSLIC, 32, 50.0);
-
-    superpixels->iterate(12);
-    superpixels->getLabelContourMask(contour);
+void extract_candidates(Mat &src, Ptr<SuperpixelLSC> &superpixels,
+                        vector<Point> &candidates,
+                        const double Density_Threshold,
+                        const double Variance_Threshold,
+                        Mat &out,
+                        Mat &mask,
+                        Offsets offsets) {
+    Mat labels;
     superpixels->getLabels(labels);
-
-    Mat out, mask, res;
-    src.copyTo(out);
-    src.copyTo(mask);
-    mask.setTo(Scalar(255, 255, 255));
-
-    cout << "SP, Size, Area, Variance, Density" << endl;
 
     for (int l = 0; l < superpixels->getNumberOfSuperpixels(); ++l) {
 
@@ -72,16 +67,17 @@ int PotholeSegmentation(Mat &src,
 //        Point shrinked_(translated_.x*shrink_.x, translated_.x*shrink_.y);
 
         // How to evaluate the thresholds in order to separate road super pixels?
-        // Or directly identify RoI where a pothole willl be more likely detected?
+        // Or directly identify RoI where a pothole will be more likely detected?
         // ...
         // Possibilities
         // => Gaussian 3D function
         // => Evaluates the pixels through an Analytic Rect Function : F(x) > 0 is over the rect, F(x) < 0 is under, F(x) = 0 it lies on.
 
-        bool isRoad = AnalyticRect2D(cv::Point2d(src.cols * SLine_X_Offset, src.rows * SLine_Y_Offset),
+        bool isRoad = AnalyticRect2D(cv::Point2d(src.cols * offsets.SLine_X_Offset, src.rows * offsets.SLine_Y_Offset),
                                      cv::Point2d(src.cols * 0.4, 0.0), Center) >= 0 &&
-                      AnalyticRect2D(cv::Point2d(src.cols * (1.0 - SLine_X_Offset), src.rows * SLine_Y_Offset),
-                                     cv::Point2d(src.cols * 0.6, 0.0), Center) >= 0;
+                      AnalyticRect2D(
+                              cv::Point2d(src.cols * (1.0 - offsets.SLine_X_Offset), src.rows * offsets.SLine_Y_Offset),
+                              cv::Point2d(src.cols * 0.6, 0.0), Center) >= 0;
 
         Scalar mean_color_value = mean(src, LabelMask);
         Scalar color_mask_value = Scalar(0, 0, 0);
@@ -106,33 +102,84 @@ int PotholeSegmentation(Mat &src,
             Density = (double) PixelsInLabel.size() / Area;
 
             if (Density < Density_Threshold && (Variance.x > Variance_Threshold || Variance.y > Variance_Threshold)) {
-                
-				cout << l << ", " << PixelsInLabel.size() << ", " << Area << ", \"" << Variance << "\", " << Density << endl;
+
+                cout << l << ", " << PixelsInLabel.size() << ", " << Area << ", \"" << Variance << "\", " << Density
+                     << endl;
 
                 color_mask_value = Scalar(255, 255, 255);
 
-				// Add the center of the superpixel to the candidates.
-				candidates.push_back(Center);
+                // Add the center of the superpixel to the candidates.
+                candidates.push_back(Center);
             }
         }
 
         out.setTo(mean_color_value, LabelMask);
         mask.setTo(color_mask_value, LabelMask);
     }
+}
 
+int PotholeSegmentation(Mat &src,
+                        vector<Point> &candidates,
+                        const int SuperPixelEdge,
+                        const ExtractionThresholds thresholds,
+                        const Offsets offsets) {
+
+    printThresholds(thresholds);
+    printOffsets(offsets);
+
+    Mat tmp;
+    Mat imgCIELab;
+    Mat contour;
+
+
+    resize_image(src, src, offsets.Horizon_Offset);
+
+
+
+//	imshow("Crop", src);
+
+    // Switch color space from RGB to CieLAB
+    cvtColor(src, imgCIELab, COLOR_BGR2Lab);
+//	imshow("CieLab color space", imgCIELab);
+
+    // Linear Spectral Clustering
+    Ptr<SuperpixelLSC> superpixels = cv::ximgproc::createSuperpixelLSC(imgCIELab, SuperPixelEdge);
+//    Ptr<SuperpixelSLIC> superpixelSegmentation = cv::ximgproc::createSuperpixelSLIC(imgCIELab, SLIC::MSLIC, 32, 50.0);
+
+    superpixels->iterate(12);
+    superpixels->getLabelContourMask(contour);
+
+    Mat out;
+    Mat mask;
+    Mat res;
+    src.copyTo(out);
+    src.copyTo(mask);
+    mask.setTo(Scalar(255, 255, 255));
+
+    cout << "SP, Size, Area, Variance, Density" << endl;
+
+    /*extract_candidates(src,
+                       superpixels,
+                       candidates,
+                       thresholds.Density_Threshold,
+                       thresholds.Variance_Threshold,
+                       out,
+                       mask,
+                       offsets);
+*/
     out.setTo(Scalar(0, 0, 0), contour);
 
     imshow("Segmentation", out);
 
     // Dilate to clean possible small black dots into the image "center"
     auto dilateElem = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));
-    // Remove smal white dots outside the image "center"
+    // Remove small white dots outside the image "center"
     auto erodeElem = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));
 
 //    dilate(mask, mask, dilateElem);
     erode(mask, mask, erodeElem);
 
-//    imshow("Mask", mask);
+    //imshow("Mask", mask);
 
     src.copyTo(res, mask);
 

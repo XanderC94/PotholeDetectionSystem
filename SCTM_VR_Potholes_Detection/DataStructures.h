@@ -1,0 +1,19 @@
+//
+// Created by Matteo Gabellini on 25/05/2018.
+//
+
+typedef struct Offsets {
+    double Horizon_Offset;
+    double SLine_X_Offset;
+    double SLine_Y_Offset;
+} Offsets;
+const Offsets defaultOffsets = {0.60, 0.0, 0.8};
+
+
+typedef struct ExtractionThresholds {
+    double Density_Threshold;
+    double Variance_Threshold;
+    double Gauss_RoadThreshold;
+} ExtractionThresholds;
+
+const ExtractionThresholds defaultThresholds = {0.80, 0.35, 0.60};

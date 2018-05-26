@@ -1,6 +1,7 @@
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
+#include <iostream>
 #include "Segmentation.h"
 #include "HistogramElaboration.h"
 
@@ -27,10 +28,12 @@ int main(int argc, char*argv[]) {
 		auto centroids = vector<Point>();
 		auto candidates = vector<Mat>();
         auto features = vector<Feature>();
-		Mat candidateGrayScale, imgBlurred;
+        Mat candidateGrayScale;
+        Mat imgBlurred;
 		auto candidate_size = Size(128, 128);
 
 		Mat src = imread(argv[1], IMREAD_COLOR), tmp;
+        imshow("Original Image", src);
 
 		/*
 			The src image will be:
@@ -41,10 +44,17 @@ int main(int argc, char*argv[]) {
 		*/
 
         // Apply gaussian blur in order to smooth edges and gaining cleaner superpixels
-        GaussianBlur(src, imgBlurred, Size(5, 5), 0.0);
-		PotholeSegmentation(imgBlurred, centroids, 32, 0.65, 0.8);
+        //GaussianBlur(src, imgBlurred, Size(5, 5), 0.0);
+        //imshow("Blurred Image", imgBlurred);
 
-		// Candidate Extraction
+        Offsets offsets = {0.60, 0.65, 0.8};
+
+        int superPixelEdge = 32;
+        PotholeSegmentation(src, centroids, superPixelEdge, defaultThresholds, offsets);
+
+        cout << "Centroids Number: " << centroids.size() << endl;
+
+        // Candidate Extraction
 		for (auto c : centroids) {
 
 			auto tlc_x = c.x - candidate_size.width*0.5;

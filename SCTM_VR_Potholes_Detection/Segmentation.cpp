@@ -27,7 +27,7 @@ void printOffsets(Offsets of) {
     cout << "SLine_Y_Offset: " << of.SLine_Y_Offset << endl;
 }
 
-void resize_image(Mat &src, Mat &resizedImage, const double Horizon_Offset) {
+void preprocessing(Mat &src, Mat &resizedImage, const double Horizon_Offset) {
 
 
     Size scale(RESIZING_WIDTH, RESIZING_HEIGHT);
@@ -41,8 +41,7 @@ void resize_image(Mat &src, Mat &resizedImage, const double Horizon_Offset) {
 
 void extract_candidates(Mat &src, Ptr<SuperpixelLSC> &superpixels,
                         vector<Point> &candidates,
-                        const double Density_Threshold,
-                        const double Variance_Threshold,
+                        ExtractionThresholds thresolds,
                         Mat &out,
                         Mat &mask,
                         Offsets offsets) {
@@ -67,7 +66,7 @@ void extract_candidates(Mat &src, Ptr<SuperpixelLSC> &superpixels,
 //        Point shrinked_(translated_.x*shrink_.x, translated_.x*shrink_.y);
 
         // How to evaluate the thresholds in order to separate road super pixels?
-        // Or directly identify RoI where a pothole will be more likely detected?
+        // Or directly identify RoI (Region of interrest) where a pothole will be more likely detected?
         // ...
         // Possibilities
         // => Gaussian 3D function
@@ -101,9 +100,18 @@ void extract_candidates(Mat &src, Ptr<SuperpixelLSC> &superpixels,
 
             Density = (double) PixelsInLabel.size() / Area;
 
-            if (Density < Density_Threshold && (Variance.x > Variance_Threshold || Variance.y > Variance_Threshold)) {
+            if (Density < thresolds.Density_Threshold &&
+                (Variance.x > thresolds.Variance_Threshold || Variance.y > thresolds.Variance_Threshold)) {
 
-                cout << l << ", " << PixelsInLabel.size() << ", " << Area << ", \"" << Variance << "\", " << Density
+                cout << l
+                     << ", "
+                     << PixelsInLabel.size()
+                     << ", "
+                     << Area
+                     << ", \""
+                     << Variance
+                     << "\", "
+                     << Density
                      << endl;
 
                 color_mask_value = Scalar(255, 255, 255);
@@ -132,11 +140,10 @@ int PotholeSegmentation(Mat &src,
     Mat contour;
 
 
-    resize_image(src, src, offsets.Horizon_Offset);
+    preprocessing(src, src, offsets.Horizon_Offset);
+    imshow("Preprocessed Image (Resized & Cropped)", src);
 
 
-
-//	imshow("Crop", src);
 
     // Switch color space from RGB to CieLAB
     cvtColor(src, imgCIELab, COLOR_BGR2Lab);
@@ -158,15 +165,8 @@ int PotholeSegmentation(Mat &src,
 
     cout << "SP, Size, Area, Variance, Density" << endl;
 
-    /*extract_candidates(src,
-                       superpixels,
-                       candidates,
-                       thresholds.Density_Threshold,
-                       thresholds.Variance_Threshold,
-                       out,
-                       mask,
-                       offsets);
-*/
+    extract_candidates(src, superpixels, candidates, thresholds, out, mask, offsets);
+
     out.setTo(Scalar(0, 0, 0), contour);
 
     imshow("Segmentation", out);

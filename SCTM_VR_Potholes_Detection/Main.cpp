@@ -58,6 +58,7 @@ int main(int argc, char*argv[]) {
         /*--------------------------------- Feature Extraction Phase ------------------------------*/
         auto features = extractFeatures(src, centroids, candidate_size);
 
+
         //Calculate and Print the execution time
         timeElapsed = ((double) getTickCount() - timeElapsed) / getTickFrequency();
         cout << "Times passed in seconds: " << timeElapsed << endl;

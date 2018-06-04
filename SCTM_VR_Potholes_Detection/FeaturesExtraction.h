@@ -18,12 +18,12 @@ using namespace std;
 
 typedef struct Features {
     Point2d centroid;
-//    Mat candidate;
     Mat histogram;
     Scalar averageGrayValue;
     double contrast;
     double entropy;
     double skewness;
+    double energy;
 } Features;
 
 vector<Features> extractFeatures(Mat sourceImage, vector<Point> centroids, Size candidate_size);

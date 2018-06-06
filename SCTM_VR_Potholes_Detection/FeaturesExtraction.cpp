@@ -73,10 +73,10 @@ vector<Features> extractFeatures(Mat sourceImage, vector<Point> centroids, Size 
         entropy = 0 - entropy;
         candidatesEntropy.push_back(entropy);
 
-        Scalar averageGreyValue = mean(candidateGrayScale);
-        candidatesAverageGreyLevel.push_back(averageGreyValue[0]);
+        double averageGreyValue = mean(candidateGrayScale)[0];
+        candidatesAverageGreyLevel.push_back(averageGreyValue);
 
-        double skewness = calculateSkewnessGrayImage(candidate, averageGreyValue[0]);
+        double skewness = calculateSkewnessGrayImage(candidate, averageGreyValue);
         candidatesSkewness.push_back(skewness);
 
 
@@ -85,13 +85,13 @@ vector<Features> extractFeatures(Mat sourceImage, vector<Point> centroids, Size 
 
         cout << c_name << endl;
         cout <<
-             "Average Gray Value: " << averageGreyValue[0] <<
+             "Average Gray Value: " << averageGreyValue <<
              " Contrast: " << contrast <<
              " Skeweness: " << skewness <<
              " Energy: " << energy <<
              " Entropy: " << entropy << endl;
 
-        Mat histogram = ExtractHistograms(candidateGrayScale);
+        Mat histogram = ExtractHistograms(candidateGrayScale, c_name);
 
         notNormalizedfeatures.push_back(Features{c, histogram, averageGreyValue, contrast, entropy, skewness, energy});
     }
@@ -118,8 +118,6 @@ vector<Features> extractFeatures(Mat sourceImage, vector<Point> centroids, Size 
              " Skeweness: " << normCandidatesSkewness.at(i) <<
              " Energy: " << normCandidatesEnergy.at(i) <<
              " Entropy: " << normCandidatesEntropy.at(i) << endl;
-
-        Mat histogram = ExtractHistograms(candidateGrayScale);
 
         normalizedFeatures.push_back(Features{
                 centroids.at(i),

@@ -50,3 +50,7 @@ CMakeLists.txt
 */cmake
 FindOpenCV.make
 *.user
+
+.idea*
+
+/cmake-build-*

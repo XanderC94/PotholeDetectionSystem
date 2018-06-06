@@ -16,6 +16,6 @@ double GaussianEllipseFunction3D(cv::Point P,
                                  double A = 1.0,
                                  double Theta = 0.0);
 
-double calculateSkewnessGrayImage(Mat image, double averageColorVal);
+float calculateSkewnessGrayImage(Mat image, float averageColorVal);
 
 #endif //POTHOLEDETENCTIONSYSTEM_MATHUTILS_H

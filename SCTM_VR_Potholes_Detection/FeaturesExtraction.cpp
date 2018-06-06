@@ -10,11 +10,11 @@ vector<Features> extractFeatures(Mat sourceImage, vector<Point> centroids, Size 
     auto notNormalizedfeatures = vector<Features>();
     auto normalizedFeatures = vector<Features>();
 
-    auto candidatesAverageGreyLevel = vector<double>();
-    auto candidatesContrast = vector<double>();
-    auto candidatesEntropy = vector<double>();
-    auto candidatesSkewness = vector<double>();
-    auto candidatesEnergy = vector<double>();
+    auto candidatesAverageGreyLevel = vector<float>();
+    auto candidatesContrast = vector<float>();
+    auto candidatesEntropy = vector<float>();
+    auto candidatesSkewness = vector<float>();
+    auto candidatesEnergy = vector<float>();
 
 
     Mat candidateGrayScale;
@@ -53,30 +53,30 @@ vector<Features> extractFeatures(Mat sourceImage, vector<Point> centroids, Size 
         // In order to reduce computation complexity
         // calculate the contrast, entropy and energy with in the same loops
 
-        double contrast = 0.0;
-        double entropy = 0.0;
-        double energy = 0.0;
+        float contrast = 0.0;
+        float entropy = 0.0;
+        float energy = 0.0;
 
         for (int i = 0; i < candidateGrayScale.rows; i++) {
             for (int j = 0; j < candidateGrayScale.cols; j++) {
-                contrast = contrast + pow((i - j), 2) * candidateGrayScale.at<uchar>(i, j);
-                entropy = entropy + (candidateGrayScale.at<uchar>(i, j) * log10(candidateGrayScale.at<uchar>(i, j)));
-                energy = energy + pow(candidateGrayScale.at<uchar>(i, j), 2);
+                contrast = contrast + powf((i - j), 2) * candidateGrayScale.at<uchar>(i, j);
+                entropy = entropy + (candidateGrayScale.at<uchar>(i, j) * log10f(candidateGrayScale.at<uchar>(i, j)));
+                energy = energy + powf(candidateGrayScale.at<uchar>(i, j), 2);
             }
         }
 
         candidatesContrast.push_back(contrast);
 
-        energy = sqrt(energy);
+        energy = sqrtf(energy);
         candidatesEnergy.push_back(energy);
 
         entropy = 0 - entropy;
         candidatesEntropy.push_back(entropy);
 
-        double averageGreyValue = mean(candidateGrayScale)[0];
+        float averageGreyValue = (float) mean(candidateGrayScale)[0];
         candidatesAverageGreyLevel.push_back(averageGreyValue);
 
-        double skewness = calculateSkewnessGrayImage(candidate, averageGreyValue);
+        float skewness = calculateSkewnessGrayImage(candidate, averageGreyValue);
         candidatesSkewness.push_back(skewness);
 
 
@@ -98,11 +98,11 @@ vector<Features> extractFeatures(Mat sourceImage, vector<Point> centroids, Size 
 
     /*------------- Normalization Phase -------------*/
 
-    auto normCandidatesAverageGreyLevel = vector<double>();
-    auto normCandidatesContrast = vector<double>();
-    auto normCandidatesEntropy = vector<double>();
-    auto normCandidatesSkewness = vector<double>();
-    auto normCandidatesEnergy = vector<double>();
+    auto normCandidatesAverageGreyLevel = vector<float>();
+    auto normCandidatesContrast = vector<float>();
+    auto normCandidatesEntropy = vector<float>();
+    auto normCandidatesSkewness = vector<float>();
+    auto normCandidatesEnergy = vector<float>();
 
     //Normalize feature values to [1,10]
     normalize(candidatesAverageGreyLevel, normCandidatesAverageGreyLevel, 1, 10, NORM_MINMAX, -1, Mat());

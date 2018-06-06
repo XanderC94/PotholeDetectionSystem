@@ -24,11 +24,11 @@ double GaussianEllipseFunction3D(cv::Point P,
 
 }
 
-double calculateSkewnessGrayImage(Mat image, double averageGrayVal) {
-    double result = 0.0;
+float calculateSkewnessGrayImage(Mat image, float averageGrayVal) {
+    float result = 0.0;
     for (int i = 0; i < image.rows; i++) {
         for (int j = 0; j < image.cols; j++) {
-            result = result + cbrt(image.at<uchar>(i, j) - averageGrayVal);
+            result = result + cbrtf(image.at<uchar>(i, j) - averageGrayVal);
         }
     }
     result = result / (image.rows * image.cols);

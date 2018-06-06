@@ -6,7 +6,7 @@
 using namespace std;
 
 
-Mat ExtractHistograms(Mat src) {
+Mat ExtractHistograms(Mat src, String candidateName) {
     /// Separate the image in 3 places ( B, G and R )
     vector<Mat> bgr_planes;
     //split( src, bgr_planes );
@@ -44,8 +44,8 @@ Mat ExtractHistograms(Mat src) {
     }
 
     /// Display
-    namedWindow("Grey Scale Histogram", CV_WINDOW_AUTOSIZE);
-    imshow("Grey Scale Histogram", histImage);
+    namedWindow(candidateName + "Grey Scale Histogram", CV_WINDOW_AUTOSIZE);
+    imshow(candidateName + "Grey Scale Histogram", histImage);
 
     return histImage;
 }

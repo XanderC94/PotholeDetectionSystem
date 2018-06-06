@@ -39,16 +39,16 @@ void preprocessing(Mat &src, Mat &resizedImage, const double Horizon_Offset) {
             Rect(Point2d(0, RESIZING_HEIGHT * Horizon_Offset), Point2d(RESIZING_WIDTH - 1, RESIZING_HEIGHT - 1)));
 }
 
-void extract_candidates(Mat &src, Ptr<SuperpixelLSC> &superpixels,
+void extract_candidates(Mat &src,
+                        Mat &labels,
+                        int nSuperPixels,
                         vector<Point> &candidates,
                         ExtractionThresholds thresolds,
                         Mat &out,
                         Mat &mask,
                         Offsets offsets) {
-    Mat labels;
-    superpixels->getLabels(labels);
 
-    for (int l = 0; l < superpixels->getNumberOfSuperpixels(); ++l) {
+    for (int l = 0; l < nSuperPixels; ++l) {
 
         Mat1b LabelMask = (labels == l);
 
@@ -151,9 +151,9 @@ int PotholeSegmentation(Mat &src,
 
     // Linear Spectral Clustering
     Ptr<SuperpixelLSC> superpixels = cv::ximgproc::createSuperpixelLSC(imgCIELab, SuperPixelEdge);
-//    Ptr<SuperpixelSLIC> superpixelSegmentation = cv::ximgproc::createSuperpixelSLIC(imgCIELab, SLIC::MSLIC, 32, 50.0);
+    //Ptr<SuperpixelSLIC> superpixels = cv::ximgproc::createSuperpixelSLIC(imgCIELab, SLIC::MSLIC, 32, 50.0);
 
-    superpixels->iterate(12);
+    superpixels->iterate(10);
     superpixels->getLabelContourMask(contour);
 
     Mat out;
@@ -165,9 +165,11 @@ int PotholeSegmentation(Mat &src,
 
     cout << "SP, Size, Area, Variance, Density" << endl;
 
-    extract_candidates(src, superpixels, candidates, thresholds, out, mask, offsets);
+    Mat labels;
+    superpixels->getLabels(labels);
+    extract_candidates(src, labels, superpixels->getNumberOfSuperpixels(), candidates, thresholds, out, mask, offsets);
 
-    out.setTo(Scalar(0, 0, 0), contour);
+    out.setTo(Scalar(0, 0, 255), contour);
 
     imshow("Segmentation", out);
 

@@ -55,10 +55,10 @@ int main(int argc, char*argv[]) {
 		*	(in Candidates will be placed the set on centroids that survived segmentation)
 		*/
 
-        Offsets offsets = {0.60, 0.15, 0.8};
-
+        Offsets offsets = {0.65, 0.15, 0.8};
+        ExtractionThresholds threshold = {0.80, 0.30, 0.60};
         int superPixelEdge = 32;
-        PotholeSegmentation(src, centroids, superPixelEdge, defaultThresholds, offsets);
+        PotholeSegmentation(src, centroids, superPixelEdge, threshold, offsets);
 
         cout << "Centroids Number: " << centroids.size() << endl;
 

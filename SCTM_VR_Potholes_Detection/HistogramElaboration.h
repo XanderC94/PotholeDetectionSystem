@@ -5,6 +5,6 @@
 
 using namespace cv;
 
-Mat ExtractHistograms(Mat src);
+Mat ExtractHistograms(Mat src, String candidateName);
 
 #endif //POTHOLEDETENCTIONSYSTEM_HISTOGRAMELABORATION_H

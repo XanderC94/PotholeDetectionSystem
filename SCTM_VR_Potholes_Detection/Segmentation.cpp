@@ -103,16 +103,16 @@ void extract_candidates(Mat &src,
             if (Density < thresolds.Density_Threshold &&
                 (Variance.x > thresolds.Variance_Threshold || Variance.y > thresolds.Variance_Threshold)) {
 
-                cout << l
-                     << ", "
-                     << PixelsInLabel.size()
-                     << ", "
-                     << Area
-                     << ", \""
-                     << Variance
-                     << "\", "
-                     << Density
-                     << endl;
+//                cout << l
+//                     << ", "
+//                     << PixelsInLabel.size()
+//                     << ", "
+//                     << Area
+//                     << ", \""
+//                     << Variance
+//                     << "\", "
+//                     << Density
+//                     << endl;
 
                 color_mask_value = Scalar(255, 255, 255);
 
@@ -141,9 +141,7 @@ int PotholeSegmentation(Mat &src,
 
 
     preprocessing(src, src, offsets.Horizon_Offset);
-    imshow("Preprocessed Image (Resized & Cropped)", src);
-
-
+//    imshow("Preprocessed Image (Resized & Cropped)", src);
 
     // Switch color space from RGB to CieLAB
     cvtColor(src, imgCIELab, COLOR_BGR2Lab);
@@ -151,7 +149,7 @@ int PotholeSegmentation(Mat &src,
 
     // Linear Spectral Clustering
     Ptr<SuperpixelLSC> superpixels = cv::ximgproc::createSuperpixelLSC(imgCIELab, SuperPixelEdge);
-    //Ptr<SuperpixelSLIC> superpixels = cv::ximgproc::createSuperpixelSLIC(imgCIELab, SLIC::MSLIC, 32, 50.0);
+//    Ptr<SuperpixelSLIC> superpixels = cv::ximgproc::createSuperpixelSLIC(imgCIELab, SLIC::MSLIC, 32, 50.0);
 
     superpixels->iterate(10);
     superpixels->getLabelContourMask(contour);
@@ -163,7 +161,7 @@ int PotholeSegmentation(Mat &src,
     src.copyTo(mask);
     mask.setTo(Scalar(255, 255, 255));
 
-    cout << "SP, Size, Area, Variance, Density" << endl;
+//    cout << "SP, Size, Area, Variance, Density" << endl;
 
     Mat labels;
     superpixels->getLabels(labels);
@@ -171,7 +169,7 @@ int PotholeSegmentation(Mat &src,
 
     out.setTo(Scalar(0, 0, 255), contour);
 
-    imshow("Segmentation", out);
+//    imshow("Segmentation", out);
 
     // Dilate to clean possible small black dots into the image "center"
     auto dilateElem = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));
@@ -185,7 +183,7 @@ int PotholeSegmentation(Mat &src,
 
     src.copyTo(res, mask);
 
-    imshow("Result", res);
+//    imshow("Result", res);
 
     // Cut the image in order to resize it to the smalled square/rectangle possible
     // To Do ...

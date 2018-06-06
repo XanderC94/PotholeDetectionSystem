@@ -81,15 +81,15 @@ vector<Features> extractFeatures(Mat sourceImage, vector<Point> centroids, Size 
 
 
         auto c_name = "Candidate @ (" + to_string(c.x) + ", " + to_string(c.y) + ")";
-        imshow(c_name, candidateGrayScale);
+//        imshow(c_name, candidateGrayScale);
 
-        cout << c_name << endl;
-        cout <<
-             "Average Gray Value: " << averageGreyValue <<
-             " Contrast: " << contrast <<
-             " Skeweness: " << skewness <<
-             " Energy: " << energy <<
-             " Entropy: " << entropy << endl;
+//        cout << c_name << endl;
+//        cout <<
+//             "Average Gray Value: " << averageGreyValue <<
+//             " Contrast: " << contrast <<
+//             " Skeweness: " << skewness <<
+//             " Energy: " << energy <<
+//             " Entropy: " << entropy << endl;
 
         Mat histogram = ExtractHistograms(candidateGrayScale, c_name);
 

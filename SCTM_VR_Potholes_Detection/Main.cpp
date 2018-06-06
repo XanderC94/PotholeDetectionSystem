@@ -42,9 +42,10 @@ int main(int argc, char*argv[]) {
 
         /*-------------------------- Segmentation Phase --------------------*/
 
+        cout << "Preprocessing... ";
         // Apply gaussian blur in order to smooth edges and gaining cleaner superpixels
         GaussianBlur(src, src, Size(5, 5), 0.0);
-        //imshow("Blurred Image", imgBlurred);
+//        imshow("Blurred Image", imgBlurred);
 
         /*
 		*	The src image will be:
@@ -54,23 +55,32 @@ int main(int argc, char*argv[]) {
         *    4. Superpixels in the RoI is selected using Analytic Rect Function
 		*	(in Candidates will be placed the set on centroids that survived segmentation)
 		*/
-
+        cout << "Finished." << endl;
         Offsets offsets = {0.65, 0.15, 0.8};
         ExtractionThresholds threshold = {0.80, 0.30, 0.60};
         int superPixelEdge = 32;
-        PotholeSegmentation(src, centroids, superPixelEdge, threshold, offsets);
 
-        cout << "Centroids Number: " << centroids.size() << endl;
+
+        PotholeSegmentation(src, centroids, superPixelEdge, threshold, offsets);
+        cout << "Finished." << endl;
+        cout << "Found " << centroids.size() << " candidates." << endl;
 
         /*--------------------------------- End Segmentation Phase ------------------------------*/
 
         /*--------------------------------- Feature Extraction Phase ------------------------------*/
+
+        cout << "Feature Extraction... " << endl;
         auto features = extractFeatures(src, centroids, candidate_size);
+        cout << "Finished." << endl;
 
         if (isTraining) {
-            Training(features, labels, 100, "../svm_trained_model.txt");
+            printf("Starting Training...\n");
+            for (int i = 0; i < features.size(); ++i) {
+                labels.push_back(1);
+            }
+            Training(features, labels, 100, "../svm_trained_model.yml");
         } else {
-            auto labels = Classifier(features, 100, "../svm_trained_model.txt");
+            auto labels = Classifier(features, 100, "../svm_trained_model.yml");
         }
 
         //Calculate and Print the execution time

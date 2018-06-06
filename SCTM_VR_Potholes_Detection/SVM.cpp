@@ -24,19 +24,20 @@ Ptr<SVM> initSVM(String model_path, int max_iter, bool isTraining = false) {
 
 Mat ConvertFeatures(vector<Features> &features) {
 
-    double data[features.size()][5];
+    vector<float*> data; //[features.size()][5];
 
-    for (int i = 0; i < features.size(); ++i) {
+    for (auto f : features) {
 
-        Features f = features[i];
-        data[i][0] = f.averageGrayValue;
-        data[i][1] = f.contrast;
-        data[i][2] = f.energy;
-        data[i][3] = f.entropy;
-        data[i][4] = f.skewness;
+        float row[5] = {static_cast<float>(f.averageGrayValue),
+                        static_cast<float>(f.contrast),
+                        static_cast<float>(f.skewness),
+                        static_cast<float>(f.energy),
+                        static_cast<float>(f.entropy)};
+
+        data.push_back(row);
     }
 
-    return Mat((int) features.size(), 5, CV_32FC1 , data);
+    return Mat((int) features.size(), 5, CV_32F, data.data());
 }
 
 Mat Classifier(vector<Features> &features, int max_iter, String model_path){
@@ -58,15 +59,22 @@ void Training(vector<Features> &features, vector<int> &labels, int max_iter, Str
     Mat labels_mat((int) features.size(), 1, CV_32SC1, labels.data());
     Mat data_mat = ConvertFeatures(features);
 
+    cout << data_mat << endl << endl;
+
+    printf("SVM Initialization\n");
+
     Ptr<SVM> svm = initSVM(model_path, max_iter, true);
 
     Ptr<TrainData> td = TrainData::create(data_mat, ROW_SAMPLE, labels_mat);
 
+    printf("Ready...\n");
     svm->trainAuto(td);
 
     while(!svm->isTrained()) {
         printf("Training...\n");
     }
+
+    printf("Finished.\n");
 
     svm->save(model_path);
 }

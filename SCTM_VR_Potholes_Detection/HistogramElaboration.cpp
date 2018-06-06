@@ -44,8 +44,8 @@ Mat ExtractHistograms(Mat src, String candidateName) {
     }
 
     /// Display
-    namedWindow(candidateName + "Grey Scale Histogram", CV_WINDOW_AUTOSIZE);
-    imshow(candidateName + "Grey Scale Histogram", histImage);
+//    namedWindow(candidateName + "Grey Scale Histogram", CV_WINDOW_AUTOSIZE);
+//    imshow(candidateName + "Grey Scale Histogram", histImage);
 
     return histImage;
 }

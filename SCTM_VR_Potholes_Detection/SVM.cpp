@@ -29,7 +29,7 @@ Mat ConvertFeatures(vector<Features> &features) {
     for (int i = 0; i < features.size(); ++i) {
 
         Features f = features[i];
-        data[i][0] = f.averageGrayValue.val[0];
+        data[i][0] = f.averageGrayValue;
         data[i][1] = f.contrast;
         data[i][2] = f.energy;
         data[i][3] = f.entropy;

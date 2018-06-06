@@ -19,7 +19,7 @@ using namespace std;
 typedef struct Features {
     Point2d centroid;
     Mat histogram;
-    Scalar averageGrayValue;
+    double averageGrayValue;
     double contrast;
     double entropy;
     double skewness;

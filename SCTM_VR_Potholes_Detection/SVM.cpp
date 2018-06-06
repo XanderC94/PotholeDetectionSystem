@@ -4,17 +4,15 @@
 
 #include "SVM.h"
 
-Ptr<SVM> initSVM(String model_path, int max_iter, bool isTraining = false) {
+Ptr<SVM> initSVM(String model_path, int max_iter) {
     const double epsilon = exp(-6);
 
     Ptr<SVM> svm = SVM::create();
 
-    if (!isTraining) {
-        try {
-            svm = svm->load(model_path);
-        } catch (Exception ex) {
-            printf(ex.msg.c_str());
-        }
+    try {
+        svm = svm->load(model_path);
+    } catch (Exception ex) {
+        cout << "ERROR -- No saved model has been found... Training will start from scratch." << endl;
     }
 
     svm->setType(SVM::C_SVC);
@@ -24,20 +22,17 @@ Ptr<SVM> initSVM(String model_path, int max_iter, bool isTraining = false) {
 
 Mat ConvertFeatures(vector<Features> &features) {
 
-    vector<float*> data; //[features.size()][5];
+    Mat data((int) features.size(), 5, CV_32F);
 
-    for (auto f : features) {
-
-        float row[5] = {static_cast<float>(f.averageGrayValue),
-                        static_cast<float>(f.contrast),
-                        static_cast<float>(f.skewness),
-                        static_cast<float>(f.energy),
-                        static_cast<float>(f.entropy)};
-
-        data.push_back(row);
+    for (int i = 0; i < features.size(); i++) {
+        data.at<float>(i, 0) = features[i].averageGrayValue;
+        data.at<float>(i, 1) = features[i].contrast;
+        data.at<float>(i, 2) = features[i].skewness;
+        data.at<float>(i, 3) = features[i].energy;
+        data.at<float>(i, 4) = features[i].entropy;
     }
 
-    return Mat((int) features.size(), 5, CV_32F, data.data());
+    return data;
 }
 
 Mat Classifier(vector<Features> &features, int max_iter, String model_path){
@@ -59,16 +54,12 @@ void Training(vector<Features> &features, vector<int> &labels, int max_iter, Str
     Mat labels_mat((int) features.size(), 1, CV_32SC1, labels.data());
     Mat data_mat = ConvertFeatures(features);
 
-    cout << data_mat << endl << endl;
-
     printf("SVM Initialization\n");
 
-    Ptr<SVM> svm = initSVM(model_path, max_iter, true);
-
-    Ptr<TrainData> td = TrainData::create(data_mat, ROW_SAMPLE, labels_mat);
+    Ptr<SVM> svm = initSVM(model_path, max_iter);
 
     printf("Ready...\n");
-    svm->trainAuto(td);
+    svm->trainAuto(data_mat, ROW_SAMPLE, labels_mat);
 
     while(!svm->isTrained()) {
         printf("Training...\n");

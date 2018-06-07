@@ -60,10 +60,6 @@ void Training(const vector<Features> &features, const Mat &labels, const int max
 
     svm->trainAuto(data_mat, ROW_SAMPLE, labels);
 
-    while(!svm->isTrained()) {
-        printf("Training...\n");
-    }
-
     printf("Finished.\n");
 
     svm->save(model_path);

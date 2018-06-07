@@ -30,7 +30,6 @@ int main(int argc, char*argv[]) {
 
 		auto centroids = vector<Point>();
 
-        Mat imgBlurred;
         auto candidate_size = Size(64, 64);
 
         /*---------------------------------Load image------------------------*/
@@ -40,19 +39,18 @@ int main(int argc, char*argv[]) {
             isTraining = true;
 		}
 
-        /*-------------------------- Segmentation Phase --------------------*/
+        /*-------------------------- First Segmentation Phase --------------------*/
 
         cout << "Preprocessing... ";
         // Apply gaussian blur in order to smooth edges and gaining cleaner superpixels
         GaussianBlur(src, src, Size(5, 5), 0.0);
-//        imshow("Blurred Image", imgBlurred);
 
         /*
 		*	The src image will be:
 		*	1. Resized to 640 * 480
 		*	2. Cropped under the Horizon Line
-        *    3. Segmented with superpixeling
-        *    4. Superpixels in the RoI is selected using Analytic Rect Function
+        *   3. Segmented with superpixeling
+        *   4. Superpixels in the RoI is selected using Analytic Rect Function
 		*	(in Candidates will be placed the set on centroids that survived segmentation)
 		*/
         cout << "Finished." << endl;
@@ -65,13 +63,18 @@ int main(int argc, char*argv[]) {
         cout << "Finished." << endl;
         cout << "Found " << centroids.size() << " candidates." << endl;
 
-        /*--------------------------------- End Segmentation Phase ------------------------------*/
+        /*--------------------------------- End First Segmentation Phase ------------------------------*/
 
         /*--------------------------------- Feature Extraction Phase ------------------------------*/
 
-        cout << "Feature Extraction... " << endl;
+        cout << "Feature Extraction -- Starting " << endl;
         auto features = extractFeatures(src, centroids, candidate_size);
-        cout << "Finished." << endl;
+        cout << "Feature Extraction -- Finished." << endl;
+
+        /*--------------------------------- End Feature Extraction Phase ------------------------------*/
+
+
+        /*--------------------------------- Training Or Classification Phase ------------------------------*/
 
         saveFeatures(features, "data", argv[1], "features");
 
@@ -96,4 +99,3 @@ int main(int argc, char*argv[]) {
         return 1;
 	}
 }
-

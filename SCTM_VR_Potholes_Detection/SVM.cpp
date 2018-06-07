@@ -18,6 +18,8 @@ Ptr<SVM> initSVM(const string model_path, int max_iter) {
     svm->setType(SVM::C_SVC);
     svm->setKernel(SVM::RBF);
     svm->setTermCriteria(TermCriteria(TermCriteria::MAX_ITER, max_iter, epsilon));
+
+    return svm;
 }
 
 Mat ConvertFeatures(const vector<Features> &features) {
@@ -57,10 +59,6 @@ void Training(const vector<Features> &features, const Mat &labels, const int max
     printf("Ready...\n");
 
     svm->trainAuto(data_mat, ROW_SAMPLE, labels);
-
-    while(!svm->isTrained()) {
-        printf("Training...\n");
-    }
 
     printf("Finished.\n");
 

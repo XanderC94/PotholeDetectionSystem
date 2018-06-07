@@ -6,7 +6,7 @@
 
 vector<Features> extractFeatures(Mat sourceImage, vector<Point> centroids, Size candidate_size) {
 
-    auto candidates = vector<Mat>();
+//    auto candidates = vector<Mat>();
     auto notNormalizedfeatures = vector<Features>();
     auto normalizedFeatures = vector<Features>();
 
@@ -15,7 +15,6 @@ vector<Features> extractFeatures(Mat sourceImage, vector<Point> centroids, Size 
     auto candidatesEntropy = vector<float>();
     auto candidatesSkewness = vector<float>();
     auto candidatesEnergy = vector<float>();
-
 
     Mat candidateGrayScale;
 
@@ -45,7 +44,7 @@ vector<Features> extractFeatures(Mat sourceImage, vector<Point> centroids, Size 
 
         auto candidate = sourceImage(Rect(tlc, brc));
 
-        candidates.push_back(candidate);
+//        candidates.push_back(candidate);
 
         // Switch color-space from RGB to GreyScale
         cvtColor(candidate, candidateGrayScale, CV_BGR2GRAY);
@@ -81,19 +80,12 @@ vector<Features> extractFeatures(Mat sourceImage, vector<Point> centroids, Size 
 
 
         auto c_name = "Candidate @ (" + to_string(c.x) + ", " + to_string(c.y) + ")";
-//        imshow(c_name, candidateGrayScale);
-
-//        cout << c_name << endl;
-//        cout <<
-//             "Average Gray Value: " << averageGreyValue <<
-//             " Contrast: " << contrast <<
-//             " Skeweness: " << skewness <<
-//             " Energy: " << energy <<
-//             " Entropy: " << entropy << endl;
 
         Mat histogram = ExtractHistograms(candidateGrayScale, c_name);
 
-        notNormalizedfeatures.push_back(Features{c, histogram, averageGreyValue, contrast, entropy, skewness, energy});
+        normalize(histogram, histogram, 1, 10, NORM_MINMAX, -1, Mat());
+
+        notNormalizedfeatures.push_back(Features{candidate, histogram, averageGreyValue, contrast, entropy, skewness, energy});
     }
 
     /*------------- Normalization Phase -------------*/
@@ -112,15 +104,15 @@ vector<Features> extractFeatures(Mat sourceImage, vector<Point> centroids, Size 
     normalize(candidatesEnergy, normCandidatesEnergy, 1, 10, NORM_MINMAX, -1, Mat());
 
     for (int i = 0; i < centroids.size(); i++) {
-        cout <<
-             "Average Gray Value: " << normCandidatesAverageGreyLevel.at(i) <<
-             " Contrast: " << normCandidatesContrast.at(i) <<
-             " Skeweness: " << normCandidatesSkewness.at(i) <<
-             " Energy: " << normCandidatesEnergy.at(i) <<
-             " Entropy: " << normCandidatesEntropy.at(i) << endl;
+//        cout <<
+//             "Average Gray Value: " << normCandidatesAverageGreyLevel.at(i) <<
+//             " Contrast: " << normCandidatesContrast.at(i) <<
+//             " Skeweness: " << normCandidatesSkewness.at(i) <<
+//             " Energy: " << normCandidatesEnergy.at(i) <<
+//             " Entropy: " << normCandidatesEntropy.at(i) << endl;
 
         normalizedFeatures.push_back(Features{
-                centroids.at(i),
+                notNormalizedfeatures.at(i).candidate,
                 notNormalizedfeatures.at(i).histogram,
                 normCandidatesAverageGreyLevel.at(i),
                 normCandidatesContrast.at(i),

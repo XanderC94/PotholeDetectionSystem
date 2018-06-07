@@ -17,7 +17,7 @@ using namespace cv;
 using namespace std;
 
 typedef struct Features {
-    Point2d centroid;
+    Mat candidate;
     Mat histogram;
     float averageGreyValue;
     float contrast;

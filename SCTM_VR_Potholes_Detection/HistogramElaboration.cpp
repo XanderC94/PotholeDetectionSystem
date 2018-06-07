@@ -26,26 +26,27 @@ Mat ExtractHistograms(Mat src, String candidateName) {
     /// Compute the histograms:
     calcHist(&src, 1, 0, Mat(), gs_hist, 1, &histSize, &histRange, uniform, accumulate);
 
+    transpose(gs_hist, gs_hist);
     // Draw the histograms for B, G and R
-    int hist_w = 512;
-    int hist_h = 400;
-    int bin_w = cvRound((double) hist_w / histSize);
-
-    Mat histImage(hist_h, hist_w, CV_8UC3, Scalar(0, 0, 0));
+//    int hist_w = 512;
+//    int hist_h = 400;
+//    int bin_w = cvRound((double) hist_w / histSize);
+//    Mat tmp;
+//    Mat histImage(hist_h, hist_w, CV_8UC3, Scalar(0, 0, 0));
 
     /// Normalize the result to [ 0, histImage.rows ]
-    normalize(gs_hist, gs_hist, 0, histImage.rows, NORM_MINMAX, -1, Mat());
+//    normalize(gs_hist, tmp, 0, histImage.rows, NORM_MINMAX, -1, Mat());
 
     /// Draw for each channel
-    for (int i = 1; i < histSize; i++) {
-        line(histImage, Point(bin_w * (i - 1), hist_h - cvRound(gs_hist.at<float>(i - 1))),
-             Point(bin_w * (i), hist_h - cvRound(gs_hist.at<float>(i))),
-             Scalar(255, 255, 255), 2, 8, 0);
-    }
+//    for (int i = 1; i < histSize; i++) {
+//        line(histImage, Point(bin_w * (i - 1), hist_h - cvRound(gs_hist.at<float>(i - 1))),
+//             Point(bin_w * (i), hist_h - cvRound(tmp.at<float>(i))),
+//             Scalar(255, 255, 255), 2, 8, 0);
+//    }
 
     /// Display
 //    namedWindow(candidateName + "Grey Scale Histogram", CV_WINDOW_AUTOSIZE);
 //    imshow(candidateName + "Grey Scale Histogram", histImage);
 
-    return histImage;
+    return gs_hist;
 }

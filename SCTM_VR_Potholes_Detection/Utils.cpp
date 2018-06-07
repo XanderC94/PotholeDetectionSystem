@@ -70,6 +70,17 @@ Features objectify(const vector<string> &tokens, Mat &labels) {
             ft.energy = stof(t[1]);
         } else if (t[0] == "Entropy") {
             ft.entropy = stof(t[1]);
+        } else if (t[0] == "Histogram") {
+            string comma_separated_floats = t[1].substr(1, t[1].length()-2);
+            vector<string> values;
+
+            CSVTokenizer(comma_separated_floats, ',', values);
+
+            ft.histogram = Mat(1, (int) values.size(), CV_32FC1);
+
+            for (int i = 0; i < values.size(); ++i){
+                ft.histogram.at<float>(0, i) = stof(values[i]);
+            }
         }
     }
 
@@ -85,13 +96,22 @@ void loadFromCSV(const string target, vector<Features> &ft, Mat &labels) {
 
         while (std::getline(csv, line)) {
             vector<string> tokens;
-            CSVTokenizer(line, ',', tokens);
+            CSVTokenizer(line, ';', tokens);
             ft.push_back(objectify(tokens, labels));
         }
         csv.close();
     } else cout << "Unable to open file";
 
     cout << labels.rows << " " << ft.size() << endl;
+//    for (auto f : ft) {
+//        cout << " Contrast:"   << f.contrast;
+//        cout << " Skewness:"   << f.skewness;
+//        cout << " AvgGreyVal:" << f.averageGreyValue;
+//        cout << " Energy:"     << f.energy;
+//        cout << " Entropy:"    << f.entropy;
+//        cout << " Histogram:"  << f.histogram << endl;
+//    }
+
 }
 
 string extractFileName(const string file_path, const string sep = "/") {
@@ -111,14 +131,18 @@ void saveFeatures(const vector<Features> &ft, const string directory, const stri
     for (int i = 0; i < ft.size(); ++i) {
         auto f = ft[i];
 
-        save_file << "Label:" << -1 << ",";
-        save_file << "Candidate:"  << "../data/" << set_format(candidate, "", false) << "_" << i << ".bmp" << ",";
-        save_file << "Contrast:"   << f.contrast << ",";
-        save_file << "Skewness:"   << f.skewness << ",";
-        save_file << "AvgGreyVal:" << f.averageGreyValue << ",";
-        save_file << "Energy:"     << f.energy << ",";
-        save_file << "Entropy:"    << f.entropy << endl;
-//        save_file << "Histogram: "  << f.histogram << "; " << endl;
+        string c_name = "../data/"+ set_format(candidate, "", false) + "_" + to_string(i) + ".bmp";
+
+        save_file << "Label:" << -1 << ";";
+        save_file << "Candidate:"  << c_name << ";";
+        save_file << "Contrast:"   << f.contrast << ";";
+        save_file << "Skewness:"   << f.skewness << ";";
+        save_file << "AvgGreyVal:" << f.averageGreyValue << ";";
+        save_file << "Energy:"     << f.energy << ";";
+        save_file << "Entropy:"    << f.entropy << ";";
+        save_file << "Histogram:"  << f.histogram << endl;
+
+        imwrite(c_name, f.candidate);
 
     }
 

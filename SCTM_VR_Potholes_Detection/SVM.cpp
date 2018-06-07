@@ -2,7 +2,9 @@
 // Created by Xander_C on 5/06/2018.
 //
 
+#include <thread>
 #include "SVM.h"
+
 
 Ptr<SVM> initSVM(String model_path, int max_iter) {
     const double epsilon = exp(-6);
@@ -18,6 +20,8 @@ Ptr<SVM> initSVM(String model_path, int max_iter) {
     svm->setType(SVM::C_SVC);
     svm->setKernel(SVM::RBF);
     svm->setTermCriteria(TermCriteria(TermCriteria::MAX_ITER, max_iter, epsilon));
+
+    return svm;
 }
 
 Mat ConvertFeatures(vector<Features> &features) {
@@ -56,14 +60,17 @@ void Training(vector<Features> &features, vector<int> &labels, int max_iter, Str
 
     printf("SVM Initialization\n");
 
+    const double epsilon = exp(-6);
+
     Ptr<SVM> svm = initSVM(model_path, max_iter);
 
     printf("Ready...\n");
     svm->trainAuto(data_mat, ROW_SAMPLE, labels_mat);
 
-    while(!svm->isTrained()) {
+    /*while(!svm->isTrained()) {
         printf("Training...\n");
-    }
+        std::this_thread::sleep_for(2s);
+    }*/
 
     printf("Finished.\n");
 

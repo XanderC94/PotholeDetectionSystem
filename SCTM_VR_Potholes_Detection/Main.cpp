@@ -29,7 +29,6 @@ int main(int argc, char*argv[]) {
 	} else {
 
 		auto centroids = vector<Point>();
-        vector<int> labels;
 
         Mat imgBlurred;
         auto candidate_size = Size(64, 64);
@@ -77,20 +76,23 @@ int main(int argc, char*argv[]) {
         saveFeatures(features, "data", argv[1], "features");
 
         if (isTraining) {
+
             printf("Starting Training...\n");
-            for (int i = 0; i < features.size(); ++i) {
-                labels.push_back(1);
-            }
+
+            Mat labels(0, 0, CV_32SC1);
+            vector<Features> candidates;
+            loadFromCSV("../data/features.csv", candidates, labels);
+
             Training(features, labels, 100, "../data/svm_trained_model.yml");
         } else {
-            auto labels = Classifier(features, 100, "../data/svm_trained_model.yml");
+            Mat labels((int) features.size(), 1, CV_32SC1);
+            Classifier(features, 100, "../data/svm_trained_model.yml", labels);
         }
 
         //Calculate and Print the execution time
         timeElapsed = ((double) getTickCount() - timeElapsed) / getTickFrequency();
         cout << "Times passed in seconds: " << timeElapsed << endl;
 
-        waitKey();
         return 1;
 	}
 }

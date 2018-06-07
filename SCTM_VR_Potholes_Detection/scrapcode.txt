@@ -534,7 +534,7 @@ void HOG() {
 	vector<string> ids;
 
 	load_from_directory(positive_training_set_directory, ids, set, classes, CLASSES::POTHOLE);
-	//load_from_directory(negative_training_set_directory, ids, set, classes, CLASSES::NORMAL);
+	//loadFromCSV(negative_training_set_directory, ids, set, classes, CLASSES::NORMAL);
 
 	const Size window(640, 480), block(64, 64), block_stride(16, 16), cell(16, 16), stride(8, 8), padding(0, 0);
 	const int bin = 9;

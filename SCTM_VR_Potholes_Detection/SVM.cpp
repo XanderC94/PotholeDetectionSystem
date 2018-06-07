@@ -4,7 +4,7 @@
 
 #include "SVM.h"
 
-Ptr<SVM> initSVM(String model_path, int max_iter) {
+Ptr<SVM> initSVM(const string model_path, int max_iter) {
     const double epsilon = exp(-6);
 
     Ptr<SVM> svm = SVM::create();
@@ -35,7 +35,7 @@ Mat ConvertFeatures(vector<Features> &features) {
     return data;
 }
 
-Mat Classifier(vector<Features> &features, int max_iter, String model_path){
+Mat Classifier(vector<Features> &features, int max_iter, const string model_path){
 
     Mat labels_mat((int) features.size(), 1, CV_32SC1);
     Mat data_mat = ConvertFeatures(features);
@@ -49,7 +49,7 @@ Mat Classifier(vector<Features> &features, int max_iter, String model_path){
     return labels_mat;
 }
 
-void Training(vector<Features> &features, vector<int> &labels, int max_iter, String model_path) {
+void Training(vector<Features> &features, vector<int> &labels, int max_iter, const string model_path) {
 
     Mat labels_mat((int) features.size(), 1, CV_32SC1, labels.data());
     Mat data_mat = ConvertFeatures(features);
@@ -59,6 +59,7 @@ void Training(vector<Features> &features, vector<int> &labels, int max_iter, Str
     Ptr<SVM> svm = initSVM(model_path, max_iter);
 
     printf("Ready...\n");
+
     svm->trainAuto(data_mat, ROW_SAMPLE, labels_mat);
 
     while(!svm->isTrained()) {

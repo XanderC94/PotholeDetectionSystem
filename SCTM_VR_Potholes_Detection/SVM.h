@@ -15,7 +15,7 @@ using namespace cv;
 using namespace std;
 using namespace ml;
 
-Mat Classifier(vector<Features> &features, int max_iter, String model_path);
-void Training(vector<Features> &features, vector<int> &labels, int max_iter, String model_path);
+Mat Classifier(vector<Features> &features, int max_iter, string model_path);
+void Training(vector<Features> &features, vector<int> &labels, int max_iter, string model_path);
 
 #endif //POTHOLEDETENCTIONSYSTEM_SVMCLASSIFIER_H

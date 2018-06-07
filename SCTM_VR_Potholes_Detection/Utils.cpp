@@ -1,14 +1,11 @@
 #include "Utils.h"
-#include <opencv2/imgproc.hpp>
-#include <iostream>
 
-
-void set_format(string &of_file_name_path, string to_new_format, bool use_separator) {
+string set_format(string of_file_name_path, string to_new_format, bool use_separator) {
     int image_format_offset_begin = of_file_name_path.find_last_of(".");
     string image_format = of_file_name_path.substr(image_format_offset_begin);
     int image_format_offset_end = image_format.length() + image_format_offset_begin;
 
-    of_file_name_path.replace(image_format_offset_begin, image_format_offset_end,
+    return of_file_name_path.replace(image_format_offset_begin, image_format_offset_end,
                               (use_separator ? "." : "") + to_new_format);
 }
 
@@ -66,4 +63,35 @@ int resize_all_in(const string parent, const string folder, const int width, con
     }
 
     return 1;
+}
+
+string extractFileName(const string file_path, const string sep = "/") {
+
+    auto offset = file_path.find_last_of(sep);
+
+    return file_path.substr(offset+1);
+}
+
+void saveFeatures(const vector<Features> &ft, const string directory, const string parent, const string target) {
+
+    auto candidate = extractFileName(parent);
+
+    ofstream save_file;
+    save_file.open ("../" + directory + "/" + target + ".csv", fstream::in | fstream::out | fstream::app);
+
+    for (int i = 0; i < ft.size(); ++i) {
+        auto f = ft[i];
+
+        save_file << "Label: " << -1 << "; ";
+        save_file << "Candidate: "  << "../" << set_format(candidate, "", false) << "_" << i << ".bmp" << "; ";
+        save_file << "Contrast: "   << f.contrast << "; ";
+        save_file << "Skewness: "   << f.skewness << "; ";
+        save_file << "AvgGrayVal: " << f.averageGrayValue << "; ";
+        save_file << "Energy: "     << f.energy << "; ";
+        save_file << "Entropy: "    << f.entropy << "; " << endl;
+//        save_file << "Histogram: "  << f.histogram << "; " << endl;
+
+    }
+
+    save_file.close();
 }

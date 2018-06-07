@@ -6,6 +6,7 @@
 #include "Segmentation.h"
 #include "FeaturesExtraction.h"
 #include "SVM.h"
+#include "Utils.h"
 
 using namespace cv;
 using namespace std;
@@ -60,7 +61,7 @@ int main(int argc, char*argv[]) {
         ExtractionThresholds threshold = {0.80, 0.30, 0.60};
         int superPixelEdge = 32;
 
-
+        cout << "Segmentation... " << endl;
         PotholeSegmentation(src, centroids, superPixelEdge, threshold, offsets);
         cout << "Finished." << endl;
         cout << "Found " << centroids.size() << " candidates." << endl;
@@ -73,14 +74,16 @@ int main(int argc, char*argv[]) {
         auto features = extractFeatures(src, centroids, candidate_size);
         cout << "Finished." << endl;
 
+        saveFeatures(features, "data", argv[1], "features");
+
         if (isTraining) {
             printf("Starting Training...\n");
             for (int i = 0; i < features.size(); ++i) {
                 labels.push_back(1);
             }
-            Training(features, labels, 100, "../svm_trained_model.yml");
+            Training(features, labels, 100, "../data/svm_trained_model.yml");
         } else {
-            auto labels = Classifier(features, 100, "../svm_trained_model.yml");
+            auto labels = Classifier(features, 100, "../data/svm_trained_model.yml");
         }
 
         //Calculate and Print the execution time
@@ -91,3 +94,4 @@ int main(int argc, char*argv[]) {
         return 1;
 	}
 }
+

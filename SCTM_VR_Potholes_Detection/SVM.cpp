@@ -2,11 +2,9 @@
 // Created by Xander_C on 5/06/2018.
 //
 
-#include <thread>
 #include "SVM.h"
 
-
-Ptr<SVM> initSVM(String model_path, int max_iter) {
+Ptr<SVM> initSVM(const string model_path, int max_iter) {
     const double epsilon = exp(-6);
 
     Ptr<SVM> svm = SVM::create();
@@ -24,12 +22,12 @@ Ptr<SVM> initSVM(String model_path, int max_iter) {
     return svm;
 }
 
-Mat ConvertFeatures(vector<Features> &features) {
+Mat ConvertFeatures(const vector<Features> &features) {
 
     Mat data((int) features.size(), 5, CV_32F);
 
     for (int i = 0; i < features.size(); i++) {
-        data.at<float>(i, 0) = features[i].averageGrayValue;
+        data.at<float>(i, 0) = features[i].averageGreyValue;
         data.at<float>(i, 1) = features[i].contrast;
         data.at<float>(i, 2) = features[i].skewness;
         data.at<float>(i, 3) = features[i].energy;
@@ -39,38 +37,32 @@ Mat ConvertFeatures(vector<Features> &features) {
     return data;
 }
 
-Mat Classifier(vector<Features> &features, int max_iter, String model_path){
+void Classifier(const vector<Features> &features, const int max_iter, const string model_path, Mat &labels){
 
-    Mat labels_mat((int) features.size(), 1, CV_32SC1);
     Mat data_mat = ConvertFeatures(features);
 
     Ptr<SVM> svm = initSVM(model_path, max_iter);
 
-    auto flag = svm->predict(data_mat, labels_mat);
+    auto flag = svm->predict(data_mat, labels);
 
     printf("FLAG: %2f.5", flag);
-
-    return labels_mat;
 }
 
-void Training(vector<Features> &features, vector<int> &labels, int max_iter, String model_path) {
+void Training(const vector<Features> &features, const Mat &labels, const int max_iter, const string model_path) {
 
-    Mat labels_mat((int) features.size(), 1, CV_32SC1, labels.data());
     Mat data_mat = ConvertFeatures(features);
 
     printf("SVM Initialization\n");
 
-    const double epsilon = exp(-6);
-
     Ptr<SVM> svm = initSVM(model_path, max_iter);
 
     printf("Ready...\n");
-    svm->trainAuto(data_mat, ROW_SAMPLE, labels_mat);
 
-    /*while(!svm->isTrained()) {
+    svm->trainAuto(data_mat, ROW_SAMPLE, labels);
+
+    while(!svm->isTrained()) {
         printf("Training...\n");
-        std::this_thread::sleep_for(2s);
-    }*/
+    }
 
     printf("Finished.\n");
 

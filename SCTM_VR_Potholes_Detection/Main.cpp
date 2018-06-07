@@ -2,9 +2,11 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/ml.hpp>
+#include <iostream>
 #include "Segmentation.h"
 #include "FeaturesExtraction.h"
 #include "SVM.h"
+#include "Utils.h"
 
 using namespace cv;
 using namespace std;
@@ -27,7 +29,6 @@ int main(int argc, char*argv[]) {
 	} else {
 
 		auto centroids = vector<Point>();
-        vector<int> labels;
 
         auto candidate_size = Size(64, 64);
 
@@ -57,7 +58,7 @@ int main(int argc, char*argv[]) {
         ExtractionThresholds threshold = {0.80, 0.30, 0.60};
         int superPixelEdge = 32;
 
-
+        cout << "Segmentation... " << endl;
         PotholeSegmentation(src, centroids, superPixelEdge, threshold, offsets);
         cout << "Finished." << endl;
         cout << "Found " << centroids.size() << " candidates." << endl;
@@ -75,21 +76,26 @@ int main(int argc, char*argv[]) {
 
         /*--------------------------------- Training Or Classification Phase ------------------------------*/
 
+        saveFeatures(features, "data", argv[1], "features");
+
         if (isTraining) {
+
             printf("Starting Training...\n");
-            for (int i = 0; i < features.size(); ++i) {
-                labels.push_back(1);
-            }
-            //Training(features, labels, 100, "../svm_trained_model.yml");
+
+            Mat labels(0, 0, CV_32SC1);
+            vector<Features> candidates;
+            loadFromCSV("../data/features.csv", candidates, labels);
+
+            Training(features, labels, 100, "../data/svm_trained_model.yml");
         } else {
-            auto labels = Classifier(features, 100, "../svm_trained_model.yml");
+            Mat labels((int) features.size(), 1, CV_32SC1);
+            Classifier(features, 100, "../data/svm_trained_model.yml", labels);
         }
 
         //Calculate and Print the execution time
         timeElapsed = ((double) getTickCount() - timeElapsed) / getTickFrequency();
         cout << "Times passed in seconds: " << timeElapsed << endl;
 
-        waitKey();
         return 1;
 	}
 }

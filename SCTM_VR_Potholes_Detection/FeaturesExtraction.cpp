@@ -22,11 +22,9 @@ typedef struct FeaturesVectors {
 *  3. The histogram will be calculated
 *  4. Calculate the average gray value
 *  5. Calculate the contrast
-*  6. Calculate 3-order moments (is Skewness according to http://aishack.in/tutorials/image-moments/)
-*  7. Calculate Consistency (After only searches I think that the consistency is what the professor calls energy)
-*  8. Calculate Entropy
-*  9. Put the calculated features in a eigenvector
-*
+*  6. Calculate Entropy
+*  7. Calculate Energy
+*  8. Calculate 3-order moments (is Skewness according to http://aishack.in/tutorials/image-moments/)
 * */
 Features candidateFeatureExtraction(Point centroid, Mat sourceImage, Size candidate_size) {
     //tlc (top left corner) brc(bottom right corner)
@@ -43,12 +41,25 @@ Features candidateFeatureExtraction(Point centroid, Mat sourceImage, Size candid
 
     //candidates.push_back(candidate);
     Mat candidateGrayScale;
-    // Switch color-space from RGB to GreyScale
+    // 1. Switch color-space from RGB to GreyScale
     cvtColor(candidate, candidateGrayScale, CV_BGR2GRAY);
 
+
+    // 2. Extract only the pothole region
+
+
+    // 3. The histogram will be calculated
+    auto c_name = "Candidate @ (" + to_string(centroid.x) + ", " + to_string(centroid.y) + ")";
+    Mat histogram = ExtractHistograms(candidateGrayScale, c_name);
+
+    //4. Calculate the average gray value
+    float averageGreyValue = (float) mean(candidateGrayScale)[0];
+
+    // 5. Calculate the contrast
+    // 6. Calculate Entropy
+    // 7. Calculate Energy
     // In order to reduce computation complexity
     // calculate the contrast, entropy and energy with in the same loops
-
     float contrast = 0.0;
     float entropy = 0.0;
     float energy = 0.0;
@@ -61,14 +72,11 @@ Features candidateFeatureExtraction(Point centroid, Mat sourceImage, Size candid
         }
     }
 
-    energy = sqrtf(energy);
     entropy = 0 - entropy;
+    energy = sqrtf(energy);
 
-    float averageGreyValue = (float) mean(candidateGrayScale)[0];
+    //8. Calculate Skewness
     float skewness = calculateSkewnessGrayImage(candidate, averageGreyValue);
-
-    auto c_name = "Candidate @ (" + to_string(centroid.x) + ", " + to_string(centroid.y) + ")";
-    Mat histogram = ExtractHistograms(candidateGrayScale, c_name);
 
     return Features{candidate, histogram, averageGreyValue, contrast, entropy, skewness, energy};
 }

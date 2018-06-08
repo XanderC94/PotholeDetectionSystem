@@ -25,7 +25,7 @@ int resize_all_in(const string parent,
                   const int width = 1280,
                   const int height = 720);
 
-void saveFeatures(const vector<Features> &ft, string directory, string parent, string target);
+void saveFeatures(const vector<Features> &ft, string saveDirectory, string imgName, string saveFile);
 
 string extractFileName(const string file_path, const string sep);
 

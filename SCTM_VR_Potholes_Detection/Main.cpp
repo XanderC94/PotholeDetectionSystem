@@ -18,84 +18,105 @@ enum CLASSES {
 	POTHOLE	// 1
 };
 
+vector<Features> preClassification (const string target) {
+    auto centroids = vector<Point>();
+
+    auto candidate_size = Size(64, 64);
+
+    /*---------------------------------Load image------------------------*/
+
+    Mat src = imread(target, IMREAD_COLOR), tmp;
+
+    /*-------------------------- First Segmentation Phase --------------------*/
+
+    /*
+    *	The src image will be:
+    *	1. Resized to 640 * 480
+    *	2. Cropped under the Horizon Line
+    *   3. Segmented with superpixeling
+    *   4. Superpixels in the RoI is selected using Analytic Rect Function
+    *	(in Candidates will be placed the set on centroids that survived segmentation)
+    */
+
+    Offsets offsets = {0.65, 0.15, 0.8};
+    ExtractionThresholds threshold = {0.80, 0.30, 0.60};
+    int superPixelEdge = 32;
+
+    cout << "Segmentation... " << endl;
+    PotholeSegmentation(src, centroids, superPixelEdge, threshold, offsets);
+    cout << "Finished." << endl;
+    cout << "Found " << centroids.size() << " candidates." << endl;
+
+    /*--------------------------------- End First Segmentation Phase ------------------------------*/
+
+    /*--------------------------------- Feature Extraction Phase ------------------------------*/
+
+    cout << "Feature Extraction -- Starting " << endl;
+    auto features = extractFeatures(src, centroids, candidate_size);
+    cout << "Feature Extraction -- Finished." << endl;
+
+    /*--------------------------------- End Feature Extraction Phase ------------------------------*/
+
+    return features;
+}
+
+void createCandidates (const string targets) {
+
+    vector<String> fn;
+
+    glob(targets + "/*", fn);
+
+    for (auto image : fn) {
+
+        cout << endl << "---------------" << image << endl;
+
+        auto features = preClassification(image);
+        saveFeatures(features, "data", image, "features");
+    }
+}
+
 int main(int argc, char*argv[]) {
 
     //Save cpu tick count at the program start
     double timeElapsed = (double) getTickCount();
     bool isTraining = false;
 
-    if (argc < 2) {
-		return 0;
-	} else {
 
-		auto centroids = vector<Point>();
+    if (argc < 3) {
+        return 0;
+    } else {
+        auto mode = string(argv[1]);
 
-        auto candidate_size = Size(64, 64);
+        if (mode == "-d") {
+            createCandidates(argv[2]);
+        } else if (mode == "-i") {
 
-        /*---------------------------------Load image------------------------*/
-		Mat src = imread(argv[1], IMREAD_COLOR), tmp;
+            /*--------------------------------- Classification Phase ------------------------------*/
 
-		if (argc <= 3) {
-            isTraining = true;
-		}
+            auto features = preClassification(argv[2]);
+            Mat labels((int) features.size(), 1, CV_32SC1);
 
-        /*-------------------------- First Segmentation Phase --------------------*/
+            Classifier(features, 100, "../data/svm_trained_model.yml", labels);
 
-        cout << "Preprocessing... ";
-        // Apply gaussian blur in order to smooth edges and gaining cleaner superpixels
-        GaussianBlur(src, src, Size(5, 5), 0.0);
+        } else if (mode == "-t") {
 
-        /*
-		*	The src image will be:
-		*	1. Resized to 640 * 480
-		*	2. Cropped under the Horizon Line
-        *   3. Segmented with superpixeling
-        *   4. Superpixels in the RoI is selected using Analytic Rect Function
-		*	(in Candidates will be placed the set on centroids that survived segmentation)
-		*/
-        cout << "Finished." << endl;
-        Offsets offsets = {0.65, 0.15, 0.8};
-        ExtractionThresholds threshold = {0.80, 0.30, 0.60};
-        int superPixelEdge = 32;
-
-        cout << "Segmentation... " << endl;
-        PotholeSegmentation(src, centroids, superPixelEdge, threshold, offsets);
-        cout << "Finished." << endl;
-        cout << "Found " << centroids.size() << " candidates." << endl;
-
-        /*--------------------------------- End First Segmentation Phase ------------------------------*/
-
-        /*--------------------------------- Feature Extraction Phase ------------------------------*/
-
-        cout << "Feature Extraction -- Starting " << endl;
-        auto features = extractFeatures(src, centroids, candidate_size);
-        cout << "Feature Extraction -- Finished." << endl;
-
-        /*--------------------------------- End Feature Extraction Phase ------------------------------*/
-
-
-        /*--------------------------------- Training Or Classification Phase ------------------------------*/
-
-        saveFeatures(features, "data", argv[1], "features");
-
-        if (isTraining) {
-
-            printf("Starting Training...\n");
+            /*--------------------------------- Training Phase ------------------------------*/
 
             Mat labels(0, 0, CV_32SC1);
             vector<Features> candidates;
+
             loadFromCSV("../data/features.csv", candidates, labels);
 
-            Training(features, labels, 100, "../data/svm_trained_model.yml");
-        } else {
-            Mat labels((int) features.size(), 1, CV_32SC1);
-            Classifier(features, 100, "../data/svm_trained_model.yml", labels);
+            Training(candidates, labels, 100, "../data/svm_trained_model.yml");
         }
+    }
 
-        //Calculate and Print the execution time
-        timeElapsed = ((double) getTickCount() - timeElapsed) / getTickFrequency();
-        cout << "Times passed in seconds: " << timeElapsed << endl;
+    // Calculate and Print the execution time
 
-        return 1;
-	}
+    timeElapsed = ((double) getTickCount() - timeElapsed) / getTickFrequency();
+    cout << "Times passed in seconds: " << timeElapsed << endl;
+
+    return 1;
 }
+
+

@@ -29,14 +29,20 @@ void printOffsets(Offsets of) {
 
 void preprocessing(Mat &src, Mat &resizedImage, const double Horizon_Offset) {
 
+    cout << "Preprocessing... ";
 
     Size scale(RESIZING_WIDTH, RESIZING_HEIGHT);
 //    Point2d translation_((double) -W / 2.0, (double) -H / 1.0), shrink_(3.0 / (double) W, 5.0 / (double) H);
+
+    // Apply gaussian blur in order to smooth edges and gaining cleaner superpixels
+    GaussianBlur(src, src, Size(5, 5), 0.0);
 
     resize(src, resizedImage, scale);
 
     resizedImage = resizedImage(
             Rect(Point2d(0, RESIZING_HEIGHT * Horizon_Offset), Point2d(RESIZING_WIDTH - 1, RESIZING_HEIGHT - 1)));
+
+    cout << "Finished." << endl;
 }
 
 bool evalutateThresholds(Mat &src, Offsets offsets, Point2d center) {
@@ -175,11 +181,11 @@ void superPixeling(Mat &src,
 
     extract_candidates(src, labels, superpixels->getNumberOfSuperpixels(), candidates, thresholds, out, mask, offsets);
 
-    imshow("src", src);
-    imshow("out", out);
-    imshow("contour", contour);
-    imshow("mask", mask);
-    imshow("labels", labels);
+//    imshow("src", src);
+//    imshow("out", out);
+//    imshow("contour", contour);
+//    imshow("mask", mask);
+//    imshow("labels", labels);
 }
 
 int PotholeSegmentation(Mat &src,

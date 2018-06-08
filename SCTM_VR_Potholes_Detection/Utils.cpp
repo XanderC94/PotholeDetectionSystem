@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <direct.h>
 #include "Utils.h"
 
 int resize_all_in(const string parent, const string folder, const int width, const int height) {
@@ -113,24 +114,30 @@ void loadFromCSV(const string target, vector<Features> &ft, Mat &labels) {
 
 }
 
-string extractFileName(const string file_path, const string sep = "/") {
+string extractFileName(string file_path, const string sep = "/") {
+
+    std::replace(file_path.begin(), file_path.end(), '\\', '/');
 
     auto offset = file_path.find_last_of(sep);
 
     return file_path.substr(offset+1);
 }
 
-void saveFeatures(const vector<Features> &ft, const string directory, const string parent, const string target) {
+void saveFeatures(const vector<Features> &ft, const string saveDirectory, const string imgName, const string saveFile) {
 
-    auto candidate = extractFileName(parent);
+    auto candidate = extractFileName(imgName);
+
+    mkdir(("../"+saveDirectory).data());
 
     ofstream save_file;
-    save_file.open ("../" + directory + "/" + target + ".csv", fstream::in | fstream::out | fstream::app);
+    save_file.open ("../" + saveDirectory + "/" + saveFile + ".csv", fstream::in | fstream::out | fstream::app);
 
     for (int i = 0; i < ft.size(); ++i) {
         auto f = ft[i];
 
         string c_name = "../data/"+ set_format(candidate, "", false) + "_" + to_string(i) + ".bmp";
+
+        cout << "Saving candidate " << c_name << endl;
 
         save_file << "Label:" << -1 << ";";
         save_file << "Candidate:"  << c_name << ";";
@@ -140,6 +147,8 @@ void saveFeatures(const vector<Features> &ft, const string directory, const stri
         save_file << "Energy:"     << f.energy << ";";
         save_file << "Entropy:"    << f.entropy << ";";
         save_file << "Histogram:"  << f.histogram << endl;
+
+        cout << "Saving candidate image " << c_name << endl;
 
         imwrite(c_name, f.candidate);
 

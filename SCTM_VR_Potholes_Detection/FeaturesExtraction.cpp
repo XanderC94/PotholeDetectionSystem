@@ -135,12 +135,12 @@ vector<Features> extractFeatures(Mat sourceImage, vector<Point> centroids, Size 
     FeaturesVectors normalizedFeaturesVectors = normalizeFeatures(1, 10, candidatesFeaturesVectors);
 
     for (int i = 0; i < centroids.size(); i++) {
-        cout <<
+        /*cout <<
              "Average Gray Value: " << normalizedFeaturesVectors.averageGreyLevels.at(i) <<
              " Contrast: " << normalizedFeaturesVectors.contrasts.at(i) <<
              " Skeweness: " << normalizedFeaturesVectors.skewnesses.at(i) <<
              " Energy: " << normalizedFeaturesVectors.energies.at(i) <<
-             " Entropy: " << normalizedFeaturesVectors.entropies.at(i) << endl;
+             " Entropy: " << normalizedFeaturesVectors.entropies.at(i) << endl;*/
 
         normalizedFeatures.push_back(Features{
                 notNormalizedfeatures.at(i).candidate,

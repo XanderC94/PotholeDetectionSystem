@@ -2,12 +2,12 @@
 // Created by Matteo Gabellini on 25/05/2018.
 //
 
-typedef struct Offsets {
+typedef struct RoadOffsets {
     double Horizon_Offset;
     double SLine_X_Offset;
     double SLine_Y_Offset;
 } Offsets;
-const Offsets defaultOffsets = {0.60, 0.0, 0.8};
+const RoadOffsets defaultOffsets = {0.60, 0.0, 0.8};
 
 
 typedef struct ExtractionThresholds {

@@ -7,11 +7,18 @@
 using namespace cv;
 using namespace std;
 
-int PotholeSegmentation(Mat& src,
+int potholeSegmentation(Mat &src,
                         vector<Point> &candidates,
                         const int superPixelEdge = 32,
                         const ExtractionThresholds thresholds = defaultThresholds,
-                        const Offsets offsets = defaultOffsets);
+                        const RoadOffsets offsets = defaultOffsets,
+                        const string showingWindowPrefix = "");
+
+int startImageSegmentation(Mat &src,
+                           vector<Point> &candidates,
+                           const int superPixelEdge = 32,
+                           const ExtractionThresholds thresholds = defaultThresholds,
+                           const RoadOffsets offsets = defaultOffsets);
 
 
 #endif //POTHOLEDETENCTIONSYSTEM_SEGMENTATION_H

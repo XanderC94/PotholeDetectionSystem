@@ -20,8 +20,8 @@ void printThresholds(ExtractionThresholds thresholds) {
     cout << "Gauss_RoadThreshold: " << thresholds.Gauss_RoadThreshold << endl;
 }
 
-void printOffsets(Offsets of) {
-    cout << "OFFSETS" << endl;
+void printOffsets(RoadOffsets of) {
+    cout << "ROAD OFFSETS" << endl;
     cout << "Horizon_Offset: " << of.Horizon_Offset << endl;
     cout << "SLine_X_Offset: " << of.SLine_X_Offset << endl;
     cout << "SLine_Y_Offset: " << of.SLine_Y_Offset << endl;
@@ -45,8 +45,8 @@ void preprocessing(Mat &src, Mat &resizedImage, const double Horizon_Offset) {
     cout << "Finished." << endl;
 }
 
-bool evalutateThresholds(Mat &src, Offsets offsets, Point2d center) {
-    // How to evaluate thresholds in order to separate road super pixels?
+bool evalutateRoadOffsets(Mat &src, RoadOffsets offsets, Point2d center) {
+    // How to evaluate offsets in order to separate road super pixels?
     // Or directly identify RoI (Region of interest) where a pothole will be more likely detected?
     // ...
     // Possibilities
@@ -62,20 +62,6 @@ bool evalutateThresholds(Mat &src, Offsets offsets, Point2d center) {
     return isRoad;
 }
 
-Point2d calculateVariance(vector<cv::Point> PixelsInLabel, Point2d center) {
-
-    cv::Point2d variance(0.0, 0.0);
-
-    for (Point2d p : PixelsInLabel) {
-        variance = p - (cv::Point2d) center;
-        variance = Point2d(variance.x * variance.x, variance.y * variance.y);
-    }
-
-    variance /= (double) PixelsInLabel.size();
-
-    return variance;
-}
-
 void extract_candidates(Mat &src,
                         Mat &labels,
                         int nSuperPixels,
@@ -83,50 +69,38 @@ void extract_candidates(Mat &src,
                         ExtractionThresholds thresolds,
                         Mat &out,
                         Mat &mask,
-                        Offsets offsets) {
+                        RoadOffsets offsets) {
 
     for (int l = 0; l < nSuperPixels; ++l) {
 
-        Mat1b LabelMask = (labels == l);
+        Mat1b currSuperPixelSelectionMask = (labels == l);
 
-        vector<cv::Point> PixelsInLabel;
-        findNonZero(LabelMask, PixelsInLabel);
+        vector<cv::Point> currentSuperPixel;
+        findNonZero(currSuperPixelSelectionMask, currentSuperPixel);
 
-        cv::Point2d center(0.0, 0.0);
-        for (Point2d p : PixelsInLabel) center += p;
-        center /= (double) PixelsInLabel.size();
+        cv::Point2d center = calculateSuperPixelCenter(currentSuperPixel);
 
-//        Point translated_((Center.x + translation_.x), (Center.y + translation_.y));
-//        Point shrinked_(translated_.x*shrink_.x, translated_.x*shrink_.y);
+//      Point translated_((Center.x + translation_.x), (Center.y + translation_.y));
+//      Point shrinked_(translated_.x*shrink_.x, translated_.x*shrink_.y);
 
-        bool isRoad = evalutateThresholds(src, offsets, center);
+        bool isRoad = evalutateRoadOffsets(src, offsets, center);
 
-        Scalar mean_color_value = mean(src, LabelMask);
+        Scalar mean_color_value = mean(src, currSuperPixelSelectionMask);
         Scalar color_mask_value = Scalar(0, 0, 0);
 
         if (isRoad) {
 
             cv::Point2d Variance(0.0, 0.0);
-            Variance = calculateVariance(PixelsInLabel, center);
-            
-            Point2f vertex[4];
-            minAreaRect(PixelsInLabel).points(vertex);
-            // Shoelace Area Formula
-            double area =
-                    ((vertex[0].x * vertex[1].y - vertex[1].x * vertex[0].y) +
-                     (vertex[1].x * vertex[2].y - vertex[2].x * vertex[1].y) +
-                     (vertex[2].x * vertex[3].y - vertex[3].x * vertex[2].y) +
-                     (vertex[3].x * vertex[0].y - vertex[0].x * vertex[3].y)) * 0.5;
+            Variance = calculateSuperPixelVariance(currentSuperPixel, center);
 
-
-            double density = (double) PixelsInLabel.size() / area;
+            double density = calculateSuperPixelDensity(currentSuperPixel);
 
             if (density < thresolds.Density_Threshold &&
                 (Variance.x > thresolds.Variance_Threshold || Variance.y > thresolds.Variance_Threshold)) {
 
 //                cout << l
 //                     << ", "
-//                     << PixelsInLabel.size()
+//                     << currentSuperPixel.size()
 //                     << ", "
 //                     << Area
 //                     << ", \""
@@ -142,19 +116,17 @@ void extract_candidates(Mat &src,
             }
         }
 
-        out.setTo(mean_color_value, LabelMask);
-        mask.setTo(color_mask_value, LabelMask);
+        out.setTo(mean_color_value, currSuperPixelSelectionMask);
+        mask.setTo(color_mask_value, currSuperPixelSelectionMask);
     }
 }
 
-void superPixeling(Mat &src,
-                   Mat &out,
-                   Mat &mask,
-                   Mat &contour,
-                   vector<Point> &candidates,
-                   ExtractionThresholds thresholds,
-                   Offsets offsets,
-                   int superPixelEdge) {
+Ptr<SuperpixelLSC> initSuperPixeling(Mat &src,
+                                     Mat &out,
+                                     Mat &mask,
+                                     Mat &contour,
+                                     vector<Point> &candidates,
+                                     int superPixelEdge) {
 
 
     Mat imgCIELab;
@@ -173,41 +145,37 @@ void superPixeling(Mat &src,
     src.copyTo(mask);
     mask.setTo(Scalar(255, 255, 255));
 
-//    cout << "SP, Size, Area, Variance, Density" << endl;
-
-    Mat labels;
-    superpixels->getLabels(labels);
-
-
-    extract_candidates(src, labels, superpixels->getNumberOfSuperpixels(), candidates, thresholds, out, mask, offsets);
-
-//    imshow("src", src);
-//    imshow("out", out);
-//    imshow("contour", contour);
-//    imshow("mask", mask);
-//    imshow("labels", labels);
+//  cout << "SP, Size, Area, Variance, Density" << endl;
+    return superpixels;
 }
 
-int PotholeSegmentation(Mat &src,
+int potholeSegmentation(Mat &src,
                         vector<Point> &candidates,
                         const int superPixelEdge,
                         const ExtractionThresholds thresholds,
-                        const Offsets offsets) {
+                        const RoadOffsets offsets,
+                        const string showingWindowPrefix) {
 
-    printThresholds(thresholds);
-    printOffsets(offsets);
-
-    preprocessing(src, src, offsets.Horizon_Offset);
 //    imshow("Preprocessed Image (Resized & Cropped)", src);
 
     Mat contour;
     Mat out;
     Mat mask;
     Mat res;
-    superPixeling(src, out, mask, contour, candidates, thresholds, offsets, superPixelEdge);
+    Ptr<SuperpixelLSC> superpixels = initSuperPixeling(src, out, mask, contour, candidates, superPixelEdge);
+
+    Mat labels;
+    superpixels->getLabels(labels);
+    //imshow("labels", labels);
+
+    extract_candidates(src, labels, superpixels->getNumberOfSuperpixels(), candidates, thresholds, out, mask, offsets);
+
+    //imshow(showingWindowPrefix + " src", src);
+    //imshow(showingWindowPrefix + " out", out);
+    //imshow(showingWindowPrefix + " contour", contour);
+    //imshow(showingWindowPrefix + " mask", mask);
 
     out.setTo(Scalar(0, 0, 255), contour);
-
 
     //imshow("Segmentation", out);
 
@@ -219,15 +187,30 @@ int PotholeSegmentation(Mat &src,
 //    dilate(mask, mask, dilateElem);
     erode(mask, mask, erodeElem);
 
-    //imshow("Mask", mask);
+    imshow("Mask", mask);
 
     src.copyTo(res, mask);
+    src.copyTo(res, out);
 
-//    imshow("Result", res);
+    imshow(showingWindowPrefix + " Result", res);
 
     // Cut the image in order to resize it to the smalled square/rectangle possible
     // To Do ...
-//    waitKey();
+    return 1;
+}
+
+
+int startImageSegmentation(Mat &src,
+                           vector<Point> &candidates,
+                           const int superPixelEdge,
+                           const ExtractionThresholds thresholds,
+                           const RoadOffsets offsets) {
+    printThresholds(thresholds);
+    printOffsets(offsets);
+
+    preprocessing(src, src, offsets.Horizon_Offset);
+
+    potholeSegmentation(src, candidates, superPixelEdge, thresholds, offsets, " Start image");
 
     return 1;
 }

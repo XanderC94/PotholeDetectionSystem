@@ -1,3 +1,4 @@
+#include <opencv2/imgproc.hpp>
 #include "MathUtils.h"
 
 double AnalyticRect2D(cv::Point from, cv::Point to, cv::Point evaluationPoint) {
@@ -33,4 +34,39 @@ float calculateSkewnessGrayImage(Mat image, float averageGrayVal) {
     }
     result = result / (image.rows * image.cols);
     return result;
+}
+
+Point2d calculateSuperPixelCenter(vector<cv::Point> pixelOfTheSuperPixel) {
+    cv::Point2d center(0.0, 0.0);
+    for (Point2d p : pixelOfTheSuperPixel) center += p;
+    center /= (double) pixelOfTheSuperPixel.size();
+    return center;
+}
+
+Point2d calculateSuperPixelVariance(vector<cv::Point> superPixel, Point2d center) {
+
+    cv::Point2d variance(0.0, 0.0);
+
+    for (Point2d p : superPixel) {
+        variance = p - (cv::Point2d) center;
+        variance = Point2d(variance.x * variance.x, variance.y * variance.y);
+    }
+
+    variance /= (double) superPixel.size();
+
+    return variance;
+}
+
+double calculateSuperPixelDensity(vector<cv::Point> superPixel) {
+    Point2f vertex[4];
+    minAreaRect(superPixel).points(vertex);
+    // Shoelace Area Formula
+    double area =
+            ((vertex[0].x * vertex[1].y - vertex[1].x * vertex[0].y) +
+             (vertex[1].x * vertex[2].y - vertex[2].x * vertex[1].y) +
+             (vertex[2].x * vertex[3].y - vertex[3].x * vertex[2].y) +
+             (vertex[3].x * vertex[0].y - vertex[0].x * vertex[3].y)) * 0.5;
+
+
+    return (double) superPixel.size() / area;
 }

@@ -1,5 +1,5 @@
 #include <algorithm>
-#include <direct.h>
+#include <sys/stat.h>
 #include "Utils.h"
 
 int resize_all_in(const string parent, const string folder, const int width, const int height) {
@@ -127,7 +127,7 @@ void saveFeatures(const vector<Features> &ft, const string saveDirectory, const 
 
     auto candidate = extractFileName(imgName);
 
-    mkdir(("../"+saveDirectory).data());
+    mkdir(("../" + saveDirectory).data(), S_IWUSR);
 
     ofstream save_file;
     save_file.open ("../" + saveDirectory + "/" + saveFile + ".csv", fstream::in | fstream::out | fstream::app);

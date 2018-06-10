@@ -4,6 +4,11 @@
 
 #include "FeaturesExtraction.h"
 
+#include <opencv2/ximgproc.hpp>
+
+using namespace cv;
+using namespace std;
+using namespace cv::ximgproc;
 
 typedef struct FeaturesVectors {
     vector<float> averageGreyLevels = vector<float>();
@@ -15,8 +20,33 @@ typedef struct FeaturesVectors {
 } FeaturesVectors;
 
 
+void extractPotholeRegion(Mat &src, string candidateName) {
+    Mat res;
+    Mat out;
+    Mat mask;
+    Mat contour;
+    Mat imgCIELab;
+    // Switch color space from RGB to CieLAB
+    cvtColor(src, imgCIELab, COLOR_BGR2Lab);
+//	imshow("CieLab color space", imgCIELab);
+
+    //Ptr<SuperpixelSLIC> superpixels = cv::ximgproc::createSuperpixelSLIC(imgCIELab, SLIC::MSLIC, 32, 40.0);
+    Ptr<SuperpixelSLIC> superpixels = cv::ximgproc::createSuperpixelSLIC(imgCIELab, SLIC::MSLIC, 32, 20.0);
+    superpixels->iterate(10);
+    superpixels->getLabelContourMask(contour);
+
+    src.copyTo(out);
+    src.copyTo(mask);
+    mask.setTo(Scalar(255, 255, 255));
+
+    out.setTo(Scalar(0, 0, 255), contour);
+    src.copyTo(res, out);
+    imshow(candidateName + " Result", res);
+//  cout << "SP, Size, Area, Variance, Density" << endl;
+}
+
 /*
-* Each centroid of superpixels extracted in the previous phase
+*  Feature extraction from a candidate:
 *  1. Candidate will be converted to greyscale
 *  2. The pothole region will be segmented another time with super pixeling
 *  3. The histogram will be calculated
@@ -38,6 +68,7 @@ Features candidateFeatureExtraction(Point centroid, Mat sourceImage, Size candid
                        brc_y > sourceImage.rows - 1 ? sourceImage.rows : brc_y);
 
     auto candidate = sourceImage(Rect(tlc, brc));
+    auto c_name = "Candidate @ (" + to_string(centroid.x) + ", " + to_string(centroid.y) + ")";
 
     //candidates.push_back(candidate);
     Mat candidateGrayScale;
@@ -46,10 +77,12 @@ Features candidateFeatureExtraction(Point centroid, Mat sourceImage, Size candid
 
 
     // 2. Extract only the pothole region
+    Mat candidateForSuperPixeling;
+    cvtColor(candidateGrayScale, candidateForSuperPixeling, CV_GRAY2BGR);
+    extractPotholeRegion(candidateForSuperPixeling, c_name);
 
 
     // 3. The histogram will be calculated
-    auto c_name = "Candidate @ (" + to_string(centroid.x) + ", " + to_string(centroid.y) + ")";
     Mat histogram = ExtractHistograms(candidateGrayScale, c_name);
 
     //4. Calculate the average gray value
@@ -112,18 +145,6 @@ vector<Features> extractFeatures(Mat sourceImage, vector<Point> centroids, Size 
 
     FeaturesVectors candidatesFeaturesVectors;
 
-    /*
-        * Each centroid of superpixels extracted in the previous phase
-        *  1. Candidate will be converted to greyscale
-        *  2. The histogram will be calculated
-        *  3. Calculate the average gray value
-        *  4. Calculate the contrast
-        *  5. Calculate 3-order moments (is Skewness according to http://aishack.in/tutorials/image-moments/)
-        *  6. Calculate Consistency (After only searches I think that the consistency is what the professor calls energy)
-        *  7. Calculate Entropy
-        *  8. Put the calculated features in a eigenvector
-        *
-        * */
     /*------------------------Candidate Extraction---------------------------*/
     for (auto c : centroids) {
         Features candidateFeatures = candidateFeatureExtraction(c, sourceImage, candidate_size);

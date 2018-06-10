@@ -2,7 +2,6 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/ml.hpp>
-#include <iostream>
 #include "Segmentation.h"
 #include "FeaturesExtraction.h"
 #include "SVM.h"
@@ -38,12 +37,18 @@ vector<Features> preClassification (const string target) {
     *	(in Candidates will be placed the set on centroids that survived segmentation)
     */
 
-    Offsets offsets = {0.65, 0.15, 0.8};
-    ExtractionThresholds threshold = {0.80, 0.30, 0.60};
+    RoadOffsets offsets;
+    offsets.Horizon_Offset = 0.65;
+    offsets.SLine_X_Offset = 0.15;
+    offsets.SLine_Y_Offset = 0.8;
+    ExtractionThresholds threshold;
+    threshold.Density_Threshold = 0.80;
+    threshold.Variance_Threshold = 0.30;
+    threshold.Gauss_RoadThreshold = 0.60;
     int superPixelEdge = 32;
 
     cout << "Segmentation... " << endl;
-    PotholeSegmentation(src, centroids, superPixelEdge, threshold, offsets);
+    startImageSegmentation(src, centroids, superPixelEdge, threshold, offsets);
     cout << "Finished." << endl;
     cout << "Found " << centroids.size() << " candidates." << endl;
 
@@ -64,7 +69,7 @@ void createCandidates (const string targets) {
 
     vector<String> fn;
 
-    glob(targets + "/*", fn);
+    glob(targets + "/*.jpg", fn);
 
     for (auto image : fn) {
 
@@ -116,6 +121,7 @@ int main(int argc, char*argv[]) {
     timeElapsed = ((double) getTickCount() - timeElapsed) / getTickFrequency();
     cout << "Times passed in seconds: " << timeElapsed << endl;
 
+    waitKey();
     return 1;
 }
 

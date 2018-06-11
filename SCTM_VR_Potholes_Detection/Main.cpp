@@ -87,21 +87,27 @@ int main(int argc, char*argv[]) {
     bool isTraining = false;
 
 
-    if (argc < 3) {
+    if (argc < 2) {
         return 0;
     } else {
         auto mode = string(argv[1]);
 
-        if (mode == "-d") {
+        if (mode == "-d" && argc > 2) {
             createCandidates(argv[2]);
-        } else if (mode == "-i") {
+        } else if (mode == "-i" && argc > 2) {
 
             /*--------------------------------- Classification Phase ------------------------------*/
+
+            portable_mkdir("../results");
 
             auto features = preClassification(argv[2]);
             Mat labels((int) features.size(), 1, CV_32SC1);
 
             Classifier(features, 100, "../data/svm_trained_model.yml", labels);
+
+            for (int i = 0; i < features.size(); ++i) {
+                imwrite("../results/Candidate_" + to_string(i) + ".bmp", features[i].candidate);
+            }
 
         } else if (mode == "-t") {
 

@@ -41,7 +41,7 @@ void extractPotholeRegion(Mat &src, string candidateName) {
 
     out.setTo(Scalar(0, 0, 255), contour);
     src.copyTo(res, out);
-    imshow(candidateName + " Result", res);
+//    imshow(candidateName + " Result", res);
 //  cout << "SP, Size, Area, Variance, Density" << endl;
 }
 
@@ -79,7 +79,7 @@ Features candidateFeatureExtraction(Point centroid, Mat sourceImage, Size candid
     // 2. Extract only the pothole region
     Mat candidateForSuperPixeling;
     cvtColor(candidateGrayScale, candidateForSuperPixeling, CV_GRAY2BGR);
-    extractPotholeRegion(candidateForSuperPixeling, c_name);
+//    extractPotholeRegion(candidateForSuperPixeling, c_name);
 
 
     // 3. The histogram will be calculated

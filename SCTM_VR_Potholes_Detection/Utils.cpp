@@ -29,6 +29,15 @@ int resize_all_in(const string parent, const string folder, const int width, con
     return 1;
 }
 
+void portable_mkdir(const char * args) {
+
+    #if defined(_WIN32) || defined(_WIN32_WINNT) || defined(_WIN64)
+        mkdir(args);
+    #else
+        mkdir(args, S_IWUSR);
+    #endif
+}
+
 string set_format(string of_file_name_path, string to_new_format, bool use_separator) {
     int image_format_offset_begin = of_file_name_path.find_last_of(".");
     string image_format = of_file_name_path.substr(image_format_offset_begin);
@@ -97,20 +106,22 @@ void loadFromCSV(const string target, vector<Features> &ft, Mat &labels) {
         while (std::getline(csv, line)) {
             vector<string> tokens;
             CSVTokenizer(line, ';', tokens);
-            ft.push_back(objectify(tokens, labels));
+            auto f = objectify(tokens, labels);
+
+            ft.push_back(f);
+
+//            cout << " Contrast:"   << f.contrast;
+//            cout << " Skewness:"   << f.skewness;
+//            cout << " AvgGreyVal:" << f.averageGreyValue;
+//            cout << " Energy:"     << f.energy;
+//            cout << " Entropy:"    << f.entropy;
+//            cout << " Histogram:"  << f.histogram << endl;
+
         }
         csv.close();
     } else cout << "Unable to open file";
 
     cout << labels.rows << " " << ft.size() << endl;
-//    for (auto f : ft) {
-//        cout << " Contrast:"   << f.contrast;
-//        cout << " Skewness:"   << f.skewness;
-//        cout << " AvgGreyVal:" << f.averageGreyValue;
-//        cout << " Energy:"     << f.energy;
-//        cout << " Entropy:"    << f.entropy;
-//        cout << " Histogram:"  << f.histogram << endl;
-//    }
 
 }
 
@@ -127,7 +138,7 @@ void saveFeatures(const vector<Features> &ft, const string saveDirectory, const 
 
     auto candidate = extractFileName(imgName);
 
-    mkdir(("../" + saveDirectory).data(), S_IWUSR);
+    portable_mkdir(("../" + saveDirectory).data());
 
     ofstream save_file;
     save_file.open ("../" + saveDirectory + "/" + saveFile + ".csv", fstream::in | fstream::out | fstream::app);

@@ -12,6 +12,8 @@
 using namespace cv;
 using namespace std;
 
+void portable_mkdir(const char * args);
+
 string set_format(string of_file_name_path,
                 string to_new_format,
                 bool use_separator = true);

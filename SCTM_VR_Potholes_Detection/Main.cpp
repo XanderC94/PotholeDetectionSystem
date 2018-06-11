@@ -103,10 +103,12 @@ int main(int argc, char*argv[]) {
             auto features = preClassification(argv[2]);
             Mat labels((int) features.size(), 1, CV_32SC1);
 
-            Classifier(features, 100, "../data/svm_trained_model.yml", labels);
+            Classifier(features, 1000, "../data/svm_trained_model.yml", labels);
 
             for (int i = 0; i < features.size(); ++i) {
-                imwrite("../results/Candidate_" + to_string(i) + ".bmp", features[i].candidate);
+                if (labels.at<float>(0, i) == 1) {
+                    imwrite("../results/Candidate_" + to_string(i) + ".bmp", features[i].candidate);
+                }
             }
 
         } else if (mode == "-t") {
@@ -118,7 +120,7 @@ int main(int argc, char*argv[]) {
 
             loadFromCSV("../data/features.csv", candidates, labels);
 
-            Training(candidates, labels, 100, "../data/svm_trained_model.yml");
+            Training(candidates, labels, 1000, "../data/svm_trained_model.yml");
         }
     }
 

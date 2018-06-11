@@ -48,8 +48,8 @@ void Classifier(const vector<Features> &features, const int max_iter, const stri
     auto flag = svm->predict(data_mat, labels);
 
 //    cout << "FLAG: " << flag << endl;
-    transpose(labels, labels);
-    cout << labels << endl;
+//    transpose(labels, labels);
+//    cout << labels << endl;
 }
 
 void Training(const vector<Features> &features, const Mat &labels, const int max_iter, const string model_path) {

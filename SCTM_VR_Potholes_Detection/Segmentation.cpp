@@ -120,25 +120,25 @@ int extractPossiblePotholes(Mat &src,
     imshow(showingWindowPrefix + " contour", contour);
     imshow(showingWindowPrefix + " mask", mask);
 
-    out.setTo(Scalar(0, 0, 255), contour);
+//    out.setTo(Scalar(0, 0, 255), contour);
 
     imshow("Segmentation", out);
 
     // Dilate to clean possible small black dots into the image "center"
-    auto dilateElem = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));
+//    auto dilateElem = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));
     // Remove small white dots outside the image "center"
-    auto erodeElem = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));
+//    auto erodeElem = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));
 
 //    dilate(mask, mask, dilateElem);
-    erode(mask, mask, erodeElem);
+//    erode(mask, mask, erodeElem);
 
     //imshow("Mask", mask);
 
-    Mat res;
-    src.copyTo(res, mask);
-    src.copyTo(res, out);
+//    Mat res;
+//    src.copyTo(res, mask);
+//    src.copyTo(res, out);
 
-    imshow(showingWindowPrefix + " Result", res);
+//    imshow(showingWindowPrefix + " Result", res);
     // Cut the image in order to resize it to the smalled square/rectangle possible
     // To Do ...
     return 1;

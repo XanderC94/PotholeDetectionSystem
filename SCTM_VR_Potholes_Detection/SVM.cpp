@@ -24,7 +24,7 @@ Ptr<SVM> initSVM(const string model_path, int max_iter) {
 
 Mat ConvertFeatures(const vector<Features> &features) {
 
-    Mat data((int) features.size(), 5, CV_32F);
+    Mat data((int) features.size(), 5, CV_32FC1);
 
     for (int i = 0; i < features.size(); i++) {
         data.at<float>(i, 0) = features[i].averageGreyValue;
@@ -32,6 +32,8 @@ Mat ConvertFeatures(const vector<Features> &features) {
         data.at<float>(i, 2) = features[i].skewness;
         data.at<float>(i, 3) = features[i].energy;
         data.at<float>(i, 4) = features[i].entropy;
+
+//        cout << data.row(i) << endl;
     }
 
     return data;
@@ -45,7 +47,9 @@ void Classifier(const vector<Features> &features, const int max_iter, const stri
 
     auto flag = svm->predict(data_mat, labels);
 
-    printf("FLAG: %2f.5", flag);
+//    cout << "FLAG: " << flag << endl;
+//    transpose(labels, labels);
+//    cout << labels << endl;
 }
 
 void Training(const vector<Features> &features, const Mat &labels, const int max_iter, const string model_path) {
@@ -58,7 +62,9 @@ void Training(const vector<Features> &features, const Mat &labels, const int max
 
     printf("Ready...\n");
 
-    svm->trainAuto(data_mat, ROW_SAMPLE, labels);
+    auto data = TrainData::create(data_mat, ROW_SAMPLE, labels);
+
+    svm->trainAuto(data);
 
     printf("Finished.\n");
 

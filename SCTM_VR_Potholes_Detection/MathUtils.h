@@ -18,10 +18,6 @@ double GaussianEllipseFunction3D(cv::Point P,
 
 float calculateSkewnessGrayImage(Mat image, float averageColorVal);
 
-Point2d calculateSuperPixelCenter(vector<cv::Point> pixelOfTheSuperPixel);
-
-Point2d calculateSuperPixelVariance(vector<cv::Point> superPixel, Point2d center);
-
-double calculateSuperPixelDensity(vector<cv::Point> superPixel);
+float calculateSkewnessGrayImageRegion(Mat image, vector<Point> region, float averageGrayVal);
 
 #endif //POTHOLEDETENCTIONSYSTEM_MATHUTILS_H

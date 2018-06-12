@@ -29,4 +29,6 @@ void saveFeatures(const vector<Features> &ft, string saveDirectory, string imgNa
 
 string extractFileName(const string file_path, const string sep);
 
+vector<String> extractImagePath(const string targets);
+
 #endif //POTHOLEDETENCTIONSYSTEM_UTILIS_H

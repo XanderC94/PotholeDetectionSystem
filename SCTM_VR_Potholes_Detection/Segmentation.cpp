@@ -1,9 +1,6 @@
 #include "Segmentation.h"
 #include "MathUtils.h"
 
-#include <opencv2/imgproc.hpp>
-#include <opencv2/highgui.hpp>
-#include <opencv2/ximgproc.hpp>
 #include <iostream>
 
 using namespace cv;
@@ -13,19 +10,6 @@ using namespace cv::ximgproc;
 const int RESIZING_WIDTH = 640;
 const int RESIZING_HEIGHT = 480;
 
-void printThresholds(ExtractionThresholds thresholds) {
-    cout << "THRESHOLDS" << endl;
-    cout << "Density_Threshold: " << thresholds.Density_Threshold << endl;
-    cout << "Variance_Threshold: " << thresholds.Variance_Threshold << endl;
-    cout << "Gauss_RoadThreshold: " << thresholds.Gauss_RoadThreshold << endl;
-}
-
-void printOffsets(RoadOffsets of) {
-    cout << "ROAD OFFSETS" << endl;
-    cout << "Horizon_Offset: " << of.Horizon_Offset << endl;
-    cout << "SLine_X_Offset: " << of.SLine_X_Offset << endl;
-    cout << "SLine_Y_Offset: " << of.SLine_Y_Offset << endl;
-}
 
 void preprocessing(Mat &src, Mat &resizedImage, const double Horizon_Offset) {
 
@@ -45,7 +29,7 @@ void preprocessing(Mat &src, Mat &resizedImage, const double Horizon_Offset) {
     cout << "Finished." << endl;
 }
 
-bool evalutateRoadOffsets(Mat &src, RoadOffsets offsets, Point2d center) {
+bool isRoad(Mat src, RoadOffsets offsets, Point2d center) {
     // How to evaluate offsets in order to separate road super pixels?
     // Or directly identify RoI (Region of interest) where a pothole will be more likely detected?
     // ...
@@ -62,122 +46,83 @@ bool evalutateRoadOffsets(Mat &src, RoadOffsets offsets, Point2d center) {
     return isRoad;
 }
 
-void extract_candidates(Mat &src,
-                        Mat &labels,
-                        int nSuperPixels,
-                        vector<Point> &candidates,
-                        ExtractionThresholds thresolds,
-                        Mat &out,
-                        Mat &mask,
-                        RoadOffsets offsets) {
+/*
+ * Check if the super pixel is a pothole using thesholds relative to density e variance
+ * */
+bool isPothole(SuperPixel superPixel, cv::Point2d center, ExtractionThresholds thresholds) {
+    cv::Point2d Variance(0.0, 0.0);
+    Variance = calculateSuperPixelVariance(superPixel.points, center);
+    double density = calculateSuperPixelDensity(superPixel.points);
+    return (density < thresholds.Density_Threshold &&
+            (Variance.x > thresholds.Variance_Threshold || Variance.y > thresholds.Variance_Threshold));
+}
 
+
+/*
+ * Check if the super pixel is a pothole comparing its mean colour value and the mean colour value
+ * of the candidate that contains the super pixel
+ * */
+bool isPothole(SuperPixel superPixel, SuperPixel previousSelected, Scalar meanCandidateColourValue) {
+    return superPixel.meanColourValue[0] < meanCandidateColourValue[0]
+           && superPixel.meanColourValue[0] > (meanCandidateColourValue[0] / 1.5)
+           && superPixel.meanColourValue[0] < (previousSelected.meanColourValue[0]);
+}
+
+void extractCandidateCentroids(Mat &src,
+                               Mat labels,
+                               int nSuperPixels,
+                               vector<Point> &candidateCentroids,
+                               ExtractionThresholds thresolds,
+                               Mat &meanColourMask,
+                               Mat &candidateMask,
+                               RoadOffsets offsets) {
+
+    src.copyTo(meanColourMask);
     for (int l = 0; l < nSuperPixels; ++l) {
-
-        Mat1b currSuperPixelSelectionMask = (labels == l);
-
-        vector<cv::Point> currentSuperPixel;
-        findNonZero(currSuperPixelSelectionMask, currentSuperPixel);
-
-        cv::Point2d center = calculateSuperPixelCenter(currentSuperPixel);
-
 //      Point translated_((Center.x + translation_.x), (Center.y + translation_.y));
 //      Point shrinked_(translated_.x*shrink_.x, translated_.x*shrink_.y);
+        SuperPixel currentSuperPixel = getSuperPixel(src, l, labels);
 
-        bool isRoad = evalutateRoadOffsets(src, offsets, center);
-
-        Scalar mean_color_value = mean(src, currSuperPixelSelectionMask);
+        cv::Point2d center = calculateSuperPixelCenter(currentSuperPixel.points);
         Scalar color_mask_value = Scalar(0, 0, 0);
-
-        if (isRoad) {
-
-            cv::Point2d Variance(0.0, 0.0);
-            Variance = calculateSuperPixelVariance(currentSuperPixel, center);
-
-            double density = calculateSuperPixelDensity(currentSuperPixel);
-
-            if (density < thresolds.Density_Threshold &&
-                (Variance.x > thresolds.Variance_Threshold || Variance.y > thresolds.Variance_Threshold)) {
-
-//                cout << l
-//                     << ", "
-//                     << currentSuperPixel.size()
-//                     << ", "
-//                     << Area
-//                     << ", \""
-//                     << Variance
-//                     << "\", "
-//                     << density
-//                     << endl;
-
+        if (isRoad(src, offsets, center)) {
+            if (isPothole(currentSuperPixel, center, thresolds)) {
                 color_mask_value = Scalar(255, 255, 255);
-
-                // Add the center of the superpixel to the candidates.
-                candidates.push_back(center);
+                // Add the center of the superpixel to the candidateCentroids.
+                candidateCentroids.push_back(center);
             }
         }
 
-        out.setTo(mean_color_value, currSuperPixelSelectionMask);
-        mask.setTo(color_mask_value, currSuperPixelSelectionMask);
+        meanColourMask.setTo(currentSuperPixel.meanColourValue, currentSuperPixel.selectionMask);
+        candidateMask.setTo(color_mask_value, currentSuperPixel.selectionMask);
     }
 }
 
-Ptr<SuperpixelLSC> initSuperPixeling(Mat &src,
-                                     Mat &out,
-                                     Mat &mask,
-                                     Mat &contour,
-                                     vector<Point> &candidates,
-                                     int superPixelEdge) {
-
-
-    Mat imgCIELab;
-    // Switch color space from RGB to CieLAB
-    cvtColor(src, imgCIELab, COLOR_BGR2Lab);
-//	imshow("CieLab color space", imgCIELab);
-
-    // Linear Spectral Clustering
-    Ptr<SuperpixelLSC> superpixels = cv::ximgproc::createSuperpixelLSC(imgCIELab, superPixelEdge);
-//  Ptr<SuperpixelSLIC> superpixels = cv::ximgproc::createSuperpixelSLIC(imgCIELab, SLIC::MSLIC, 32, 50.0);
-
-    superpixels->iterate(10);
-    superpixels->getLabelContourMask(contour);
-
-    src.copyTo(out);
-    src.copyTo(mask);
-    mask.setTo(Scalar(255, 255, 255));
-
-//  cout << "SP, Size, Area, Variance, Density" << endl;
-    return superpixels;
-}
-
-int potholeSegmentation(Mat &src,
-                        vector<Point> &candidates,
-                        const int superPixelEdge,
-                        const ExtractionThresholds thresholds,
-                        const RoadOffsets offsets,
-                        const string showingWindowPrefix) {
-
-//    imshow("Preprocessed Image (Resized & Cropped)", src);
-
+int extractPossiblePotholes(Mat &src,
+                            vector<Point> &candidateCentroids,
+                            const int superPixelEdge,
+                            const ExtractionThresholds thresholds,
+                            const RoadOffsets offsets,
+                            const string showingWindowPrefix) {
     Mat contour;
-    Mat out;
     Mat mask;
-    Mat res;
-    Ptr<SuperpixelLSC> superpixels = initSuperPixeling(src, out, mask, contour, candidates, superPixelEdge);
-
     Mat labels;
-    superpixels->getLabels(labels);
+    Ptr<SuperpixelLSC> superpixels = initSuperPixelingLSC(src, contour, mask, labels, candidateCentroids,
+                                                          superPixelEdge);
+
     //imshow("labels", labels);
+    Mat out;
+    extractCandidateCentroids(src, labels, superpixels->getNumberOfSuperpixels(), candidateCentroids, thresholds, out,
+                              mask, offsets);
 
-    extract_candidates(src, labels, superpixels->getNumberOfSuperpixels(), candidates, thresholds, out, mask, offsets);
-
-    //imshow(showingWindowPrefix + " src", src);
-    //imshow(showingWindowPrefix + " out", out);
-    //imshow(showingWindowPrefix + " contour", contour);
-    //imshow(showingWindowPrefix + " mask", mask);
+    imshow(showingWindowPrefix + " src", src);
+    imshow(showingWindowPrefix + " Mean colour mask", out);
+    imshow(showingWindowPrefix + " contour", contour);
+    imshow(showingWindowPrefix + " mask", mask);
 
     out.setTo(Scalar(0, 0, 255), contour);
 
-    //imshow("Segmentation", out);
+    imshow("Segmentation", out);
 
     // Dilate to clean possible small black dots into the image "center"
     auto dilateElem = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));
@@ -187,30 +132,84 @@ int potholeSegmentation(Mat &src,
 //    dilate(mask, mask, dilateElem);
     erode(mask, mask, erodeElem);
 
-    imshow("Mask", mask);
+    //imshow("Mask", mask);
 
+    Mat res;
     src.copyTo(res, mask);
     src.copyTo(res, out);
 
     imshow(showingWindowPrefix + " Result", res);
-
     // Cut the image in order to resize it to the smalled square/rectangle possible
     // To Do ...
     return 1;
 }
 
 
-int startImageSegmentation(Mat &src,
-                           vector<Point> &candidates,
-                           const int superPixelEdge,
-                           const ExtractionThresholds thresholds,
-                           const RoadOffsets offsets) {
+int initialImageSegmentation(Mat &src,
+                             vector<Point> &candidateCentroids,
+                             const int superPixelEdge,
+                             const ExtractionThresholds thresholds,
+                             const RoadOffsets offsets) {
     printThresholds(thresholds);
     printOffsets(offsets);
 
     preprocessing(src, src, offsets.Horizon_Offset);
 
-    potholeSegmentation(src, candidates, superPixelEdge, thresholds, offsets, " Start image");
+    extractPossiblePotholes(src, candidateCentroids, superPixelEdge, thresholds, offsets, " Start image");
 
     return 1;
+}
+
+
+
+/***** FEATURE EXTRACTION SEGMENTATION ****/
+
+/*
+ * Select the super pixel that have the minor average
+ * value greater tha the total candidate average value
+ * */
+SuperPixel selectPothole(Mat src, int nSuperPixels, Mat labels) {
+    SuperPixel selected = getSuperPixel(src, 0, labels);
+    double averagePixelValue = (double) mean(src)[0];
+    //vector<SuperPixel> possiblePotholes = vector<SuperPixel>();
+    //Select all possible potholes
+    for (int l = 0; l < nSuperPixels; ++l) {
+        SuperPixel currSp = getSuperPixel(src, l, labels);
+        //Point2d center = calculateSuperPixelCenter(currSp.points);
+        if (isPothole(currSp, selected, averagePixelValue)) {
+            selected = currSp;
+            //possiblePotholes.push_back(currSp);
+        }
+    }
+
+    /*if(possiblePotholes.size() > 0) {
+        sort(possiblePotholes.begin(),
+             possiblePotholes.end(),
+             [](SuperPixel a, SuperPixel b) -> bool { return (a.meanColourValue[0] < b.meanColourValue[0]); }
+        );
+
+        selected = possiblePotholes[possiblePotholes.size() - 1];
+    } */
+
+
+    return selected;
+}
+
+/*
+ * 1. Segment the candidate with super pixeling
+ * 2. Calculate the pixel colour average value
+ * In order to isolate the pothole super pixel from car's bumper
+ * 3. Select the super pixel that is darker than the average pixel value and lighter than a specified threshold
+ * */
+SuperPixel extractPotholeRegionFromCandidate(Mat &src, string candidateName) {
+    Mat res;
+    Mat mask;
+    Mat labels;
+    Mat contour;
+    Ptr<SuperpixelSLIC> superPixels = initSuperPixelingSLIC(src, contour, labels, mask);
+
+    SuperPixel selected = selectPothole(src, superPixels->getNumberOfSuperpixels(), labels);
+
+    //cout << "SP, Size, Area, Variance, Density" << endl;
+    return selected;
 }

@@ -3,8 +3,7 @@
 //
 
 #include "FeaturesExtraction.h"
-
-#include <opencv2/ximgproc.hpp>
+#include "Segmentation.h"
 
 using namespace cv;
 using namespace std;
@@ -19,31 +18,20 @@ typedef struct FeaturesVectors {
     vector<float> energies = vector<float>();
 } FeaturesVectors;
 
+typedef struct Gradient {
+    Mat x;
+    Mat y;
+} Gradient;
 
-void extractPotholeRegion(Mat &src, string candidateName) {
-    Mat res;
-    Mat out;
-    Mat mask;
-    Mat contour;
-    Mat imgCIELab;
-    // Switch color space from RGB to CieLAB
-    cvtColor(src, imgCIELab, COLOR_BGR2Lab);
-//	imshow("CieLab color space", imgCIELab);
-
-    //Ptr<SuperpixelSLIC> superpixels = cv::ximgproc::createSuperpixelSLIC(imgCIELab, SLIC::MSLIC, 32, 40.0);
-    Ptr<SuperpixelSLIC> superpixels = cv::ximgproc::createSuperpixelSLIC(imgCIELab, SLIC::MSLIC, 32, 20.0);
-    superpixels->iterate(10);
-    superpixels->getLabelContourMask(contour);
-
-    src.copyTo(out);
-    src.copyTo(mask);
-    mask.setTo(Scalar(255, 255, 255));
-
-    out.setTo(Scalar(0, 0, 255), contour);
-    src.copyTo(res, out);
-    imshow(candidateName + " Result", res);
-//  cout << "SP, Size, Area, Variance, Density" << endl;
+Gradient calculateGradient(Mat &candidate) {
+    Mat resultx;
+    Mat resulty;
+    //cv::Sobel(candidate, result, CV_64F, 0 , 1, 5);
+    cv::spatialGradient(candidate, resultx, resulty);
+    Gradient result = {resultx, resulty};
+    return result;
 }
+
 
 /*
 *  Feature extraction from a candidate:
@@ -79,14 +67,18 @@ Features candidateFeatureExtraction(Point centroid, Mat sourceImage, Size candid
     // 2. Extract only the pothole region
     Mat candidateForSuperPixeling;
     cvtColor(candidateGrayScale, candidateForSuperPixeling, CV_GRAY2BGR);
-    extractPotholeRegion(candidateForSuperPixeling, c_name);
+    SuperPixel selectedSuperPixel = extractPotholeRegionFromCandidate(candidateForSuperPixeling, c_name);
+
+    //Gradient grad = calculateGradient(candidateGrayScale);
+    //imwrite("../data/gradiente/" + c_name + " gradientey.bmp", resulty);
+    //imshow(c_name + " gradient x", grad.x);
 
 
     // 3. The histogram will be calculated
     Mat histogram = ExtractHistograms(candidateGrayScale, c_name);
 
     //4. Calculate the average gray value
-    float averageGreyValue = (float) mean(candidateGrayScale)[0];
+    float averageGreyValue = (float) mean(candidateGrayScale, selectedSuperPixel.selectionMask)[0];
 
     // 5. Calculate the contrast
     // 6. Calculate Entropy
@@ -97,19 +89,31 @@ Features candidateFeatureExtraction(Point centroid, Mat sourceImage, Size candid
     float entropy = 0.0;
     float energy = 0.0;
 
-    for (int i = 0; i < candidateGrayScale.rows; i++) {
+    /*for (int i = 0; i < candidateGrayScale.rows; i++) {
         for (int j = 0; j < candidateGrayScale.cols; j++) {
             contrast = contrast + powf((i - j), 2) * candidateGrayScale.at<uchar>(i, j);
             entropy = entropy + (candidateGrayScale.at<uchar>(i, j) * log10f(candidateGrayScale.at<uchar>(i, j)));
             energy = energy + powf(candidateGrayScale.at<uchar>(i, j), 2);
         }
+    }*/
+
+    for (Point coordinates : selectedSuperPixel.points) {
+        contrast = contrast + powf((coordinates.y - coordinates.x), 2) * candidateGrayScale.at<uchar>(coordinates);
+        entropy = entropy +
+                  (candidateGrayScale.at<uchar>(coordinates) * log10f(candidateGrayScale.at<uchar>(coordinates)));
+        energy = energy + powf(candidateGrayScale.at<uchar>(coordinates), 2);
     }
 
     entropy = 0 - entropy;
     energy = sqrtf(energy);
 
     //8. Calculate Skewness
-    float skewness = calculateSkewnessGrayImage(candidate, averageGreyValue);
+    //float skewness = calculateSkewnessGrayImage(candidate, averageGreyValue);
+    float skewness = calculateSkewnessGrayImageRegion(candidate, selectedSuperPixel.points, averageGreyValue);
+
+
+    //Highlights the selected pothole region
+    candidate.setTo(Scalar(0, 0, 255), selectedSuperPixel.selectionMask);
 
     return Features{candidate, histogram, averageGreyValue, contrast, entropy, skewness, energy};
 }

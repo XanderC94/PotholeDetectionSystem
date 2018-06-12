@@ -156,3 +156,26 @@ void saveFeatures(const vector<Features> &ft, const string saveDirectory, const 
 
     save_file.close();
 }
+
+vector<String> extractImagePath(const string targets) {
+    vector<String> res;
+    vector<String> fnJpg;
+    vector<String> fnPng;
+    vector<String> fnBmp;
+
+    glob(targets + "/*.jpg", fnJpg);
+    glob(targets + "/*.png", fnPng);
+    glob(targets + "/*.bmp", fnBmp);
+
+    for (auto jpgImage : fnJpg) {
+        res.push_back(jpgImage);
+    }
+    for (auto pngImage : fnPng) {
+        res.push_back(pngImage);
+    }
+    for (auto bmpImage : fnBmp) {
+        res.push_back(bmpImage);
+    }
+
+    return res;
+}

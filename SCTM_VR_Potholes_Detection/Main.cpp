@@ -48,7 +48,7 @@ vector<Features> preClassification (const string target) {
     int superPixelEdge = 32;
 
     cout << "Segmentation... " << endl;
-    startImageSegmentation(src, centroids, superPixelEdge, threshold, offsets);
+    initialImageSegmentation(src, centroids, superPixelEdge, threshold, offsets);
     cout << "Finished." << endl;
     cout << "Found " << centroids.size() << " candidates." << endl;
 
@@ -67,9 +67,7 @@ vector<Features> preClassification (const string target) {
 
 void createCandidates (const string targets) {
 
-    vector<String> fn;
-
-    glob(targets + "/*.jpg", fn);
+    vector<String> fn = extractImagePath(targets);
 
     for (auto image : fn) {
 

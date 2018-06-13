@@ -47,7 +47,9 @@ bool isRoad(Mat src, RoadOffsets offsets, Point2d center) {
 }
 
 /*
- * Check if the super pixel is a pothole using thesholds relative to density e variance
+ * Check if the super pixel is a pothole:
+ *      - checking if its density il less than the specified density threshold
+ *      - checking if the variance on x axis or y axis is greater than the variance threshold
  * */
 bool isPothole(SuperPixel superPixel, cv::Point2d center, ExtractionThresholds thresholds) {
     cv::Point2d Variance(0.0, 0.0);
@@ -59,13 +61,19 @@ bool isPothole(SuperPixel superPixel, cv::Point2d center, ExtractionThresholds t
 
 
 /*
- * Check if the super pixel is a pothole comparing its mean colour value and the mean colour value
- * of the candidate that contains the super pixel
+ * Check if:
+ *  1) The super pixel is a pothole checking its mean colour value is:
+ *      - less than the mean colour value of the candidate and  greater than mean colour value of the candidate / 1.5;
+ *      - less than the previous selected super pixel mean value;
+ *  2) The number of point of the super pixel is greater than 16*16
  * */
 bool isPothole(SuperPixel superPixel, SuperPixel previousSelected, Scalar meanCandidateColourValue) {
+    double meanDivider = 1.5;
+    double minPixelNumber = 256;
     return superPixel.meanColourValue[0] < meanCandidateColourValue[0]
-           && superPixel.meanColourValue[0] > (meanCandidateColourValue[0] / 1.5)
-           && superPixel.meanColourValue[0] < (previousSelected.meanColourValue[0]);
+           && superPixel.meanColourValue[0] > (meanCandidateColourValue[0] / meanDivider)
+           && superPixel.meanColourValue[0] < (previousSelected.meanColourValue[0])
+           && superPixel.points.size() > minPixelNumber;
 }
 
 void extractCandidateCentroids(Mat &src,

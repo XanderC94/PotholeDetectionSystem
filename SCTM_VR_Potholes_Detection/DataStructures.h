@@ -14,9 +14,7 @@ typedef struct RoadOffsets {
 } RoadOffsets;
 const RoadOffsets defaultOffsets = {0.60, 0.0, 0.8};
 
-
 void printOffsets(RoadOffsets of);
-
 
 typedef struct ExtractionThresholds {
     double Density_Threshold;

@@ -16,8 +16,11 @@ SuperPixel getSuperPixel(Mat src,
     findNonZero(selectionMask, superPixelPoints);
     Scalar meanColourValue = mean(src, selectionMask);
 
+    Mat cleanedContour;
+    auto dilateElem = getStructuringElement(MORPH_ELLIPSE, Size(2, 2));
+    dilate(contour, cleanedContour, dilateElem);
     Mat spContour;
-    contour.copyTo(spContour, selectionMask);
+    cleanedContour.copyTo(spContour, selectionMask);
 
     SuperPixel result = {
             .points = superPixelPoints,

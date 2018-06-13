@@ -84,7 +84,7 @@ Ptr<SuperpixelSLIC> initSuperPixelingSLIC(Mat &src, Mat &contour, Mat &labels, M
     cvtColor(src, imgCIELab, COLOR_BGR2Lab);
 //	imshow("CieLab color space", imgCIELab);
 
-    int regionSize = 32;
+    int regionSize = 48;
     float ruler = 20.0;
     Ptr<SuperpixelSLIC> superpixels = cv::ximgproc::createSuperpixelSLIC(imgCIELab, SLIC::MSLIC, regionSize, ruler);
 

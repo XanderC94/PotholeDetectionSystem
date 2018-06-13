@@ -175,8 +175,7 @@ int initialImageSegmentation(Mat &src,
 /***** FEATURE EXTRACTION SEGMENTATION ****/
 
 /*
- * Select the super pixel that have the minor average
- * value greater tha the total candidate average value
+ * if there isn't a super pixel that is recognized as a pothole the function will return the first superpixel
  * */
 SuperPixel selectPothole(Mat src, int nSuperPixels, Mat labels, Mat contour) {
     SuperPixel selected = getSuperPixel(src, 0, labels, contour);

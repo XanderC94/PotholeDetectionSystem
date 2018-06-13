@@ -1,17 +1,17 @@
 //
 // Created by Matteo Gabellini on 25/05/2018.
 //
-
+#ifndef POTHOLEDETENCTIONSYSTEM_DATASTRUCTURES_H
+#define POTHOLEDETENCTIONSYSTEM_DATASTRUCTURES_H
 
 #include <opencv2/core.hpp>
-
 using namespace cv;
 
 typedef struct RoadOffsets {
     double Horizon_Offset;
     double SLine_X_Offset;
     double SLine_Y_Offset;
-} Offsets;
+} RoadOffsets;
 const RoadOffsets defaultOffsets = {0.60, 0.0, 0.8};
 
 
@@ -37,3 +37,5 @@ typedef struct Features {
 } Features;
 
 void printThresholds(ExtractionThresholds thresholds);
+
+#endif //POTHOLEDETENCTIONSYSTEM_DATASTRUCTURES_H

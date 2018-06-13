@@ -12,6 +12,7 @@
 
 #include "HistogramElaboration.h"
 #include "MathUtils.h"
+#include "DataStructures.h"
 
 using namespace cv;
 using namespace std;

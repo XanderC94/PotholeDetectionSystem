@@ -115,14 +115,14 @@ int extractPossiblePotholes(Mat &src,
     extractCandidateCentroids(src, labels, superpixels->getNumberOfSuperpixels(), candidateCentroids, thresholds, out,
                               mask, offsets);
 
-    imshow(showingWindowPrefix + " src", src);
-    imshow(showingWindowPrefix + " Mean colour mask", out);
-    imshow(showingWindowPrefix + " contour", contour);
-    imshow(showingWindowPrefix + " mask", mask);
+    //imshow(showingWindowPrefix + " src", src);
+    //imshow(showingWindowPrefix + " Mean colour mask", out);
+    //imshow(showingWindowPrefix + " contour", contour);
+    //imshow(showingWindowPrefix + " mask", mask);
 
 //    out.setTo(Scalar(0, 0, 255), contour);
 
-    imshow("Segmentation", out);
+    //imshow("Segmentation", out);
 
     // Dilate to clean possible small black dots into the image "center"
 //    auto dilateElem = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));

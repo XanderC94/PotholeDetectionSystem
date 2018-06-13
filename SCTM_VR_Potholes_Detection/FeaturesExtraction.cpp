@@ -111,11 +111,11 @@ Features candidateFeatureExtraction(Point centroid, Mat sourceImage, Size candid
     //float skewness = calculateSkewnessGrayImage(candidate, averageGreyValue);
     float skewness = calculateSkewnessGrayImageRegion(candidate, selectedSuperPixel.points, averageGreyValue);
 
-
     //Highlights the selected pothole region
-    candidate.setTo(Scalar(0, 0, 255), selectedSuperPixel.selectionMask);
+    //imshow(c_name + " - Result", selectedSuperPixel.superPixelSelection);
 
-    return Features{candidate, histogram, averageGreyValue, contrast, entropy, skewness, energy};
+    return Features{selectedSuperPixel.superPixelSelection, histogram, averageGreyValue, contrast, entropy, skewness,
+                    energy};
 }
 
 FeaturesVectors normalizeFeatures(double minValue, double maxValue, FeaturesVectors notNormalizedFeatures) {

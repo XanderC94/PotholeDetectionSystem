@@ -1,6 +1,12 @@
 //
 // Created by Matteo Gabellini on 25/05/2018.
 //
+
+
+#include <opencv2/core.hpp>
+
+using namespace cv;
+
 typedef struct RoadOffsets {
     double Horizon_Offset;
     double SLine_X_Offset;
@@ -20,5 +26,14 @@ typedef struct ExtractionThresholds {
 
 const ExtractionThresholds defaultThresholds = {0.80, 0.35, 0.60};
 
+typedef struct Features {
+    Mat candidate;
+    Mat histogram;
+    float averageGreyValue;
+    float contrast;
+    float entropy;
+    float skewness;
+    float energy;
+} Features;
 
 void printThresholds(ExtractionThresholds thresholds);

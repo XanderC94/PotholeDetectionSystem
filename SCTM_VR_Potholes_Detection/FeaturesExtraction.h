@@ -16,16 +16,6 @@
 using namespace cv;
 using namespace std;
 
-typedef struct Features {
-    Mat candidate;
-    Mat histogram;
-    float averageGreyValue;
-    float contrast;
-    float entropy;
-    float skewness;
-    float energy;
-} Features;
-
 vector<Features> extractFeatures(Mat sourceImage, vector<Point> centroids, Size candidate_size);
 
 #endif //POTHOLEDETENCTIONSYSTEM_FEATURESEXTRACTION_H

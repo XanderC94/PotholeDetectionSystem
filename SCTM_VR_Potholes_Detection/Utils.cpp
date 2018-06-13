@@ -29,13 +29,13 @@ int resize_all_in(const string parent, const string folder, const int width, con
     return 1;
 }
 
-void portable_mkdir(const char * args) {
+void portable_mkdir(const char *args) {
 
-    #if defined(_WIN32) || defined(_WIN32_WINNT) || defined(_WIN64)
-        mkdir(args);
-    #else
-        mkdir(args, S_IWUSR);
-    #endif
+#if defined(_WIN32) || defined(_WIN32_WINNT) || defined(_WIN64)
+    mkdir(args);
+#else
+    mkdir(args, S_IWUSR);
+#endif
 }
 
 string set_format(string of_file_name_path, string to_new_format, bool use_separator) {

@@ -63,7 +63,6 @@ Features candidateFeatureExtraction(Point centroid, Mat sourceImage, Size candid
     // 1. Switch color-space from RGB to GreyScale
     cvtColor(candidate, candidateGrayScale, CV_BGR2GRAY);
 
-
     // 2. Extract only the pothole region
     Mat candidateForSuperPixeling;
     cvtColor(candidateGrayScale, candidateForSuperPixeling, CV_GRAY2BGR);
@@ -111,14 +110,19 @@ Features candidateFeatureExtraction(Point centroid, Mat sourceImage, Size candid
     //float skewness = calculateSkewnessGrayImage(candidate, averageGreyValue);
     float skewness = calculateSkewnessGrayImageRegion(candidate, selectedSuperPixel.points, averageGreyValue);
 
-
-    //Highlights the selected pothole region
-    candidate.setTo(Scalar(0, 0, 255), selectedSuperPixel.contour);
-//    imshow(c_name + " - Result", candidate);
+    // Highlights the selected pothole region
+    Mat markedCandidate;
+    candidate.copyTo(markedCandidate);
+    markedCandidate.setTo(Scalar(0, 0, 255), selectedSuperPixel.contour);
+//    imshow(c_name + " - Result", markedCandidate);
+//    waitKey();
 //    imshow(c_name + " - Contour", selectedSuperPixel.contour);
 
-    return Features{candidate, histogram, averageGreyValue, contrast, entropy, skewness,
-                    energy};
+    return Features {
+        markedCandidate,
+//        selectedSuperPixel.selectionMask, selectedSuperPixel.contour,
+        histogram, averageGreyValue, contrast, entropy, skewness, energy
+    };
 }
 
 FeaturesVectors normalizeFeatures(double minValue, double maxValue, FeaturesVectors notNormalizedFeatures) {
@@ -180,6 +184,8 @@ vector<Features> extractFeatures(Mat sourceImage, vector<Point> centroids, Size 
 
         normalizedFeatures.push_back(Features{
                 notNormalizedfeatures.at(i).candidate,
+//                notNormalizedfeatures.at(i).mask,
+//                notNormalizedfeatures.at(i).contour,
                 normalizedFeaturesVectors.histograms.at(i),
                 normalizedFeaturesVectors.averageGreyLevels.at(i),
                 normalizedFeaturesVectors.contrasts.at(i),

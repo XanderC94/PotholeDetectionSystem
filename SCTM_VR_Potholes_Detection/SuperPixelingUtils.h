@@ -20,12 +20,14 @@ typedef struct SuperPixel {
     vector<cv::Point> points;
     Mat superPixelSelection;
     Mat1b selectionMask;
+    Mat contour;
     Scalar meanColourValue;
 } SuperPixel;
 
 SuperPixel getSuperPixel(Mat src,
                          int superPixelLabel,
-                         Mat labels);
+                         Mat labels,
+                         Mat contour);
 
 Ptr<SuperpixelLSC> initSuperPixelingLSC(Mat &src,
                                         Mat &contour,

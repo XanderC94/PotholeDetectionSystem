@@ -7,7 +7,8 @@
 
 SuperPixel getSuperPixel(Mat src,
                          int superPixelLabel,
-                         Mat labels) {
+                         Mat labels,
+                         Mat contour) {
     Mat1b selectionMask = (labels == superPixelLabel);
     Mat superPixelSelection;
     src.copyTo(superPixelSelection, selectionMask);
@@ -15,10 +16,14 @@ SuperPixel getSuperPixel(Mat src,
     findNonZero(selectionMask, superPixelPoints);
     Scalar meanColourValue = mean(src, selectionMask);
 
+    Mat spContour;
+    contour.copyTo(spContour, selectionMask);
+
     SuperPixel result = {
             .points = superPixelPoints,
             .superPixelSelection = superPixelSelection,
             .selectionMask = selectionMask,
+            .contour = spContour,
             .meanColourValue = meanColourValue
     };
 

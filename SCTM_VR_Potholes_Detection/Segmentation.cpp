@@ -71,6 +71,7 @@ bool isPothole(SuperPixel superPixel, SuperPixel previousSelected, Scalar meanCa
 void extractCandidateCentroids(Mat &src,
                                Mat labels,
                                int nSuperPixels,
+                               Mat contour,
                                vector<Point> &candidateCentroids,
                                ExtractionThresholds thresolds,
                                Mat &meanColourMask,
@@ -81,7 +82,7 @@ void extractCandidateCentroids(Mat &src,
     for (int l = 0; l < nSuperPixels; ++l) {
 //      Point translated_((Center.x + translation_.x), (Center.y + translation_.y));
 //      Point shrinked_(translated_.x*shrink_.x, translated_.x*shrink_.y);
-        SuperPixel currentSuperPixel = getSuperPixel(src, l, labels);
+        SuperPixel currentSuperPixel = getSuperPixel(src, l, labels, contour);
 
         cv::Point2d center = calculateSuperPixelCenter(currentSuperPixel.points);
         Scalar color_mask_value = Scalar(0, 0, 0);
@@ -112,7 +113,8 @@ int extractPossiblePotholes(Mat &src,
 
     //imshow("labels", labels);
     Mat out;
-    extractCandidateCentroids(src, labels, superpixels->getNumberOfSuperpixels(), candidateCentroids, thresholds, out,
+    extractCandidateCentroids(src, labels, superpixels->getNumberOfSuperpixels(), contour, candidateCentroids,
+                              thresholds, out,
                               mask, offsets);
 
     //imshow(showingWindowPrefix + " src", src);
@@ -168,13 +170,13 @@ int initialImageSegmentation(Mat &src,
  * Select the super pixel that have the minor average
  * value greater tha the total candidate average value
  * */
-SuperPixel selectPothole(Mat src, int nSuperPixels, Mat labels) {
-    SuperPixel selected = getSuperPixel(src, 0, labels);
+SuperPixel selectPothole(Mat src, int nSuperPixels, Mat labels, Mat contour) {
+    SuperPixel selected = getSuperPixel(src, 0, labels, contour);
     double averagePixelValue = (double) mean(src)[0];
     //vector<SuperPixel> possiblePotholes = vector<SuperPixel>();
     //Select all possible potholes
     for (int l = 0; l < nSuperPixels; ++l) {
-        SuperPixel currSp = getSuperPixel(src, l, labels);
+        SuperPixel currSp = getSuperPixel(src, l, labels, contour);
         //Point2d center = calculateSuperPixelCenter(currSp.points);
         if (isPothole(currSp, selected, averagePixelValue)) {
             selected = currSp;
@@ -208,7 +210,7 @@ SuperPixel extractPotholeRegionFromCandidate(Mat &src, string candidateName) {
     Mat contour;
     Ptr<SuperpixelSLIC> superPixels = initSuperPixelingSLIC(src, contour, labels, mask);
 
-    SuperPixel selected = selectPothole(src, superPixels->getNumberOfSuperpixels(), labels);
+    SuperPixel selected = selectPothole(src, superPixels->getNumberOfSuperpixels(), labels, contour);
 
     //cout << "SP, Size, Area, Variance, Density" << endl;
     return selected;

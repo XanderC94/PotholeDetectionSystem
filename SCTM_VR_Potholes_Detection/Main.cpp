@@ -82,8 +82,6 @@ int main(int argc, char*argv[]) {
 
     //Save cpu tick count at the program start
     double timeElapsed = (double) getTickCount();
-    bool isTraining = false;
-
 
     if (argc < 2) {
         return 0;
@@ -127,7 +125,7 @@ int main(int argc, char*argv[]) {
     timeElapsed = ((double) getTickCount() - timeElapsed) / getTickFrequency();
     cout << "Times passed in seconds: " << timeElapsed << endl;
 
-    //waitKey();
+//    waitKey();
     return 1;
 }
 

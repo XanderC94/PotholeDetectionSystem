@@ -10,23 +10,41 @@ SuperPixel getSuperPixel(Mat src,
                          Mat labels,
                          Mat contour) {
     Mat1b selectionMask = (labels == superPixelLabel);
+
+//    Mat dilatedMask;
+//    auto dilateElem = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));
+//    dilate(selectionMask, dilatedMask, dilateElem);
+    vector<vector<Point>> tmp;
+    Mat maskContours = Mat::zeros(src.rows, src.cols, CV_8UC1);
+    findContours(selectionMask, tmp, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+    drawContours(maskContours, tmp, -1, Scalar(255));
+//    approxPolyDP(maskContours, maskContours, 0.5, true);
+
     Mat superPixelSelection;
     src.copyTo(superPixelSelection, selectionMask);
     vector<cv::Point> superPixelPoints;
     findNonZero(selectionMask, superPixelPoints);
     Scalar meanColourValue = mean(src, selectionMask);
 
-    Mat cleanedContour;
-    auto dilateElem = getStructuringElement(MORPH_ELLIPSE, Size(2, 2));
-    dilate(contour, cleanedContour, dilateElem);
-    Mat spContour;
-    cleanedContour.copyTo(spContour, selectionMask);
+//    Mat cleanedContour;
+//    auto dilateElem = getStructuringElement(MORPH_ELLIPSE, Size(2, 2));
+//    dilate(contour, cleanedContour, dilateElem);
+//    Mat spContour;
+//    contour.copyTo(spContour, selectionMask);
+
+//    if (src.rows < 64) {
+//        Mat lalala;
+//        src.copyTo(lalala);
+//        lalala.setTo(Scalar(0, 0, 255), maskContours);
+//        imshow("blabla", lalala);
+//        waitKey();
+//    }
 
     SuperPixel result = {
             .points = superPixelPoints,
             .superPixelSelection = superPixelSelection,
             .selectionMask = selectionMask,
-            .contour = spContour,
+            .contour = maskContours,
             .meanColourValue = meanColourValue
     };
 

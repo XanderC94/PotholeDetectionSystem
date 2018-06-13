@@ -161,6 +161,8 @@ void saveFeatures(const vector<Features> &ft, const string saveDirectory, const 
 
         cout << "Saving candidate image " << c_name << endl;
 
+//        imshow(c_name, f.candidate);
+//        waitKey();
         imwrite(c_name, f.candidate);
 
     }

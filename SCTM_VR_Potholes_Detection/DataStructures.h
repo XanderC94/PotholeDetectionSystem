@@ -28,6 +28,8 @@ const ExtractionThresholds defaultThresholds = {0.80, 0.35, 0.60};
 
 typedef struct Features {
     Mat candidate;
+//    Mat mask;
+//    Mat contour;
     Mat histogram;
     float averageGreyValue;
     float contrast;

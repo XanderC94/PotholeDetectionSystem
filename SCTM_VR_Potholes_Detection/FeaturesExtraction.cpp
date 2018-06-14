@@ -32,7 +32,6 @@ Gradient calculateGradient(Mat &candidate) {
     return result;
 }
 
-
 /*
 *  Feature extraction from a candidate:
 *  1. Candidate will be converted to greyscale
@@ -46,12 +45,10 @@ Gradient calculateGradient(Mat &candidate) {
 * */
 Features candidateFeatureExtraction(Point centroid, Mat sourceImage, Size candidate_size) {
     //tlc (top left corner) brc(bottom right corner)
-    auto tlc_x = centroid.x - candidate_size.width * 0.5;
-    auto tlc_y = centroid.y - candidate_size.height * 0.5;
     auto brc_x = centroid.x + candidate_size.width * 0.5;
     auto brc_y = centroid.y + candidate_size.height * 0.5;
 
-    auto tlc = Point2d(tlc_x < 0 ? 0 : tlc_x, tlc_y < 0 ? 0 : tlc_y);
+    auto tlc = calculateTopLeftCorner(centroid, candidate_size);
     auto brc = Point2d(brc_x > sourceImage.cols - 1 ? sourceImage.cols : brc_x,
                        brc_y > sourceImage.rows - 1 ? sourceImage.rows : brc_y);
 

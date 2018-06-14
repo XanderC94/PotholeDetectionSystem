@@ -25,6 +25,16 @@ double GaussianEllipseFunction3D(cv::Point P,
 
 }
 
+
+Point2d calculateTopLeftCorner(Point centroid, Size candidate_size) {
+    auto tlc_x = centroid.x - candidate_size.width * 0.5;
+    auto tlc_y = centroid.y - candidate_size.height * 0.5;
+
+    auto tlc = Point2d(tlc_x < 0 ? 0 : tlc_x, tlc_y < 0 ? 0 : tlc_y);
+
+    return tlc;
+}
+
 float calculateSkewnessGrayImage(Mat image, float averageGrayVal) {
     float result = 0.0;
     for (int i = 0; i < image.rows; i++) {

@@ -12,12 +12,8 @@ using namespace std;
 
 using namespace cv::ml;
 
-enum CLASSES {
-	NORMAL, // 0
-	POTHOLE	// 1
-};
-
 vector<Features> preClassification (const string target) {
+
     auto centroids = vector<Point>();
 
     auto candidate_size = Size(64, 64);

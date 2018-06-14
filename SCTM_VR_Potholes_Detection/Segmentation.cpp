@@ -29,6 +29,29 @@ void preprocessing(Mat &src, Mat &resizedImage, const double Horizon_Offset) {
     cout << "Finished." << endl;
 }
 
+Scalar_<float> RGBMean(const Mat &src) {
+
+    auto mean = Scalar_<float>(0.0f, 0.0f, 0.0f);
+
+    for (int r = 0; r < src.rows; ++r) {
+        for (int c = 0; c < src.cols; ++c) {
+            for (int channel = 0; channel < 3; ++channel) {
+                mean.col(0).row(channel) += (float)
+            }
+        }
+    }
+
+    return mean;
+}
+
+Scalar_<float> RGBStandardDeviation(const Mat &src) {
+    return Scalar_<float>();
+}
+
+Mat RoadSegmentation(const Mat src) {
+
+}
+
 bool isRoad(Mat src, RoadOffsets offsets, Point2d center) {
     // How to evaluate offsets in order to separate road super pixels?
     // Or directly identify RoI (Region of interest) where a pothole will be more likely detected?

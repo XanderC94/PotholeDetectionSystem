@@ -35,6 +35,15 @@ Point2d calculateTopLeftCorner(Point centroid, Size candidate_size) {
     return tlc;
 }
 
+Point2d calculateBottomRightCorner(Point centroid, Mat sourceImage, Size candidate_size) {
+    auto brc_x = centroid.x + candidate_size.width * 0.5;
+    auto brc_y = centroid.y + candidate_size.height * 0.5;
+
+    auto brc = Point2d(brc_x > sourceImage.cols - 1 ? sourceImage.cols : brc_x,
+                       brc_y > sourceImage.rows - 1 ? sourceImage.rows : brc_y);
+    return brc;
+}
+
 float calculateSkewnessGrayImage(Mat image, float averageGrayVal) {
     float result = 0.0;
     for (int i = 0; i < image.rows; i++) {

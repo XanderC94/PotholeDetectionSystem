@@ -45,12 +45,8 @@ Gradient calculateGradient(Mat &candidate) {
 * */
 Features candidateFeatureExtraction(Point centroid, Mat sourceImage, Size candidate_size) {
     //tlc (top left corner) brc(bottom right corner)
-    auto brc_x = centroid.x + candidate_size.width * 0.5;
-    auto brc_y = centroid.y + candidate_size.height * 0.5;
-
     auto tlc = calculateTopLeftCorner(centroid, candidate_size);
-    auto brc = Point2d(brc_x > sourceImage.cols - 1 ? sourceImage.cols : brc_x,
-                       brc_y > sourceImage.rows - 1 ? sourceImage.rows : brc_y);
+    auto brc = calculateBottomRightCorner(centroid, sourceImage, candidate_size);
 
     auto candidate = sourceImage(Rect(tlc, brc));
     auto c_name = "Candidate @ (" + to_string(centroid.x) + ", " + to_string(centroid.y) + ")";

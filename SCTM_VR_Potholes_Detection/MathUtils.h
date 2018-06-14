@@ -16,6 +16,10 @@ double GaussianEllipseFunction3D(cv::Point P,
                                  double A = 1.0,
                                  double Theta = 0.0);
 
+Point2d calculateTopLeftCorner(Point centroid, Size candidate_size);
+
+Point2d calculateBottomRightCorner(Point centroid, Mat sourceImage, Size candidate_size);
+
 float calculateSkewnessGrayImage(Mat image, float averageColorVal);
 
 float calculateSkewnessGrayImageRegion(Mat image, vector<Point> region, float averageGrayVal);

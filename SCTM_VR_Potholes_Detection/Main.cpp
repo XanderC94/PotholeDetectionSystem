@@ -14,7 +14,7 @@ using namespace cv::ml;
 
 vector<Features> preClassification (const string target) {
 
-    auto superPixels = vector<SuperPixel>();
+    auto candidateSuperPixels = vector<SuperPixel>();
 
     auto candidate_size = Size(128, 128);
 
@@ -29,7 +29,7 @@ vector<Features> preClassification (const string target) {
     *	2. Cropped under the Horizon Line
     *   3. Segmented with superpixeling
     *   4. Superpixels in the RoI is selected using Analytic Rect Function
-    *	(in Candidates will be placed the set on superPixels that survived segmentation)
+    *	(in Candidates will be placed the set on candidateSuperPixels that survived segmentation)
     */
 
     RoadOffsets offsets = {
@@ -39,7 +39,7 @@ vector<Features> preClassification (const string target) {
             .SLine_Y_Offset = 0.8
     };
 
-    ExtractionThresholds threshold = {
+    ExtractionThresholds thresholds = {
             .Density_Threshold = 0.60, // OK, do not change
             .Variance_Threshold = 0.3,
             .Gauss_RoadThreshold = 0.60,
@@ -49,7 +49,7 @@ vector<Features> preClassification (const string target) {
 
     int superPixelEdge = 32;
 
-    printThresholds(threshold);
+    printThresholds(thresholds);
     printOffsets(offsets);
 
     /*--------------------------------- Pre-Processing Phase ------------------------------*/
@@ -66,14 +66,17 @@ vector<Features> preClassification (const string target) {
     /*--------------------------------- First Segmentation Phase ------------------------------*/
 
     cout << "Segmentation... " << endl;
-    extractRegionsOfInterest(src, superPixels, superPixelEdge, threshold, offsets);
+    // NB: Init once, use many times!
+    auto superPixeler = initSuperPixelingLSC(src, superPixelEdge);
+    extractRegionsOfInterest(superPixeler, src, candidateSuperPixels,
+                             superPixelEdge, thresholds, offsets);
     cout << "Finished." << endl;
 
-    cout << "Found " << superPixels.size() << " candidates." << endl;
+    cout << "Found " << candidateSuperPixels.size() << " candidates." << endl;
 
     /*--------------------------------- End First Segmentation Phase ------------------------------*/
 
-//    for (auto sp: superPixels) {
+//    for (auto sp: candidateSuperPixels) {
 //        imshow("SP" + to_string(sp.label), sp.superPixelSelection);
 //    }
 //
@@ -82,7 +85,7 @@ vector<Features> preClassification (const string target) {
     /*--------------------------------- Feature Extraction Phase ------------------------------*/
 
     cout << "Feature Extraction -- Starting " << endl;
-    auto features = extractFeatures(src, superPixels, candidate_size);
+    auto features = extractFeatures(src, candidateSuperPixels, candidate_size);
     cout << "Feature Extraction -- Finished." << endl;
 
     /*--------------------------------- End Feature Extraction Phase ------------------------------*/

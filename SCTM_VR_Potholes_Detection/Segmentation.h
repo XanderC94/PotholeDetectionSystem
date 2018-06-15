@@ -10,7 +10,8 @@ using namespace std;
 
 void preprocessing(Mat &src, Mat &processedImage, const double Horizon_Offset);
 
-int extractRegionsOfInterest(const Mat &src, vector<SuperPixel> &candidateSuperpixels,
+int extractRegionsOfInterest(const Ptr<SuperpixelLSC> &algorithm,
+                             const Mat &src, vector<SuperPixel> &candidateSuperpixels,
                              const int superPixelEdge = 32,
                              const ExtractionThresholds thresholds = defaultThresholds,
                              const RoadOffsets offsets = defaultOffsets);

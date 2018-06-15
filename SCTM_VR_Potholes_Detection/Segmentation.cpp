@@ -70,22 +70,22 @@ bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel 
 
     double density = calculateSuperPixelDensity(superPixel.points);
 
-    if ((ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.colourRatioThresholdMin &&
-        (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.colourRatioThresholdMax) {
-
-//        Mat tmp; src.copyTo(tmp, selectionMask);
-//        tmp.setTo(Scalar(0, 0, 255), (labels == superPixel.label));
-//        imshow("TMask " + to_string(superPixel.label), tmp);
-//        waitKey();
-
-        cout << "SP n° " << superPixel.label
-//             << " \t| Mean: " << superPixel.meanColourValue
-//             << " \t| NeighborsMean: " << neighborsMeanColourValue
-             << " \t| Ratio: [" << ratioDark[0] << ", " << ratioDark[1] << ", " << ratioDark[2] << "]"
-             << " \t| Density:" << density
-//             << " \t| Deviation:" << deviation
-             << endl;
-    }
+//    if ((ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.colourRatioThresholdMin &&
+//        (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.colourRatioThresholdMax) {
+//
+////        Mat tmp; src.copyTo(tmp, selectionMask);
+////        tmp.setTo(Scalar(0, 0, 255), (labels == superPixel.label));
+////        imshow("TMask " + to_string(superPixel.label), tmp);
+////        waitKey();
+//
+//        cout << "SP n° " << superPixel.label
+////             << " \t| Mean: " << superPixel.meanColourValue
+////             << " \t| NeighborsMean: " << neighborsMeanColourValue
+//             << " \t| Ratio: [" << ratioDark[0] << ", " << ratioDark[1] << ", " << ratioDark[2] << "]"
+//             << " \t| Density:" << density
+////             << " \t| Deviation:" << deviation
+//             << endl;
+//    }
 
     return density < thresholds.Density_Threshold &&
 //            (deviation.x > thresholds.Variance_Threshold || deviation.y > thresholds.Variance_Threshold) &&
@@ -122,18 +122,24 @@ set<int> findNeighbors(const Point &candidate, const Mat &labels, const int edge
     return neighborhood;
 }
 
-int extractRegionsOfInterest(const Mat &src, vector<SuperPixel> &candidateSuperpixels,
+int extractRegionsOfInterest(const Ptr<SuperpixelLSC> &superPixeler,
+                             const Mat &src, vector<SuperPixel> &candidateSuperpixels,
                              const int superPixelEdge,
                              const ExtractionThresholds thresholds,
                              const RoadOffsets offsets) {
 
     Mat contour, mask, labels, meanColourMask;
 
-    Ptr<SuperpixelLSC> superpixels = initSuperPixelingLSC(src, contour, mask, labels, superPixelEdge);
+    superPixeler->iterate(10);
+    superPixeler->getLabelContourMask(contour);
+    superPixeler->getLabels(labels);
+
+    src.copyTo(mask);
+    mask.setTo(Scalar(255, 255, 255));
 
     src.copyTo(meanColourMask);
 
-    for (int superPixelLabel = 0; superPixelLabel < superpixels->getNumberOfSuperpixels(); ++superPixelLabel) {
+    for (int superPixelLabel = 0; superPixelLabel < superPixeler->getNumberOfSuperpixels(); ++superPixelLabel) {
 
         SuperPixel superPixel = getSuperPixel(src, superPixelLabel, labels, contour);
 

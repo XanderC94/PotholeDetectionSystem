@@ -4,7 +4,6 @@
 
 #include "FeaturesExtraction.h"
 #include "Segmentation.h"
-#include "GradientElaboration.h"
 
 using namespace cv;
 using namespace std;
@@ -95,13 +94,14 @@ Features candidateFeatureExtraction(const Point centroid, const Mat &src, const 
 //    imshow(c_name + " - Contour", selectedSuperPixel.contour);
 
     return Features {
-        candidate,
+            candidate,
 //        selectedSuperPixel.selectionMask, selectedSuperPixel.contour,
         histogram, averageGreyValue, contrast, entropy, skewness, energy
     };
 }
 
-FeaturesVectors normalizeFeatures(const double minValue, const double maxValue, const FeaturesVectors &notNormalizedFeatures) {
+FeaturesVectors
+normalizeFeatures(const double minValue, const double maxValue, const FeaturesVectors &notNormalizedFeatures) {
     FeaturesVectors normalizedFeatures;
 
     for (auto notNormHistogram : notNormalizedFeatures.histograms) {
@@ -124,7 +124,8 @@ FeaturesVectors normalizeFeatures(const double minValue, const double maxValue, 
 }
 
 
-vector<Features> extractFeatures(const Mat &src, const vector<SuperPixel> &candidateSuperPixels, const Size candidate_size) {
+vector<Features>
+extractFeatures(const Mat &src, const vector<SuperPixel> &candidateSuperPixels, const Size candidate_size) {
 
 //    auto candidates = vector<Mat>();
     auto notNormalizedfeatures = vector<Features>();
@@ -132,13 +133,13 @@ vector<Features> extractFeatures(const Mat &src, const vector<SuperPixel> &candi
 
     FeaturesVectors candidatesFeaturesVectors;
 
-    Mat imageGrayScale;
-    cvtColor(sourceImage, imageGrayScale, CV_BGR2GRAY);
-    Gradient grad = calculateGradient(imageGrayScale);
+    //Mat imageGrayScale;
+    //cvtColor(src, imageGrayScale, CV_BGR2GRAY);
+    //Gradient grad = calculateGradient(imageGrayScale);
     //imwrite("../data/gradiente/" + c_name + " gradientey.bmp", resulty);
-    imshow("Gradient module", grad.module);
-    imshow("Gradient x", grad.x);
-    imshow("Gradient y", grad.y);
+    //imshow("Gradient module", grad.module);
+    //imshow("Gradient x", grad.x);
+    //imshow("Gradient y", grad.y);
 
     /*------------------------Candidate Extraction---------------------------*/
     for (auto candidate : candidateSuperPixels) {

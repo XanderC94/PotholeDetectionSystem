@@ -3,7 +3,6 @@
 
 #include <iostream>
 #include <opencv2/photo.hpp>
-#include <set>
 
 using namespace cv;
 using namespace std;
@@ -52,7 +51,8 @@ bool isRoad(Mat src, RoadOffsets offsets, Point2d center) {
  *      - checking if its density il less than the specified density threshold
  *      - checking if the variance on x axis or y axis is greater than the variance threshold
  * */
-bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel &superPixel, ExtractionThresholds thresholds) {
+bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel &superPixel,
+                            ExtractionThresholds thresholds) {
 
     Mat1b selectionMask = (labels == -1);
 
@@ -66,10 +66,10 @@ bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel 
     ratioDark[1] = neighborsMeanColourValue.val[1] / superPixel.meanColourValue.val[1];
     ratioDark[2] = neighborsMeanColourValue.val[2] / superPixel.meanColourValue.val[2];
 
-    Point2d deviation =  calculateSuperPixelVariance(superPixel.points, superPixel.center);
+    Point2d deviation = calculateSuperPixelVariance(superPixel.points, superPixel.center);
     double density = calculateSuperPixelDensity(superPixel.points);
 
-    if ((ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3> thresholds.colourRatioThresholdMin &&
+    if ((ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.colourRatioThresholdMin &&
         (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.colourRatioThresholdMax) {
 
 //        Mat tmp; src.copyTo(tmp, selectionMask);
@@ -86,9 +86,9 @@ bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel 
     }
 
     return density < thresholds.Density_Threshold &&
-            (deviation.x > thresholds.Variance_Threshold || deviation.y > thresholds.Variance_Threshold) &&
-            (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.colourRatioThresholdMin &&
-            (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.colourRatioThresholdMax;
+           (deviation.x > thresholds.Variance_Threshold || deviation.y > thresholds.Variance_Threshold) &&
+           (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.colourRatioThresholdMin &&
+           (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.colourRatioThresholdMax;
 }
 
 set<int> findNeighbors(const Point &candidate, const Mat &labels, const int edge) {
@@ -111,7 +111,7 @@ set<int> findNeighbors(const Point &candidate, const Mat &labels, const int edge
         if (neighbor.y > 0 && neighbor.x > 0 && neighbor.y < labels.rows - 1 && neighbor.x < labels.cols - 1) {
             // Get the label of the neighbor
             int n = labels.at<int>(neighbor);
-            if (n > 0 && n!= labels.at<int>(candidate)) {
+            if (n > 0 && n != labels.at<int>(candidate)) {
                 neighborhood.insert(labels.at<int>(neighbor));
             }
         }
@@ -160,7 +160,7 @@ int extractRegionsOfInterest(const Mat &src, vector<SuperPixel> &candidateSuperp
 
     Ptr<SuperpixelLSC> superpixels = initSuperPixelingLSC(src, contour, mask, labels, superPixelEdge);
 
-    extractCandidateCentroids(src, labels,  candidateSuperpixels, out, mask,
+    extractCandidateCentroids(src, labels, candidateSuperpixels, out, mask,
                               superpixels->getNumberOfSuperpixels(), contour,
                               thresholds, offsets, superPixelEdge);
 

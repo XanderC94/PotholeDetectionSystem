@@ -6,7 +6,6 @@
 #include "FeaturesExtraction.h"
 #include "SVM.h"
 #include "Utils.h"
-#include "HOG.h"
 
 using namespace cv;
 using namespace std;
@@ -141,7 +140,7 @@ int main(int argc, char*argv[]) {
     timeElapsed = ((double) getTickCount() - timeElapsed) / getTickFrequency();
     cout << "Times passed in seconds: " << timeElapsed << endl;
 
-    waitKey();
+    //waitKey();
     return 1;
 }
 

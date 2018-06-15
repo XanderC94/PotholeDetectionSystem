@@ -25,9 +25,9 @@ typedef struct HOGConfig {
 
 const HOGConfig defaultConfig = {9, Size(64, 64), Size(8, 8), Size(2, 2), Size(4, 4), Size(2, 2), Size(0, 0)};
 
-void HOG (const Mat &src, vector<float> &descriptors, vector<Point> &locations, const HOGConfig config = defaultConfig);
+void HOG(const Mat &src, vector<float> &descriptors, vector<Point> &locations, const HOGConfig config = defaultConfig);
 
-Mat get_hogdescriptor_visual_image (const Mat& src, const vector<float>& descriptors,
+Mat get_hogdescriptor_visual_image(const Mat &src, const vector<float> &descriptors,
                                    const Size window, const Size cell, const int bins,
                                    const int scaling_factor = 1, const double grad_viz = 5,
                                    const bool isGrayscale = false, bool onlyMaxGrad = true);

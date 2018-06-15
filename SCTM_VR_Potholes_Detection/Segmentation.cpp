@@ -3,7 +3,6 @@
 
 #include <iostream>
 #include <opencv2/photo.hpp>
-#include <set>
 
 using namespace cv;
 using namespace std;
@@ -52,7 +51,8 @@ bool isRoad(const int H, const int W, const RoadOffsets offsets, const Point2d c
  *      - checking if its density il less than the specified density threshold
  *      - checking if the variance on x axis or y axis is greater than the variance threshold
  * */
-bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel &superPixel, ExtractionThresholds thresholds) {
+bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel &superPixel,
+                            ExtractionThresholds thresholds) {
 
     Mat1b selectionMask = (labels == -1);
 
@@ -67,6 +67,7 @@ bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel 
     ratioDark[2] = neighborsMeanColourValue.val[2] / superPixel.meanColourValue.val[2];
 
 //    Point2d deviation =  calculateSuperPixelVariance(superPixel.points, superPixel.center);
+
     double density = calculateSuperPixelDensity(superPixel.points);
 
     if ((ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.colourRatioThresholdMin &&
@@ -112,7 +113,7 @@ set<int> findNeighbors(const Point &candidate, const Mat &labels, const int edge
         if (neighbor.y > 0 && neighbor.x > 0 && neighbor.y < labels.rows - 1 && neighbor.x < labels.cols - 1) {
             // Get the label of the neighbor
             int n = labels.at<int>(neighbor);
-            if (n > 0 && n!= labels.at<int>(candidate)) {
+            if (n > 0 && n != labels.at<int>(candidate)) {
                 neighborhood.insert(labels.at<int>(neighbor));
             }
         }

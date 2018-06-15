@@ -5,13 +5,13 @@
 #include <opencv2/objdetect.hpp>
 #include "HOG.h"
 
-Mat get_hogdescriptor_visual_image(const Mat& src, const vector< float>& descriptors,
+Mat get_hogdescriptor_visual_image(const Mat &src, const vector<float> &descriptors,
                                    const Size window, const Size cell, const int bins,
                                    const int scaling_factor, const double grad_viz,
                                    const bool isGrayscale, bool onlyMaxGrad) {
     Mat visual_image;
     if (scaling_factor == 1) {
-        resize(src, visual_image, Size(src.cols*scaling_factor, src.rows*scaling_factor));
+        resize(src, visual_image, Size(src.cols * scaling_factor, src.rows * scaling_factor));
     }
 
     if (isGrayscale) {
@@ -25,18 +25,16 @@ Mat get_hogdescriptor_visual_image(const Mat& src, const vector< float>& descrip
     int cells_in_x_dir = window.width / cell.width;
     int cells_in_y_dir = window.height / cell.height;
     int totalnrofcells = cells_in_x_dir * cells_in_y_dir;
-    float*** gradientStrengths = new float**[cells_in_y_dir];
-    int** cellUpdateCounter = new int*[cells_in_y_dir];
-    for (int y = 0; y< cells_in_y_dir; y++)
-    {
-        gradientStrengths[y] = new float*[cells_in_x_dir];
+    float ***gradientStrengths = new float **[cells_in_y_dir];
+    int **cellUpdateCounter = new int *[cells_in_y_dir];
+    for (int y = 0; y < cells_in_y_dir; y++) {
+        gradientStrengths[y] = new float *[cells_in_x_dir];
         cellUpdateCounter[y] = new int[cells_in_x_dir];
-        for (int x = 0; x< cells_in_x_dir; x++)
-        {
+        for (int x = 0; x < cells_in_x_dir; x++) {
             gradientStrengths[y][x] = new float[bins];
             cellUpdateCounter[y][x] = 0;
 
-            for (int bin = 0; bin< bins; bin++)
+            for (int bin = 0; bin < bins; bin++)
                 gradientStrengths[y][x][bin] = 0.0;
         }
     }
@@ -51,27 +49,22 @@ Mat get_hogdescriptor_visual_image(const Mat& src, const vector< float>& descrip
     int cellx = 0;
     int celly = 0;
 
-    for (int blockx = 0; blockx< blocks_in_x_dir; blockx++)
-    {
-        for (int blocky = 0; blocky< blocks_in_y_dir; blocky++)
-        {
+    for (int blockx = 0; blockx < blocks_in_x_dir; blockx++) {
+        for (int blocky = 0; blocky < blocks_in_y_dir; blocky++) {
             // 4 cells per block ...
-            for (int cellNr = 0; cellNr< 4; cellNr++)
-            {
+            for (int cellNr = 0; cellNr < 4; cellNr++) {
                 // compute corresponding cell nr
                 cellx = blockx;
                 celly = blocky;
 
                 if (cellNr == 1) celly++;
                 if (cellNr == 2) cellx++;
-                if (cellNr == 3)
-                {
+                if (cellNr == 3) {
                     cellx++;
                     celly++;
                 }
 
-                for (int bin = 0; bin< bins; bin++)
-                {
+                for (int bin = 0; bin < bins; bin++) {
                     float gradientStrength = descriptors[descriptorDataIdx];
                     descriptorDataIdx++;
 
@@ -93,16 +86,13 @@ Mat get_hogdescriptor_visual_image(const Mat& src, const vector< float>& descrip
 
 
     // compute average gradient strengths
-    for (int celly = 0; celly< cells_in_y_dir; celly++)
-    {
-        for (int cellx = 0; cellx< cells_in_x_dir; cellx++)
-        {
+    for (int celly = 0; celly < cells_in_y_dir; celly++) {
+        for (int cellx = 0; cellx < cells_in_x_dir; cellx++) {
 
-            float NrUpdatesForThisCell = (float)cellUpdateCounter[celly][cellx];
+            float NrUpdatesForThisCell = (float) cellUpdateCounter[celly][cellx];
 
             // compute average gradient strenghts for each gradient bin direction
-            for (int bin = 0; bin< bins; bin++)
-            {
+            for (int bin = 0; bin < bins; bin++) {
                 gradientStrengths[celly][cellx][bin] /= NrUpdatesForThisCell;
             }
         }
@@ -112,10 +102,8 @@ Mat get_hogdescriptor_visual_image(const Mat& src, const vector< float>& descrip
     cout << "descriptorDataIdx = " << descriptorDataIdx << endl;
 
     // draw cells
-    for (int celly = 0; celly< cells_in_y_dir; celly++)
-    {
-        for (int cellx = 0; cellx< cells_in_x_dir; cellx++)
-        {
+    for (int celly = 0; celly < cells_in_y_dir; celly++) {
+        for (int cellx = 0; cellx < cells_in_x_dir; cellx++) {
             int drawX = cellx * cell.width;
             int drawY = celly * cell.height;
 
@@ -123,14 +111,15 @@ Mat get_hogdescriptor_visual_image(const Mat& src, const vector< float>& descrip
             int my = drawY + cell.height / 2;
 
             rectangle(visual_image,
-                      Point(drawX*scaling_factor, drawY*scaling_factor),
-                      Point((drawX + cell.width)*scaling_factor,
-                            (drawY + cell.height)*scaling_factor),
+                      Point(drawX * scaling_factor, drawY * scaling_factor),
+                      Point((drawX + cell.width) * scaling_factor,
+                            (drawY + cell.height) * scaling_factor),
                       CV_RGB(100, 100, 100),
                       1);
 
             if (onlyMaxGrad) {
-                double maxGrad = 0.0; int idx = 0;
+                double maxGrad = 0.0;
+                int idx = 0;
 
                 for (int bin = 0; bin < bins; bin++) {
                     if (gradientStrengths[celly][cellx][bin] > maxGrad) {
@@ -159,15 +148,13 @@ Mat get_hogdescriptor_visual_image(const Mat& src, const vector< float>& descrip
 
                 // draw gradient visual_imagealization
                 line(visual_image,
-                     Point(x1*scale, y1*scale),
-                     Point(x2*scale, y2*scale),
+                     Point(x1 * scale, y1 * scale),
+                     Point(x2 * scale, y2 * scale),
                      CV_RGB(0, 0, 255),
                      1);
-            }
-            else {
+            } else {
                 // draw in each cell all 9 gradient strengths
-                for (int bin = 0; bin < bins; bin++)
-                {
+                for (int bin = 0; bin < bins; bin++) {
                     float currentGradStrength = gradientStrengths[celly][cellx][bin];
 
                     // no line to draw?
@@ -190,8 +177,8 @@ Mat get_hogdescriptor_visual_image(const Mat& src, const vector< float>& descrip
 
                     // draw gradient visual_imagealization
                     line(visual_image,
-                         Point(x1*scale, y1*scale),
-                         Point(x2*scale, y2*scale),
+                         Point(x1 * scale, y1 * scale),
+                         Point(x2 * scale, y2 * scale),
                          CV_RGB(0, 0, 255),
                          1);
 
@@ -203,10 +190,8 @@ Mat get_hogdescriptor_visual_image(const Mat& src, const vector< float>& descrip
 
 
     // don't forget to free memory allocated by helper data structures!
-    for (int y = 0; y< cells_in_y_dir; y++)
-    {
-        for (int x = 0; x< cells_in_x_dir; x++)
-        {
+    for (int y = 0; y < cells_in_y_dir; y++) {
+        for (int x = 0; x < cells_in_x_dir; x++) {
             delete[] gradientStrengths[y][x];
         }
         delete[] gradientStrengths[y];
@@ -219,7 +204,7 @@ Mat get_hogdescriptor_visual_image(const Mat& src, const vector< float>& descrip
 
 }
 
-void HOG (const Mat &src, vector<float> &descriptors, vector<Point> &locations, const HOGConfig config) {
+void HOG(const Mat &src, vector<float> &descriptors, vector<Point> &locations, const HOGConfig config) {
 
     Mat grayscale;
     cv::HOGDescriptor hog = HOGDescriptor(config.window, config.block, config.block_stride, config.cell, config.bin);

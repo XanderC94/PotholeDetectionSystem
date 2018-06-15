@@ -158,7 +158,7 @@ void saveFeatures(const vector<Features> &ft, const string saveDirectory, const 
         save_file << "Skewness:"   << f.skewness << ";";
         save_file << "AvgGreyVal:" << f.averageGreyValue << ";";
         save_file << "Energy:"     << f.energy << ";";
-        save_file << "Entropy:"    << f.entropy << endl; //<< ";";
+        save_file << "Entropy:" << f.entropy << endl; //<< ";";
 //        save_file << "Histogram:"  << f.histogram << endl;
 
 //        imshow(c_name, f.candidate);

@@ -18,20 +18,6 @@ typedef struct FeaturesVectors {
     vector<float> energies = vector<float>();
 } FeaturesVectors;
 
-typedef struct Gradient {
-    Mat x;
-    Mat y;
-} Gradient;
-
-Gradient calculateGradient(const Mat &candidate) {
-    Mat resultx;
-    Mat resulty;
-    //cv::Sobel(candidate, result, CV_64F, 0 , 1, 5);
-    cv::spatialGradient(candidate, resultx, resulty);
-    Gradient result = {resultx, resulty};
-    return result;
-}
-
 /*
 *  Feature extraction from a candidate:
 *  1. Candidate will be converted to greyscale
@@ -61,9 +47,6 @@ Features candidateFeatureExtraction(const Point centroid, const Mat &src, const 
 //    cvtColor(candidateGrayScale, candidateForSuperPixeling, CV_GRAY2BGR);
 //    SuperPixel selectedSuperPixel = extractPotholeRegionFromCandidate(candidateForSuperPixeling, c_name);
 
-    //Gradient grad = calculateGradient(candidateGrayScale);
-    //imwrite("../data/gradiente/" + c_name + " gradientey.bmp", resulty);
-    //imshow(c_name + " gradient x", grad.x);
 
     // 3. The histogram will be calculated
     Mat histogram = ExtractHistograms(candidateGrayScale, c_name);
@@ -111,13 +94,14 @@ Features candidateFeatureExtraction(const Point centroid, const Mat &src, const 
 //    imshow(c_name + " - Contour", selectedSuperPixel.contour);
 
     return Features {
-        candidate,
+            candidate,
 //        selectedSuperPixel.selectionMask, selectedSuperPixel.contour,
         histogram, averageGreyValue, contrast, entropy, skewness, energy
     };
 }
 
-FeaturesVectors normalizeFeatures(const double minValue, const double maxValue, const FeaturesVectors &notNormalizedFeatures) {
+FeaturesVectors
+normalizeFeatures(const double minValue, const double maxValue, const FeaturesVectors &notNormalizedFeatures) {
     FeaturesVectors normalizedFeatures;
 
     for (auto notNormHistogram : notNormalizedFeatures.histograms) {
@@ -140,13 +124,22 @@ FeaturesVectors normalizeFeatures(const double minValue, const double maxValue, 
 }
 
 
-vector<Features> extractFeatures(const Mat &src, const vector<SuperPixel> &candidateSuperPixels, const Size candidate_size) {
+vector<Features>
+extractFeatures(const Mat &src, const vector<SuperPixel> &candidateSuperPixels, const Size candidate_size) {
 
 //    auto candidates = vector<Mat>();
     auto notNormalizedfeatures = vector<Features>();
     auto normalizedFeatures = vector<Features>();
 
     FeaturesVectors candidatesFeaturesVectors;
+
+    //Mat imageGrayScale;
+    //cvtColor(src, imageGrayScale, CV_BGR2GRAY);
+    //Gradient grad = calculateGradient(imageGrayScale);
+    //imwrite("../data/gradiente/" + c_name + " gradientey.bmp", resulty);
+    //imshow("Gradient module", grad.module);
+    //imshow("Gradient x", grad.x);
+    //imshow("Gradient y", grad.y);
 
     /*------------------------Candidate Extraction---------------------------*/
     for (auto candidate : candidateSuperPixels) {

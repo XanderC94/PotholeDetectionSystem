@@ -17,6 +17,6 @@
 using namespace cv;
 using namespace std;
 
-vector<Features> extractFeatures(Mat sourceImage, vector<Point> centroids, Size candidate_size);
+vector<Features> extractFeatures(const Mat &src, const vector<SuperPixel> &candidateSuperPixels, const Size candidate_size);
 
 #endif //POTHOLEDETENCTIONSYSTEM_FEATURESEXTRACTION_H

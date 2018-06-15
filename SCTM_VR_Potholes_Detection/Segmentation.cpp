@@ -2,6 +2,8 @@
 #include "MathUtils.h"
 
 #include <iostream>
+#include <opencv2/photo.hpp>
+#include <set>
 
 using namespace cv;
 using namespace std;
@@ -11,22 +13,21 @@ const int RESIZING_WIDTH = 640;
 const int RESIZING_HEIGHT = 480;
 
 
-void preprocessing(Mat &src, Mat &resizedImage, const double Horizon_Offset) {
-
-    cout << "Preprocessing... ";
+void preprocessing(Mat &src, Mat &processedImage, const double Horizon_Offset) {
 
     Size scale(RESIZING_WIDTH, RESIZING_HEIGHT);
-//    Point2d translation_((double) -W / 2.0, (double) -H / 1.0), shrink_(3.0 / (double) W, 5.0 / (double) H);
+
+    resize(src, processedImage, scale);
+
+    // Delete Reflection Noises
+    fastNlMeansDenoisingColored(processedImage, processedImage, 2.0, 9.0, 7, 21);
 
     // Apply gaussian blur in order to smooth edges and gaining cleaner superpixels
-    GaussianBlur(src, src, Size(7, 7), 0.0);
+    GaussianBlur(src, src, Size(5, 5), 0.0);
 
-    resize(src, resizedImage, scale);
-
-    resizedImage = resizedImage(
+    processedImage = processedImage(
             Rect(Point2d(0, RESIZING_HEIGHT * Horizon_Offset), Point2d(RESIZING_WIDTH - 1, RESIZING_HEIGHT - 1)));
 
-    cout << "Finished." << endl;
 }
 
 bool isRoad(Mat src, RoadOffsets offsets, Point2d center) {
@@ -51,14 +52,135 @@ bool isRoad(Mat src, RoadOffsets offsets, Point2d center) {
  *      - checking if its density il less than the specified density threshold
  *      - checking if the variance on x axis or y axis is greater than the variance threshold
  * */
-bool isPothole(SuperPixel superPixel, cv::Point2d center, ExtractionThresholds thresholds) {
-    cv::Point2d Variance(0.0, 0.0);
-    Variance = calculateSuperPixelVariance(superPixel.points, center);
+bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel &superPixel, ExtractionThresholds thresholds) {
+
+    Mat1b selectionMask = (labels == -1);
+
+    for (int n : superPixel.neighbors) selectionMask.setTo(Scalar(255), (labels == n));
+
+    auto neighborsMeanColourValue = mean(src, selectionMask);
+
+    double ratioDark[3];
+
+    ratioDark[0] = neighborsMeanColourValue.val[0] / superPixel.meanColourValue.val[0];
+    ratioDark[1] = neighborsMeanColourValue.val[1] / superPixel.meanColourValue.val[1];
+    ratioDark[2] = neighborsMeanColourValue.val[2] / superPixel.meanColourValue.val[2];
+
+    Point2d deviation =  calculateSuperPixelVariance(superPixel.points, superPixel.center);
     double density = calculateSuperPixelDensity(superPixel.points);
-    return (density < thresholds.Density_Threshold &&
-            (Variance.x > thresholds.Variance_Threshold || Variance.y > thresholds.Variance_Threshold));
+
+    if ((ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3> thresholds.colourRatioThresholdMin &&
+        (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.colourRatioThresholdMax) {
+
+//        Mat tmp; src.copyTo(tmp, selectionMask);
+//        tmp.setTo(Scalar(0, 0, 255), (labels == superPixel.label));
+//        imshow("TMask " + to_string(superPixel.label), tmp);
+//        waitKey();
+
+        cout << "SP n° " << superPixel.label
+             << " \t| Mean: " << superPixel.meanColourValue
+             << " \t| NeighborsMean: " << neighborsMeanColourValue
+             << " \t| Ratio: [" << ratioDark[0] << ", " << ratioDark[1] << ", " << ratioDark[2] << "]"
+             << " \t| Density:" << density
+             << " \t| Deviation:" << deviation << endl;
+    }
+
+    return density < thresholds.Density_Threshold &&
+            (deviation.x > thresholds.Variance_Threshold || deviation.y > thresholds.Variance_Threshold) &&
+            (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.colourRatioThresholdMin &&
+            (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.colourRatioThresholdMax;
 }
 
+set<int> findNeighbors(const Point &candidate, const Mat &labels, const int edge) {
+
+    vector<Point> testPoints = {
+            candidate + Point(edge, 0),       // Up
+            candidate - Point(edge, 0),       // Down
+            candidate + Point(0, edge),       // Right
+            candidate - Point(0, edge),       // Left
+            candidate + Point(edge, edge),    // Up Right
+            candidate - Point(edge, edge),    // Up Left
+            candidate + Point(-edge, edge),   // Down Right
+            candidate + Point(edge, -edge)    // Down Left
+    };
+
+    set<int> neighborhood;
+
+    for (Point &neighbor : testPoints) {
+        // Check if the pixel is inside the image boundaries
+        if (neighbor.y > 0 && neighbor.x > 0 && neighbor.y < labels.rows - 1 && neighbor.x < labels.cols - 1) {
+            // Get the label of the neighbor
+            int n = labels.at<int>(neighbor);
+            if (n > 0 && n!= labels.at<int>(candidate)) {
+                neighborhood.insert(labels.at<int>(neighbor));
+            }
+        }
+    }
+
+    return neighborhood;
+}
+
+void extractCandidateCentroids(const Mat &src, const Mat &labels,
+                               vector<SuperPixel> &candidateCentroids,
+                               Mat &meanColourMask, Mat &candidateMask,
+                               const int nSuperPixels, const Mat contour,
+                               const ExtractionThresholds thresholds,
+                               const RoadOffsets offsets, const int superPixelEdge) {
+
+    src.copyTo(meanColourMask);
+
+    for (int superPixelLabel = 0; superPixelLabel < nSuperPixels; ++superPixelLabel) {
+
+        SuperPixel superPixel = getSuperPixel(src, superPixelLabel, labels, contour);
+
+        Scalar color_mask_value = Scalar(0, 0, 0);
+
+        if (isRoad(src, offsets, superPixel.center)) {
+
+            superPixel.neighbors = findNeighbors(superPixel.center, labels, superPixelEdge);
+
+            if (isSuperpixelOfInterest(src, labels, superPixel, thresholds)) {
+                color_mask_value = Scalar(255, 255, 255);
+                // Add the center of the superpixel to the candidateCentroids.
+                candidateCentroids.push_back(superPixel);
+            }
+        }
+
+        meanColourMask.setTo(superPixel.meanColourValue, superPixel.selectionMask);
+        candidateMask.setTo(color_mask_value, superPixel.selectionMask);
+    }
+}
+
+int extractRegionsOfInterest(const Mat &src, vector<SuperPixel> &candidateSuperpixels,
+                             const int superPixelEdge,
+                             const ExtractionThresholds thresholds,
+                             const RoadOffsets offsets) {
+
+    Mat contour, mask, labels, out;
+
+    Ptr<SuperpixelLSC> superpixels = initSuperPixelingLSC(src, contour, mask, labels, superPixelEdge);
+
+    extractCandidateCentroids(src, labels,  candidateSuperpixels, out, mask,
+                              superpixels->getNumberOfSuperpixels(), contour,
+                              thresholds, offsets, superPixelEdge);
+
+//    imshow("Src", src);
+
+//    out.setTo(Scalar(0, 0, 255), contour);
+//    imshow("Segmentation", out);
+
+//    Mat res;
+//    src.copyTo(res, mask);
+//    res.setTo(Scalar(0,0,255), contour);
+//
+//    imshow("Result", res);
+//
+//    waitKey();
+
+    return 1;
+}
+
+/***** FEATURE EXTRACTION SEGMENTATION ****/
 
 /*
  * Check if:
@@ -75,104 +197,6 @@ bool isPothole(SuperPixel superPixel, SuperPixel previousSelected, Scalar meanCa
            && superPixel.meanColourValue[0] < (previousSelected.meanColourValue[0])
            && superPixel.points.size() > minPixelNumber;
 }
-
-void extractCandidateCentroids(Mat &src,
-                               Mat labels,
-                               int nSuperPixels,
-                               Mat contour,
-                               vector<Point> &candidateCentroids,
-                               ExtractionThresholds thresolds,
-                               Mat &meanColourMask,
-                               Mat &candidateMask,
-                               RoadOffsets offsets) {
-
-    src.copyTo(meanColourMask);
-    for (int l = 0; l < nSuperPixels; ++l) {
-//      Point translated_((Center.x + translation_.x), (Center.y + translation_.y));
-//      Point shrinked_(translated_.x*shrink_.x, translated_.x*shrink_.y);
-        SuperPixel currentSuperPixel = getSuperPixel(src, l, labels, contour);
-
-        cv::Point2d center = calculateSuperPixelCenter(currentSuperPixel.points);
-        Scalar color_mask_value = Scalar(0, 0, 0);
-        if (isRoad(src, offsets, center)) {
-            if (isPothole(currentSuperPixel, center, thresolds)) {
-                color_mask_value = Scalar(255, 255, 255);
-                // Add the center of the superpixel to the candidateCentroids.
-                candidateCentroids.push_back(center);
-            }
-        }
-
-        meanColourMask.setTo(currentSuperPixel.meanColourValue, currentSuperPixel.selectionMask);
-        candidateMask.setTo(color_mask_value, currentSuperPixel.selectionMask);
-    }
-}
-
-int extractPossiblePotholes(Mat &src,
-                            vector<Point> &candidateCentroids,
-                            const int superPixelEdge,
-                            const ExtractionThresholds thresholds,
-                            const RoadOffsets offsets,
-                            const string showingWindowPrefix) {
-    Mat contour;
-    Mat mask;
-    Mat labels;
-    Ptr<SuperpixelLSC> superpixels = initSuperPixelingLSC(src, contour, mask, labels, candidateCentroids,
-                                                          superPixelEdge);
-
-    //imshow("labels", labels);
-    Mat out;
-    extractCandidateCentroids(src, labels, superpixels->getNumberOfSuperpixels(), contour, candidateCentroids,
-                              thresholds, out,
-                              mask, offsets);
-
-    //imshow(showingWindowPrefix + " src", src);
-    //imshow(showingWindowPrefix + " Mean colour mask", out);
-    //imshow(showingWindowPrefix + " contour", contour);
-    //imshow(showingWindowPrefix + " mask", mask);
-
-//    out.setTo(Scalar(0, 0, 255), contour);
-
-    //imshow("Segmentation", out);
-
-    // Dilate to clean possible small black dots into the image "center"
-//    auto dilateElem = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));
-    // Remove small white dots outside the image "center"
-//    auto erodeElem = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));
-
-//    dilate(mask, mask, dilateElem);
-//    erode(mask, mask, erodeElem);
-
-    //imshow("Mask", mask);
-
-//    Mat res;
-//    src.copyTo(res, mask);
-//    src.copyTo(res, out);
-
-//    imshow(showingWindowPrefix + " Result", res);
-    // Cut the image in order to resize it to the smalled square/rectangle possible
-    // To Do ...
-    return 1;
-}
-
-
-int initialImageSegmentation(Mat &src,
-                             vector<Point> &candidateCentroids,
-                             const int superPixelEdge,
-                             const ExtractionThresholds thresholds,
-                             const RoadOffsets offsets) {
-    printThresholds(thresholds);
-    printOffsets(offsets);
-
-    preprocessing(src, src, offsets.Horizon_Offset);
-
-    extractPossiblePotholes(src, candidateCentroids, superPixelEdge, thresholds, offsets, " Start image");
-
-    return 1;
-}
-
-
-
-/***** FEATURE EXTRACTION SEGMENTATION ****/
 
 /*
  * if there isn't a super pixel that is recognized as a pothole the function will return the first superpixel

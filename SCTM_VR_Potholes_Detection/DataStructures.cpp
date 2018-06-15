@@ -18,4 +18,6 @@ void printThresholds(ExtractionThresholds thresholds) {
     cout << "Density_Threshold: " << thresholds.Density_Threshold << endl;
     cout << "Variance_Threshold: " << thresholds.Variance_Threshold << endl;
     cout << "Gauss_RoadThreshold: " << thresholds.Gauss_RoadThreshold << endl;
+    cout << "colourRatioThresholdMin: " << thresholds.colourRatioThresholdMin << endl;
+    cout << "colourRatioThresholdMax: " << thresholds.colourRatioThresholdMax << endl;
 }

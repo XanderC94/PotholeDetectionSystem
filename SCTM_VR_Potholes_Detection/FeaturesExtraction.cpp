@@ -4,6 +4,7 @@
 
 #include "FeaturesExtraction.h"
 #include "Segmentation.h"
+#include "GradientElaboration.h"
 
 using namespace cv;
 using namespace std;
@@ -17,20 +18,6 @@ typedef struct FeaturesVectors {
     vector<float> skewnesses = vector<float>();
     vector<float> energies = vector<float>();
 } FeaturesVectors;
-
-typedef struct Gradient {
-    Mat x;
-    Mat y;
-} Gradient;
-
-Gradient calculateGradient(Mat &candidate) {
-    Mat resultx;
-    Mat resulty;
-    //cv::Sobel(candidate, result, CV_64F, 0 , 1, 5);
-    cv::spatialGradient(candidate, resultx, resulty);
-    Gradient result = {resultx, resulty};
-    return result;
-}
 
 /*
 *  Feature extraction from a candidate:
@@ -60,10 +47,6 @@ Features candidateFeatureExtraction(Point centroid, Mat sourceImage, Size candid
     Mat candidateForSuperPixeling;
     cvtColor(candidateGrayScale, candidateForSuperPixeling, CV_GRAY2BGR);
     SuperPixel selectedSuperPixel = extractPotholeRegionFromCandidate(candidateForSuperPixeling, c_name);
-
-    //Gradient grad = calculateGradient(candidateGrayScale);
-    //imwrite("../data/gradiente/" + c_name + " gradientey.bmp", resulty);
-    //imshow(c_name + " gradient x", grad.x);
 
 
     // 3. The histogram will be calculated
@@ -148,6 +131,14 @@ vector<Features> extractFeatures(Mat sourceImage, vector<Point> centroids, Size 
     auto normalizedFeatures = vector<Features>();
 
     FeaturesVectors candidatesFeaturesVectors;
+
+    Mat imageGrayScale;
+    cvtColor(sourceImage, imageGrayScale, CV_BGR2GRAY);
+    Gradient grad = calculateGradient(imageGrayScale);
+    //imwrite("../data/gradiente/" + c_name + " gradientey.bmp", resulty);
+    imshow("Gradient module", grad.module);
+    imshow("Gradient x", grad.x);
+    imshow("Gradient y", grad.y);
 
     /*------------------------Candidate Extraction---------------------------*/
     for (auto c : centroids) {

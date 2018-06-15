@@ -19,7 +19,7 @@ void preprocessing(Mat &src, Mat &resizedImage, const double Horizon_Offset) {
 //    Point2d translation_((double) -W / 2.0, (double) -H / 1.0), shrink_(3.0 / (double) W, 5.0 / (double) H);
 
     // Apply gaussian blur in order to smooth edges and gaining cleaner superpixels
-    GaussianBlur(src, src, Size(5, 5), 0.0);
+    GaussianBlur(src, src, Size(7, 7), 0.0);
 
     resize(src, resizedImage, scale);
 

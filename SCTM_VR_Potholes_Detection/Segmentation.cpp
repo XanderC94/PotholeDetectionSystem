@@ -20,7 +20,7 @@ void preprocessing(Mat &src, Mat &processedImage, const double Horizon_Offset) {
     resize(src, processedImage, scale);
 
     // Delete Reflection Noises
-    fastNlMeansDenoisingColored(processedImage, processedImage, 2.0, 9.0, 7, 21);
+//    fastNlMeansDenoisingColored(processedImage, processedImage, 3.0, 10.0, 7, 21);
 
     // Apply gaussian blur in order to smooth edges and gaining cleaner superpixels
     GaussianBlur(processedImage, processedImage, Size(3, 3), 0.0);
@@ -78,8 +78,8 @@ bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel 
 //        waitKey();
 
         cout << "SP n° " << superPixel.label
-             << " \t| Mean: " << superPixel.meanColourValue
-             << " \t| NeighborsMean: " << neighborsMeanColourValue
+//             << " \t| Mean: " << superPixel.meanColourValue
+//             << " \t| NeighborsMean: " << neighborsMeanColourValue
              << " \t| Ratio: [" << ratioDark[0] << ", " << ratioDark[1] << ", " << ratioDark[2] << "]"
              << " \t| Density:" << density
              << " \t| Deviation:" << deviation << endl;

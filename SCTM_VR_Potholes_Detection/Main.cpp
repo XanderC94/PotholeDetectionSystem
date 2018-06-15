@@ -17,7 +17,7 @@ vector<Features> preClassification (const string target) {
 
     auto superPixels = vector<SuperPixel>();
 
-    auto candidate_size = Size(64, 64);
+    auto candidate_size = Size(128, 128);
 
     /*---------------------------------Load image------------------------*/
 
@@ -57,6 +57,9 @@ vector<Features> preClassification (const string target) {
     preprocessing(src, src, offsets.Horizon_Offset);
     cout << "Finished." << endl;
 
+//    imshow("IMAGE" + target, src);
+//    waitKey();
+
     /*--------------------------------- End Pre-Processing Phase ------------------------------*/
 
     /*--------------------------------- First Segmentation Phase ------------------------------*/
@@ -68,6 +71,12 @@ vector<Features> preClassification (const string target) {
     cout << "Found " << superPixels.size() << " candidates." << endl;
 
     /*--------------------------------- End First Segmentation Phase ------------------------------*/
+
+//    for (auto sp: superPixels) {
+//        imshow("SP" + to_string(sp.label), sp.superPixelSelection);
+//    }
+//
+//    waitKey();
 
     /*--------------------------------- Feature Extraction Phase ------------------------------*/
 

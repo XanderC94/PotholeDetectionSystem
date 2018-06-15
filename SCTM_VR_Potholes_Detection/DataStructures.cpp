@@ -9,7 +9,8 @@ using namespace std;
 void printOffsets(RoadOffsets of) {
     cout << "ROAD OFFSETS" << endl;
     cout << "Horizon_Offset: " << of.Horizon_Offset << endl;
-    cout << "SLine_X_Offset: " << of.SLine_X_Offset << endl;
+    cout << "SLine_X_Right_Offset: " << of.SLine_X_Right_Offset << endl;
+    cout << "SLine_X_Left_Offset: " << of.SLine_X_Left_Offset << endl;
     cout << "SLine_Y_Offset: " << of.SLine_Y_Offset << endl;
 }
 

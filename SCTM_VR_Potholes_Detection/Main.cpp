@@ -6,6 +6,7 @@
 #include "FeaturesExtraction.h"
 #include "SVM.h"
 #include "Utils.h"
+#include "HOG.h"
 
 using namespace cv;
 using namespace std;
@@ -14,7 +15,7 @@ using namespace cv::ml;
 
 vector<Features> preClassification (const string target) {
 
-    auto centroids = vector<Point>();
+    auto superPixels = vector<SuperPixel>();
 
     auto candidate_size = Size(64, 64);
 
@@ -22,38 +23,56 @@ vector<Features> preClassification (const string target) {
 
     Mat src = imread(target, IMREAD_COLOR), tmp;
 
-    /*-------------------------- First Segmentation Phase --------------------*/
-
     /*
     *	The src image will be:
-    *	1. Resized to 640 * 480
+    *	1. Resized
     *	2. Cropped under the Horizon Line
     *   3. Segmented with superpixeling
     *   4. Superpixels in the RoI is selected using Analytic Rect Function
-    *	(in Candidates will be placed the set on centroids that survived segmentation)
+    *	(in Candidates will be placed the set on superPixels that survived segmentation)
     */
 
-    RoadOffsets offsets;
-    offsets.Horizon_Offset = 0.65;
-    offsets.SLine_X_Offset = 0.15;
-    offsets.SLine_Y_Offset = 0.8;
-    ExtractionThresholds threshold;
-    threshold.Density_Threshold = 0.80;
-    threshold.Variance_Threshold = 0.30;
-    threshold.Gauss_RoadThreshold = 0.60;
+    RoadOffsets offsets = {
+            .Horizon_Offset = 0.65,
+            .SLine_X_Offset = 0.0,
+            .SLine_Y_Offset = 0.8
+    };
+
+    ExtractionThresholds threshold = {
+            .Density_Threshold = 0.85,
+            .Variance_Threshold = 0.25,
+            .Gauss_RoadThreshold = 0.60,
+            .colourRatioThresholdMin= 1.25,
+            .colourRatioThresholdMax = 4.0
+    };
+
     int superPixelEdge = 32;
 
-    cout << "Segmentation... " << endl;
-    initialImageSegmentation(src, centroids, superPixelEdge, threshold, offsets);
+    printThresholds(threshold);
+    printOffsets(offsets);
+
+    /*--------------------------------- Pre-Processing Phase ------------------------------*/
+
+    cout << "Preprocessing... ";
+    preprocessing(src, src, offsets.Horizon_Offset);
     cout << "Finished." << endl;
-    cout << "Found " << centroids.size() << " candidates." << endl;
+
+    /*--------------------------------- End Pre-Processing Phase ------------------------------*/
+
+    /*--------------------------------- First Segmentation Phase ------------------------------*/
+
+    cout << "Segmentation... " << endl;
+    extractRegionsOfInterest(src, superPixels, superPixelEdge, threshold, offsets);
+    cout << "Finished." << endl;
+
+    cout << "Found " << superPixels.size() << " candidates." << endl;
 
     /*--------------------------------- End First Segmentation Phase ------------------------------*/
 
     /*--------------------------------- Feature Extraction Phase ------------------------------*/
 
     cout << "Feature Extraction -- Starting " << endl;
-    auto features = extractFeatures(src, centroids, candidate_size);
+    auto features = extractFeatures(src, superPixels, candidate_size);
     cout << "Feature Extraction -- Finished." << endl;
 
     /*--------------------------------- End Feature Extraction Phase ------------------------------*/
@@ -71,6 +90,7 @@ void createCandidates (const string targets) {
 
         auto features = preClassification(image);
         saveFeatures(features, "data", image, "features");
+
     }
 }
 

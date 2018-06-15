@@ -18,6 +18,85 @@ const int BIN_THS_VALUE = 100;
 //waitKey(0);
 //bilateralFilter(tmp1, tmp2, blur_strength, blur_strength*2, blur_strength*0.5);
 
+
+float RGBMean(const Mat &src) {
+
+    float meanR = 0.0f;
+    float meanG = 0.0f;
+    float meanB = 0.0f;
+
+    float bias = src.rows * src.cols * 3;
+
+    for (int r = 0; r < src.rows; ++r) {
+        for (int c = 0; c < src.cols; ++c) {
+            auto pixel = src.at<Vec3i>(r, c);
+            meanB += pixel.val[0];
+            meanG += pixel.val[1];
+            meanR += pixel.val[2];
+        }
+    }
+
+    return (meanB + meanG + meanR) / bias ;
+}
+
+float RGBStandardDeviation(const Mat &src) {
+
+    float stdB = 0.0f;
+    float stdG= 0.0f;
+    float stdR = 0.0f;
+    float bias = src.rows * src.cols * 3 - 1;
+    float mean = RGBMean(src);
+
+    for (int r = 0; r < src.rows; ++r) {
+        for (int c = 0; c < src.cols; ++c) {
+            auto pixel = src.at<Vec3i>(r, c);
+            stdB += (pixel.val[0] - mean) * (pixel.val[0] - mean);
+            stdG += (pixel.val[1] - mean) * (pixel.val[1] - mean);
+            stdR += (pixel.val[2] - mean) * (pixel.val[2] - mean);
+        }
+    }
+
+    return sqrtf((stdB + stdG + stdR) / bias);
+}
+
+void RoadSegmentation(Mat &src, Mat &out) {
+
+    Size scale(RESIZING_WIDTH, RESIZING_HEIGHT);
+    resize(src, src, scale);
+
+    out = Mat::zeros(src.rows, src.cols, CV_32SC1);
+
+    float std = RGBStandardDeviation(src);
+
+    cout << "STD: " << std << endl;
+
+    for (int row = 0; row < src.rows; ++row) {
+        for (int col = 0; col < src.cols; ++col) {
+            auto pixel = src.at<Vec3i>(row, col);
+            if (pixel.val[1] - (pixel.val[0] + pixel.val[2]) * 0.5f + 15 > 0 ||
+                    pixel.val[2] - pixel.val[0] > 20 ||
+                    pixel.val[1] - pixel.val[2] > 15) {
+
+                out.at<int>(row, col) = 0;
+
+            } else if (
+                    ((pixel[0] + pixel[1] + pixel[2]) / 3.0f > 255 - std) ||
+                    ((pixel[0] + pixel[1] + pixel[2]) / 3.0f < std)
+                    ) {
+
+                out.at<int>(row, col) = 0;
+
+            } else if (pixel[0] > 0 && pixel[1] > 0 && pixel[2] > 0) {
+
+                out.at<int>(row, col) = 255;
+
+            }
+        }
+    }
+}
+
+
+
 void create_training_set_by_row(const vector<Mat> & set, Mat & training_set) {
 
 	for (int i = 0; i < set.size(); ++i) {

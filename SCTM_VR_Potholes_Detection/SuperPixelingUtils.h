@@ -10,30 +10,22 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/ximgproc.hpp>
+#include <set>
+#include "DataStructures.h"
 
 using namespace cv;
 using namespace std;
 using namespace cv::ximgproc;
 
-
-typedef struct SuperPixel {
-    vector<cv::Point> points;
-    Mat superPixelSelection;
-    Mat1b selectionMask;
-    Mat contour;
-    Scalar meanColourValue;
-} SuperPixel;
-
-SuperPixel getSuperPixel(Mat src,
+SuperPixel getSuperPixel(const Mat &src,
                          int superPixelLabel,
-                         Mat labels,
-                         Mat contour);
+                         const Mat &labels,
+                         const Mat &contour);
 
-Ptr<SuperpixelLSC> initSuperPixelingLSC(Mat &src,
+Ptr<SuperpixelLSC> initSuperPixelingLSC(const Mat &src,
                                         Mat &contour,
                                         Mat &mask,
                                         Mat &labels,
-                                        vector<Point> &candidates,
                                         int superPixelEdge);
 
 Ptr<SuperpixelSLIC> initSuperPixelingSLIC(Mat &src, Mat &contour, Mat &labels, Mat &mask);

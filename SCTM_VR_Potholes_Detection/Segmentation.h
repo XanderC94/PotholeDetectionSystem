@@ -8,15 +8,9 @@
 using namespace cv;
 using namespace std;
 
-int extractPossiblePotholes(Mat &src,
-                            vector<Point> &candidateCentroids,
-                            const int superPixelEdge = 32,
-                            const ExtractionThresholds thresholds = defaultThresholds,
-                            const RoadOffsets offsets = defaultOffsets,
-                            const string showingWindowPrefix = "");
+void preprocessing(Mat &src, Mat &processedImage, const double Horizon_Offset);
 
-int initialImageSegmentation(Mat &src,
-                             vector<Point> &candidateCentroids,
+int extractRegionsOfInterest(const Mat &src, vector<SuperPixel> &candidateSuperpixels,
                              const int superPixelEdge = 32,
                              const ExtractionThresholds thresholds = defaultThresholds,
                              const RoadOffsets offsets = defaultOffsets);

@@ -4,11 +4,10 @@
 
 #include "SuperPixelingUtils.h"
 
+SuperPixel getSuperPixel(const Mat &src,
+                         const int superPixelLabel,
+                         const Mat &labels, const Mat &contour) {
 
-SuperPixel getSuperPixel(Mat src,
-                         int superPixelLabel,
-                         Mat labels,
-                         Mat contour) {
     Mat1b selectionMask = (labels == superPixelLabel);
 
 //    Mat dilatedMask;
@@ -32,39 +31,30 @@ SuperPixel getSuperPixel(Mat src,
 //    Mat spContour;
 //    contour.copyTo(spContour, selectionMask);
 
-//    if (src.rows < 64) {
-//        Mat lalala;
-//        src.copyTo(lalala);
-//        lalala.setTo(Scalar(0, 0, 255), maskContours);
-//        imshow("blabla", lalala);
-//        waitKey();
-//    }
-
     SuperPixel result = {
+            .label = superPixelLabel,
             .points = superPixelPoints,
+            .center = calculateSuperPixelCenter(superPixelPoints),
             .superPixelSelection = superPixelSelection,
             .selectionMask = selectionMask,
             .contour = maskContours,
-            .meanColourValue = meanColourValue
+            .meanColourValue = meanColourValue,
+            .neighbors= std::set<int>()
     };
 
     return result;
 }
 
-Ptr<SuperpixelLSC> initSuperPixelingLSC(Mat &src,
-                                        Mat &contour,
-                                        Mat &mask,
-                                        Mat &labels,
-                                        vector<Point> &candidates,
+Ptr<SuperpixelLSC> initSuperPixelingLSC(const Mat &src,
+                                        Mat &contour, Mat &mask, Mat &labels,
                                         int superPixelEdge) {
     Mat imgCIELab;
+
     // Switch color space from RGB to CieLAB
     cvtColor(src, imgCIELab, COLOR_BGR2Lab);
-//	imshow("CieLab color space", imgCIELab);
 
     // Linear Spectral Clustering
     Ptr<SuperpixelLSC> superpixels = cv::ximgproc::createSuperpixelLSC(imgCIELab, superPixelEdge);
-//  Ptr<SuperpixelSLIC> superpixels = cv::ximgproc::createSuperpixelSLIC(imgCIELab, SLIC::MSLIC, 32, 50.0);
 
     superpixels->iterate(10);
     superpixels->getLabelContourMask(contour);
@@ -73,7 +63,6 @@ Ptr<SuperpixelLSC> initSuperPixelingLSC(Mat &src,
     src.copyTo(mask);
     mask.setTo(Scalar(255, 255, 255));
 
-//  cout << "SP, Size, Area, Variance, Density" << endl;
     return superpixels;
 }
 

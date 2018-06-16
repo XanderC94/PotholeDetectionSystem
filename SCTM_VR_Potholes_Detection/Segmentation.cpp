@@ -54,21 +54,25 @@ bool isRoad(const int H, const int W, const RoadOffsets offsets, const Point2d c
 bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel &superPixel,
                             ExtractionThresholds thresholds) {
 
+//    Point2d deviation =  calculateSuperPixelVariance(superPixel.points, superPixel.center);
+
+//    (deviation.x > thresholds.Variance_Threshold || deviation.y > thresholds.Variance_Threshold)
+
+    double density = calculateSuperPixelDensity(superPixel.points);
+
+    if (density > thresholds.Density_Threshold) return false;
+
     Mat1b selectionMask = (labels == -1);
 
     for (int n : superPixel.neighbors) selectionMask.setTo(Scalar(255), (labels == n));
 
     auto neighborsMeanColourValue = mean(src, selectionMask);
 
-    double ratioDark[3] {0.0, 0.0, 0.0};
+    double ratioDark[3] = {0.0, 0.0, 0.0};
 
     ratioDark[0] = neighborsMeanColourValue.val[0] / superPixel.meanColourValue.val[0];
     ratioDark[1] = neighborsMeanColourValue.val[1] / superPixel.meanColourValue.val[1];
     ratioDark[2] = neighborsMeanColourValue.val[2] / superPixel.meanColourValue.val[2];
-
-//    Point2d deviation =  calculateSuperPixelVariance(superPixel.points, superPixel.center);
-
-    double density = calculateSuperPixelDensity(superPixel.points);
 
 //    if ((ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.colourRatioThresholdMin &&
 //        (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.colourRatioThresholdMax) {
@@ -79,17 +83,13 @@ bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel 
 ////        waitKey();
 //
 //        cout << "SP n° " << superPixel.label
-////             << " \t| Mean: " << superPixel.meanColourValue
-////             << " \t| NeighborsMean: " << neighborsMeanColourValue
 //             << " \t| Ratio: [" << ratioDark[0] << ", " << ratioDark[1] << ", " << ratioDark[2] << "]"
 //             << " \t| Density:" << density
 ////             << " \t| Deviation:" << deviation
 //             << endl;
 //    }
 
-    return density < thresholds.Density_Threshold &&
-//            (deviation.x > thresholds.Variance_Threshold || deviation.y > thresholds.Variance_Threshold) &&
-            (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.colourRatioThresholdMin &&
+    return (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.colourRatioThresholdMin &&
             (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.colourRatioThresholdMax;
 }
 
@@ -134,10 +134,10 @@ int extractRegionsOfInterest(const Ptr<SuperpixelLSC> &superPixeler,
     superPixeler->getLabelContourMask(contour);
     superPixeler->getLabels(labels);
 
-    src.copyTo(mask);
-    mask.setTo(Scalar(255, 255, 255));
-
-    src.copyTo(meanColourMask);
+//    src.copyTo(mask);
+//    mask.setTo(Scalar(255, 255, 255));
+//
+//    src.copyTo(meanColourMask);
 
     for (int superPixelLabel = 0; superPixelLabel < superPixeler->getNumberOfSuperpixels(); ++superPixelLabel) {
 
@@ -150,21 +150,21 @@ int extractRegionsOfInterest(const Ptr<SuperpixelLSC> &superPixeler,
             superPixel.neighbors = findNeighbors(superPixel.center, labels, superPixelEdge);
 
             if (isSuperpixelOfInterest(src, labels, superPixel, thresholds)) {
-                color_mask_value = Scalar(255, 255, 255);
+//                color_mask_value = Scalar(255, 255, 255);
                 // Add the superpixel to the candidates vector
                 candidateSuperpixels.push_back(superPixel);
             }
         }
 
-        meanColourMask.setTo(superPixel.meanColourValue, superPixel.selectionMask);
-        mask.setTo(color_mask_value, superPixel.selectionMask);
+//        meanColourMask.setTo(superPixel.meanColourValue, superPixel.selectionMask);
+//        mask.setTo(color_mask_value, superPixel.selectionMask);
     }
 
 //    imshow("Src", src);
-
-//    out.setTo(Scalar(0, 0, 255), contour);
-//    imshow("Segmentation", out);
-
+//
+//    meanColourMask.setTo(Scalar(0, 0, 255), contour);
+//    imshow("Segmentation", meanColourMask);
+//
 //    Mat res;
 //    src.copyTo(res, mask);
 //    res.setTo(Scalar(0,0,255), contour);

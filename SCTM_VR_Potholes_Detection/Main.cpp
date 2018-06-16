@@ -35,7 +35,7 @@ vector<Features> preClassification (const string target) {
     RoadOffsets offsets = {
             .Horizon_Offset = 0.65,
             .SLine_X_Right_Offset = 0.0,
-            .SLine_X_Left_Offset = 0.4,
+            .SLine_X_Left_Offset = 0.3,
             .SLine_Y_Offset = 0.8
     };
 

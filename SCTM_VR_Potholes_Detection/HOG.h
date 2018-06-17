@@ -23,7 +23,7 @@ typedef struct HOGConfig {
     const Size padding;
 } HOGConfig;
 
-const HOGConfig defaultConfig = {9, Size(64, 64), Size(8, 8), Size(2, 2), Size(4, 4), Size(2, 2), Size(0, 0)};
+const HOGConfig defaultConfig = {9, Size(64, 64), Size(8, 8), Size(2, 2), Size(4, 4), Size(16, 16), Size(0, 0)};
 
 void HOG(const Mat &src, vector<float> &descriptors, vector<Point> &locations, const HOGConfig config = defaultConfig);
 

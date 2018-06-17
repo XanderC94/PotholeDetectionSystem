@@ -22,6 +22,7 @@ vector<Features> preClassification (const string target) {
 
     Mat src = imread(target, IMREAD_COLOR), tmp;
 
+//    cvtColor(src, src, CV_RGB2BGR);
     /*
     *	The src image will be:
     *	1. Resized
@@ -33,16 +34,17 @@ vector<Features> preClassification (const string target) {
 
     RoadOffsets offsets = {
             .Horizon_Offset = 0.65,
-            .SLine_X_Offset = 0.0,
+            .SLine_X_Right_Offset = 0.0,
+            .SLine_X_Left_Offset = 0.4,
             .SLine_Y_Offset = 0.8
     };
 
     ExtractionThresholds threshold = {
-            .Density_Threshold = 0.85,
-            .Variance_Threshold = 0.25,
+            .Density_Threshold = 0.60, // OK, do not change
+            .Variance_Threshold = 0.3,
             .Gauss_RoadThreshold = 0.60,
             .colourRatioThresholdMin= 1.25,
-            .colourRatioThresholdMax = 4.0
+            .colourRatioThresholdMax = 2.5
     };
 
     int superPixelEdge = 32;

@@ -22,14 +22,14 @@ void preprocessing(Mat &src, Mat &processedImage, const double Horizon_Offset) {
 //    fastNlMeansDenoisingColored(processedImage, processedImage, 3.0, 10.0, 7, 21);
 
     // Apply gaussian blur in order to smooth edges and gaining cleaner superpixels
-    GaussianBlur(src, src, Size(5, 5), 0.0);
+    GaussianBlur(processedImage, processedImage, Size(3, 3), 0.0); // OK, do not change
 
     processedImage = processedImage(
             Rect(Point2d(0, RESIZING_HEIGHT * Horizon_Offset), Point2d(RESIZING_WIDTH - 1, RESIZING_HEIGHT - 1)));
 
 }
 
-bool isRoad(Mat src, RoadOffsets offsets, Point2d center) {
+bool isRoad(const int H, const int W, const RoadOffsets offsets, const Point2d center) {
     // How to evaluate offsets in order to separate road super pixels?
     // Or directly identify RoI (Region of interest) where a pothole will be more likely detected?
     // ...
@@ -37,11 +37,11 @@ bool isRoad(Mat src, RoadOffsets offsets, Point2d center) {
     // => Gaussian 3D function
     // => Evaluates the pixels through an Analytic Rect Function : F(x) > 0 is over the rect, F(x) < 0 is under, F(x) = 0 it lies on.
 
-    bool isRoad = AnalyticRect2D(cv::Point2d(src.cols * offsets.SLine_X_Offset, src.rows * offsets.SLine_Y_Offset),
-                                 cv::Point2d(src.cols * 0.4, 0.0), center) >= 0 &&
+    bool isRoad = AnalyticRect2D(cv::Point2d(W * offsets.SLine_X_Left_Offset, H * offsets.SLine_Y_Offset),
+                                 cv::Point2d(W * 0.4, 0.0), center) >= 0 &&
                   AnalyticRect2D(
-                          cv::Point2d(src.cols * (1.0 - offsets.SLine_X_Offset), src.rows * offsets.SLine_Y_Offset),
-                          cv::Point2d(src.cols * 0.6, 0.0), center) >= 0;
+                          cv::Point2d(W * (1.0 - offsets.SLine_X_Right_Offset), H * offsets.SLine_Y_Offset),
+                          cv::Point2d(W * 0.6, 0.0), center) >= 0;
 
     return isRoad;
 }
@@ -60,13 +60,14 @@ bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel 
 
     auto neighborsMeanColourValue = mean(src, selectionMask);
 
-    double ratioDark[3];
+    double ratioDark[3] {0.0, 0.0, 0.0};
 
     ratioDark[0] = neighborsMeanColourValue.val[0] / superPixel.meanColourValue.val[0];
     ratioDark[1] = neighborsMeanColourValue.val[1] / superPixel.meanColourValue.val[1];
     ratioDark[2] = neighborsMeanColourValue.val[2] / superPixel.meanColourValue.val[2];
 
-    Point2d deviation = calculateSuperPixelVariance(superPixel.points, superPixel.center);
+//    Point2d deviation =  calculateSuperPixelVariance(superPixel.points, superPixel.center);
+
     double density = calculateSuperPixelDensity(superPixel.points);
 
     if ((ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.colourRatioThresholdMin &&
@@ -82,13 +83,14 @@ bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel 
 //             << " \t| NeighborsMean: " << neighborsMeanColourValue
              << " \t| Ratio: [" << ratioDark[0] << ", " << ratioDark[1] << ", " << ratioDark[2] << "]"
              << " \t| Density:" << density
-             << " \t| Deviation:" << deviation << endl;
+//             << " \t| Deviation:" << deviation
+             << endl;
     }
 
     return density < thresholds.Density_Threshold &&
-           (deviation.x > thresholds.Variance_Threshold || deviation.y > thresholds.Variance_Threshold) &&
-           (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.colourRatioThresholdMin &&
-           (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.colourRatioThresholdMax;
+//            (deviation.x > thresholds.Variance_Threshold || deviation.y > thresholds.Variance_Threshold) &&
+            (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.colourRatioThresholdMin &&
+            (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.colourRatioThresholdMax;
 }
 
 set<int> findNeighbors(const Point &candidate, const Mat &labels, const int edge) {
@@ -120,49 +122,37 @@ set<int> findNeighbors(const Point &candidate, const Mat &labels, const int edge
     return neighborhood;
 }
 
-void extractCandidateCentroids(const Mat &src, const Mat &labels,
-                               vector<SuperPixel> &candidateCentroids,
-                               Mat &meanColourMask, Mat &candidateMask,
-                               const int nSuperPixels, const Mat contour,
-                               const ExtractionThresholds thresholds,
-                               const RoadOffsets offsets, const int superPixelEdge) {
-
-    src.copyTo(meanColourMask);
-
-    for (int superPixelLabel = 0; superPixelLabel < nSuperPixels; ++superPixelLabel) {
-
-        SuperPixel superPixel = getSuperPixel(src, superPixelLabel, labels, contour);
-
-        Scalar color_mask_value = Scalar(0, 0, 0);
-
-        if (isRoad(src, offsets, superPixel.center)) {
-
-            superPixel.neighbors = findNeighbors(superPixel.center, labels, superPixelEdge);
-
-            if (isSuperpixelOfInterest(src, labels, superPixel, thresholds)) {
-                color_mask_value = Scalar(255, 255, 255);
-                // Add the center of the superpixel to the candidateCentroids.
-                candidateCentroids.push_back(superPixel);
-            }
-        }
-
-        meanColourMask.setTo(superPixel.meanColourValue, superPixel.selectionMask);
-        candidateMask.setTo(color_mask_value, superPixel.selectionMask);
-    }
-}
-
 int extractRegionsOfInterest(const Mat &src, vector<SuperPixel> &candidateSuperpixels,
                              const int superPixelEdge,
                              const ExtractionThresholds thresholds,
                              const RoadOffsets offsets) {
 
-    Mat contour, mask, labels, out;
+    Mat contour, mask, labels, meanColourMask;
 
     Ptr<SuperpixelLSC> superpixels = initSuperPixelingLSC(src, contour, mask, labels, superPixelEdge);
 
-    extractCandidateCentroids(src, labels, candidateSuperpixels, out, mask,
-                              superpixels->getNumberOfSuperpixels(), contour,
-                              thresholds, offsets, superPixelEdge);
+    src.copyTo(meanColourMask);
+
+    for (int superPixelLabel = 0; superPixelLabel < superpixels->getNumberOfSuperpixels(); ++superPixelLabel) {
+
+        SuperPixel superPixel = getSuperPixel(src, superPixelLabel, labels, contour);
+
+        Scalar color_mask_value = Scalar(0, 0, 0);
+
+        if (isRoad(src.rows, src.cols, offsets, superPixel.center)) {
+
+            superPixel.neighbors = findNeighbors(superPixel.center, labels, superPixelEdge);
+
+            if (isSuperpixelOfInterest(src, labels, superPixel, thresholds)) {
+                color_mask_value = Scalar(255, 255, 255);
+                // Add the superpixel to the candidates vector
+                candidateSuperpixels.push_back(superPixel);
+            }
+        }
+
+        meanColourMask.setTo(superPixel.meanColourValue, superPixel.selectionMask);
+        mask.setTo(color_mask_value, superPixel.selectionMask);
+    }
 
 //    imshow("Src", src);
 

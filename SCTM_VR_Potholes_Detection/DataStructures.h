@@ -12,10 +12,11 @@ using namespace std;
 
 typedef struct RoadOffsets {
     double Horizon_Offset;
-    double SLine_X_Offset;
+    double SLine_X_Right_Offset;
+    double SLine_X_Left_Offset;
     double SLine_Y_Offset;
 } RoadOffsets;
-const RoadOffsets defaultOffsets = {0.60, 0.0, 0.8};
+const RoadOffsets defaultOffsets = {0.60, 0.0, 0.4, 0.8};
 
 typedef struct ExtractionThresholds {
     double Density_Threshold;

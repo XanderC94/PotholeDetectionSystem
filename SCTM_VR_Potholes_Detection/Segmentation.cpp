@@ -11,13 +11,19 @@ using namespace cv::ximgproc;
 const int RESIZING_WIDTH = 640;
 const int RESIZING_HEIGHT = 480;
 
+const int MAX_AREA = RESIZING_HEIGHT * RESIZING_WIDTH;
+
 
 void preprocessing(Mat &src, Mat &processedImage, const double Horizon_Offset) {
 
-    Size scale(RESIZING_WIDTH, RESIZING_HEIGHT);
+    float aspectRatio = static_cast<float>(src.cols) / static_cast<float>(src.rows);
+
+    float newHeight = sqrtf(MAX_AREA / aspectRatio);
+    float newWidth = newHeight * aspectRatio;
+
+    Size scale(static_cast<int>(newWidth), static_cast<int>(newHeight));
 
     resize(src, processedImage, scale);
-
     // Delete Reflection Noises
 //    fastNlMeansDenoisingColored(processedImage, processedImage, 3.0, 10.0, 7, 21);
 
@@ -25,8 +31,7 @@ void preprocessing(Mat &src, Mat &processedImage, const double Horizon_Offset) {
     GaussianBlur(processedImage, processedImage, Size(3, 3), 0.0); // OK, do not change
 
     processedImage = processedImage(
-            Rect(Point2d(0, RESIZING_HEIGHT * Horizon_Offset), Point2d(RESIZING_WIDTH - 1, RESIZING_HEIGHT - 1)));
-
+            Rect(Point2d(0, newHeight * Horizon_Offset), Point2d(newWidth - 1, newHeight - 1)));
 }
 
 bool isRoad(const int H, const int W, const RoadOffsets offsets, const Point2d center) {
@@ -77,15 +82,14 @@ bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel 
 //    if ((ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.colourRatioThresholdMin &&
 //        (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.colourRatioThresholdMax) {
 //
-////        Mat tmp; src.copyTo(tmp, selectionMask);
-////        tmp.setTo(Scalar(0, 0, 255), (labels == superPixel.label));
-////        imshow("TMask " + to_string(superPixel.label), tmp);
-////        waitKey();
+//        Mat tmp; src.copyTo(tmp, selectionMask);
+//        tmp.setTo(Scalar(0, 0, 255), (labels == superPixel.SPLabel));
+//        imshow("TMask " + to_string(superPixel.SPLabel), tmp);
+//        waitKey();
 //
-//        cout << "SP n° " << superPixel.label
+//        cout << "SP n° " << superPixel.SPLabel
 //             << " \t| Ratio: [" << ratioDark[0] << ", " << ratioDark[1] << ", " << ratioDark[2] << "]"
 //             << " \t| Density:" << density
-////             << " \t| Deviation:" << deviation
 //             << endl;
 //    }
 
@@ -111,7 +115,7 @@ set<int> findNeighbors(const Point &candidate, const Mat &labels, const int edge
     for (Point &neighbor : testPoints) {
         // Check if the pixel is inside the image boundaries
         if (neighbor.y > 0 && neighbor.x > 0 && neighbor.y < labels.rows - 1 && neighbor.x < labels.cols - 1) {
-            // Get the label of the neighbor
+            // Get the SPLabel of the neighbor
             int n = labels.at<int>(neighbor);
             if (n > 0 && n != labels.at<int>(candidate)) {
                 neighborhood.insert(labels.at<int>(neighbor));
@@ -136,14 +140,13 @@ int extractRegionsOfInterest(const Ptr<SuperpixelLSC> &superPixeler,
 
 //    src.copyTo(mask);
 //    mask.setTo(Scalar(255, 255, 255));
-//
 //    src.copyTo(meanColourMask);
 
     for (int superPixelLabel = 0; superPixelLabel < superPixeler->getNumberOfSuperpixels(); ++superPixelLabel) {
 
         SuperPixel superPixel = getSuperPixel(src, superPixelLabel, labels, contour);
 
-        Scalar color_mask_value = Scalar(0, 0, 0);
+//        Scalar color_mask_value = Scalar(0, 0, 0);
 
         if (isRoad(src.rows, src.cols, offsets, superPixel.center)) {
 
@@ -158,6 +161,7 @@ int extractRegionsOfInterest(const Ptr<SuperpixelLSC> &superPixeler,
 
 //        meanColourMask.setTo(superPixel.meanColourValue, superPixel.selectionMask);
 //        mask.setTo(color_mask_value, superPixel.selectionMask);
+
     }
 
 //    imshow("Src", src);

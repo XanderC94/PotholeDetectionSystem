@@ -21,7 +21,7 @@ Mat get_hogdescriptor_visual_image(const Mat &src, const vector<float> &descript
     // dividing 180� into 9 bins, how large (in rad) is one bin?
     float radRangeForOneBin = 3.14f / (float) bins;
 
-    // prepare data structure: 9 orientation / gradient strenghts for each cell
+    // prepare data.all.128 structure: 9 orientation / gradient strenghts for each cell
     int cells_in_x_dir = window.width / cell.width;
     int cells_in_y_dir = window.height / cell.height;
     int totalnrofcells = cells_in_x_dir * cells_in_y_dir;
@@ -189,7 +189,7 @@ Mat get_hogdescriptor_visual_image(const Mat &src, const vector<float> &descript
     } // for (celly)
 
 
-    // don't forget to free memory allocated by helper data structures!
+    // don't forget to free memory allocated by helper data.all.128 structures!
     for (int y = 0; y < cells_in_y_dir; y++) {
         for (int x = 0; x < cells_in_x_dir; x++) {
             delete[] gradientStrengths[y][x];

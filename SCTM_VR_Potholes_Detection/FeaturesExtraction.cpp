@@ -136,7 +136,7 @@ extractFeatures(const Mat &src, const vector<SuperPixel> &candidateSuperPixels, 
     //Mat imageGrayScale;
     //cvtColor(src, imageGrayScale, CV_BGR2GRAY);
     //Gradient grad = calculateGradient(imageGrayScale);
-    //imwrite("../data/gradiente/" + c_name + " gradientey.bmp", resulty);
+    //imwrite("../data.all.128/gradiente/" + c_name + " gradientey.bmp", resulty);
     //imshow("Gradient module", grad.module);
     //imshow("Gradient x", grad.x);
     //imshow("Gradient y", grad.y);
@@ -146,7 +146,7 @@ extractFeatures(const Mat &src, const vector<SuperPixel> &candidateSuperPixels, 
         Features candidateFeatures = candidateFeatureExtraction(candidate.center, src, candidate_size);
         notNormalizedfeatures.push_back(candidateFeatures);
 
-//        cout << "SP" << candidate.label <<
+//        cout << "SP" << candidate.SPLabel <<
 //             "| AvgGrayVal: " << candidateFeatures.averageGreyValue <<
 //             "| Contrast: " << candidateFeatures.contrast <<
 //             "| Skeweness: " << candidateFeatures.skewness <<

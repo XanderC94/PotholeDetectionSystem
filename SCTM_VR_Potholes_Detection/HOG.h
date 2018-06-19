@@ -26,10 +26,10 @@ typedef struct HOGConfig {
 const HOGConfig defaultConfig = {
         9,
         Size(64, 64),
-        Size(8, 8),
-        Size(8, 8),
         Size(4, 4),
         Size(4, 4),
+        Size(2, 2),
+        Size(2, 2),
         Size(0, 0)
 };
 

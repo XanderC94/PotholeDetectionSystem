@@ -44,7 +44,7 @@ string extractFileName(string file_path, const string sep = "/") {
 
     auto offset = file_path.find_last_of(sep);
 
-    return file_path.substr(offset+1);
+    return file_path.substr(offset + 1);
 }
 
 string set_format(string of_file_name_path, string to_new_format, bool use_separator) {
@@ -56,7 +56,7 @@ string set_format(string of_file_name_path, string to_new_format, bool use_separ
                               (use_separator ? "." : "") + to_new_format);
 }
 
-vector<string> CSVTokenizer(const string str, const char delimiter){
+vector<string> CSVTokenizer(const string str, const char delimiter) {
 
     string tmp(str);
     auto end_pos = remove(tmp.begin(), tmp.end(), ' ');
@@ -66,7 +66,7 @@ vector<string> CSVTokenizer(const string str, const char delimiter){
 
     std::istringstream iss(str);
     string token;
-    while(std::getline(iss, token, delimiter)) tokens.push_back(token);
+    while (std::getline(iss, token, delimiter)) tokens.push_back(token);
 
     return tokens;
 }
@@ -162,7 +162,7 @@ void saveFeatures(const vector<Features> &features, const string saveDirectory, 
 
     ofstream csv("../" + saveDirectory + "/" + saveFile + ".csv", fstream::in | fstream::out | fstream::app);
 
-    if(csv.is_open()) {
+    if (csv.is_open()) {
 
         if (doesNotExist) {
             csv << "Class,Candidate,Contrast,Skewness,AvgGreyVal,Energy,Entropy" << endl;
@@ -185,7 +185,7 @@ void saveFeatures(const vector<Features> &features, const string saveDirectory, 
             csv << f.energy << ",";
             csv << f.entropy << endl;
 
-            imwrite("../" + saveDirectory +"/" + c_name + ".bmp", f.candidate);
+            imwrite("../" + saveDirectory + "/" + c_name + ".bmp", f.candidate);
 
         }
 

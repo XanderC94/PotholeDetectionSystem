@@ -106,7 +106,7 @@ Features candidateFeatureExtraction(const Point centroid, const Mat &src, const 
 //    imshow(c_name + " - Contour", selectedSuperPixel.contour);
 
     return Features {
-          -1,  candidate,
+            -1, candidate,
 //        selectedSuperPixel.selectionMask, selectedSuperPixel.contour,
         histogram, averageGreyValue, contrast, entropy, skewness, energy
     };

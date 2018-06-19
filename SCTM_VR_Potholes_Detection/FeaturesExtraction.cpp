@@ -4,6 +4,7 @@
 
 #include "FeaturesExtraction.h"
 #include "Segmentation.h"
+#include "HOG.h"
 
 using namespace cv;
 using namespace std;
@@ -46,6 +47,17 @@ Features candidateFeatureExtraction(const Point centroid, const Mat &src, const 
 //    Mat candidateForSuperPixeling;
 //    cvtColor(candidateGrayScale, candidateForSuperPixeling, CV_GRAY2BGR);
 //    SuperPixel selectedSuperPixel = extractPotholeRegionFromCandidate(candidateForSuperPixeling, c_name);
+
+    //2. Calculate HoG
+    HoG hog;
+    hog = calculateHoG(candidate, defaultConfig);
+    Mat hogImage = getHoGDescriptorVisualImage(candidateGrayScale,
+                                               hog.descriptors,
+                                               Size(candidateGrayScale.cols, candidateGrayScale.rows),
+                                               defaultConfig.cellSize,
+                                               5,
+                                               2.0);
+    imshow(c_name + " Hog matrix", hogImage);
 
 
     // 3. The histogram will be calculated
@@ -133,13 +145,14 @@ extractFeatures(const Mat &src, const vector<SuperPixel> &candidateSuperPixels, 
 
     FeaturesVectors candidatesFeaturesVectors;
 
-    //Mat imageGrayScale;
-    //cvtColor(src, imageGrayScale, CV_BGR2GRAY);
-    //Gradient grad = calculateGradient(imageGrayScale);
-    //imwrite("../data/gradiente/" + c_name + " gradientey.bmp", resulty);
-    //imshow("Gradient module", grad.module);
-    //imshow("Gradient x", grad.x);
-    //imshow("Gradient y", grad.y);
+//    imshow("src", src);
+//    Gradient grad = calculateGradient(src);
+//    imwrite("../data/gradiente/" + c_name + " gradientey.bmp", resulty);
+//    imshow("Gradient module", grad.magnitude);
+//    printDirection(grad);
+//    //imshow("Gradient direction", grad.direction);
+//    imshow("Gradient x", abs(grad.x));
+//    imshow("Gradient y", abs(grad.y));
 
     /*------------------------Candidate Extraction---------------------------*/
     for (auto candidate : candidateSuperPixels) {

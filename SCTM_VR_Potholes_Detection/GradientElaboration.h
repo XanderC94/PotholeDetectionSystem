@@ -13,9 +13,11 @@ using namespace std;
 typedef struct Gradient {
     Mat x;
     Mat y;
-    Mat module;
+    Mat magnitude;
+    Mat direction; //in degrees
 } Gradient;
 
-Gradient calculateGradient(Mat &candidate);
+void printDirection(Gradient gradient);
 
+Gradient calculateGradient(Mat candidate);
 #endif //POTHOLEDETENCTIONSYSTEM_GRADIENTELABORATION_H

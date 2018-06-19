@@ -58,3 +58,6 @@ FindOpenCV.make
 /data/*
 /results
 /results/*
+
+/svm*
+/svm/*

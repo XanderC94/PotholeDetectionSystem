@@ -106,7 +106,7 @@ Features candidateFeatureExtraction(const Point centroid, const Mat &src, const 
 //    imshow(c_name + " - Contour", selectedSuperPixel.contour);
 
     return Features {
-            candidate,
+          -1,  candidate,
 //        selectedSuperPixel.selectionMask, selectedSuperPixel.contour,
         histogram, averageGreyValue, contrast, entropy, skewness, energy
     };
@@ -145,19 +145,25 @@ extractFeatures(const Mat &src, const vector<SuperPixel> &candidateSuperPixels, 
 
     FeaturesVectors candidatesFeaturesVectors;
 
-//    imshow("src", src);
-//    Gradient grad = calculateGradient(src);
-//    imwrite("../data/gradiente/" + c_name + " gradientey.bmp", resulty);
-//    imshow("Gradient module", grad.magnitude);
-//    printDirection(grad);
-//    //imshow("Gradient direction", grad.direction);
-//    imshow("Gradient x", abs(grad.x));
-//    imshow("Gradient y", abs(grad.y));
+    //Mat imageGrayScale;
+    //cvtColor(src, imageGrayScale, CV_BGR2GRAY);
+    //Gradient grad = calculateGradient(imageGrayScale);
+    //imwrite("../data/gradiente/" + c_name + " gradientey.bmp", resulty);
+    //imshow("Gradient module", grad.module);
+    //imshow("Gradient x", grad.x);
+    //imshow("Gradient y", grad.y);
 
     /*------------------------Candidate Extraction---------------------------*/
     for (auto candidate : candidateSuperPixels) {
         Features candidateFeatures = candidateFeatureExtraction(candidate.center, src, candidate_size);
         notNormalizedfeatures.push_back(candidateFeatures);
+
+//        cout << "SP" << candidate.SPLabel <<
+//             "| AvgGrayVal: " << candidateFeatures.averageGreyValue <<
+//             "| Contrast: " << candidateFeatures.contrast <<
+//             "| Skeweness: " << candidateFeatures.skewness <<
+//             "| Energy: " << candidateFeatures.energy <<
+//             "| Entropy: " << candidateFeatures.entropy << endl;
 
         candidatesFeaturesVectors.histograms.push_back(candidateFeatures.histogram);
         candidatesFeaturesVectors.contrasts.push_back(candidateFeatures.contrast);
@@ -170,7 +176,7 @@ extractFeatures(const Mat &src, const vector<SuperPixel> &candidateSuperPixels, 
     /*------------- Normalization Phase -------------*/
 
     //Normalize feature values to [1,10]
-    FeaturesVectors normalizedFeaturesVectors = normalizeFeatures(1, 10, candidatesFeaturesVectors);
+    FeaturesVectors normalizedFeaturesVectors = normalizeFeatures(1.0, 10.0, candidatesFeaturesVectors);
 
     for (int i = 0; i < candidateSuperPixels.size(); i++) {
         /*cout <<
@@ -181,15 +187,14 @@ extractFeatures(const Mat &src, const vector<SuperPixel> &candidateSuperPixels, 
              " Entropy: " << normalizedFeaturesVectors.entropies.at(i) << endl;*/
 
         normalizedFeatures.push_back(Features{
-                notNormalizedfeatures.at(i).candidate,
-//                notNormalizedfeatures.at(i).mask,
-//                notNormalizedfeatures.at(i).contour,
-                normalizedFeaturesVectors.histograms.at(i),
-                normalizedFeaturesVectors.averageGreyLevels.at(i),
-                normalizedFeaturesVectors.contrasts.at(i),
-                normalizedFeaturesVectors.entropies.at(i),
-                normalizedFeaturesVectors.skewnesses.at(i),
-                normalizedFeaturesVectors.energies.at(i)
+                candidateSuperPixels[i].label,
+                notNormalizedfeatures[i].candidate,
+                normalizedFeaturesVectors.histograms[i],
+                normalizedFeaturesVectors.averageGreyLevels[i],
+                normalizedFeaturesVectors.contrasts[i],
+                normalizedFeaturesVectors.entropies[i],
+                normalizedFeaturesVectors.skewnesses[i],
+                normalizedFeaturesVectors.energies[i]
         });
     }
 

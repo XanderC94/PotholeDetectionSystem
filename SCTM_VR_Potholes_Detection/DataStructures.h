@@ -29,9 +29,8 @@ typedef struct ExtractionThresholds {
 const ExtractionThresholds defaultThresholds = {0.80, 0.35, 0.60, 1.25, 4.0};
 
 typedef struct Features {
+    int SPLabel;
     Mat candidate;
-//    Mat mask;
-//    Mat contour;
     Mat histogram;
     float averageGreyValue;
     float contrast;

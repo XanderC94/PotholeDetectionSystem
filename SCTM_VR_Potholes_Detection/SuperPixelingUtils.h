@@ -22,11 +22,7 @@ SuperPixel getSuperPixel(const Mat &src,
                          const Mat &labels,
                          const Mat &contour);
 
-Ptr<SuperpixelLSC> initSuperPixelingLSC(const Mat &src,
-                                        Mat &contour,
-                                        Mat &mask,
-                                        Mat &labels,
-                                        int superPixelEdge);
+Ptr<SuperpixelLSC> initSuperPixelingLSC(const Mat &src, int superPixelEdge);
 
 Ptr<SuperpixelSLIC> initSuperPixelingSLIC(Mat &src, Mat &contour, Mat &labels, Mat &mask);
 

@@ -45,25 +45,14 @@ SuperPixel getSuperPixel(const Mat &src,
     return result;
 }
 
-Ptr<SuperpixelLSC> initSuperPixelingLSC(const Mat &src,
-                                        Mat &contour, Mat &mask, Mat &labels,
-                                        int superPixelEdge) {
+Ptr<SuperpixelLSC> initSuperPixelingLSC(const Mat &src, int superPixelEdge) {
     Mat imgCIELab;
 
     // Switch color space from RGB to CieLAB
     cvtColor(src, imgCIELab, COLOR_BGR2Lab);
 
     // Linear Spectral Clustering
-    Ptr<SuperpixelLSC> superpixels = cv::ximgproc::createSuperpixelLSC(imgCIELab, superPixelEdge);
-
-    superpixels->iterate(10);
-    superpixels->getLabelContourMask(contour);
-    superpixels->getLabels(labels);
-
-    src.copyTo(mask);
-    mask.setTo(Scalar(255, 255, 255));
-
-    return superpixels;
+    return cv::ximgproc::createSuperpixelLSC(imgCIELab, superPixelEdge);
 }
 
 

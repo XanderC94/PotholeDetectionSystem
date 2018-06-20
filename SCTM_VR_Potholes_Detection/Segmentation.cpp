@@ -1,7 +1,6 @@
 #include "Segmentation.h"
 #include "MathUtils.h"
 
-#include <iostream>
 #include <opencv2/photo.hpp>
 
 using namespace cv;

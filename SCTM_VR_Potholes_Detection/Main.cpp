@@ -13,7 +13,7 @@ using namespace std;
 
 using namespace cv::ml;
 
-vector<Features> preClassification (const string &target) {
+vector<Features> preClassification(const string &target) {
 
     auto candidateSuperPixels = vector<SuperPixel>();
 
@@ -44,7 +44,7 @@ vector<Features> preClassification (const string &target) {
             .Variance_Threshold = 0.3,
             .Gauss_RoadThreshold = 0.60,
             .colourRatioThresholdMin= 1.15, // 1.25 is better if we aim to properly detect nearest holes to the vehicle,
-                                            // but will probably exclude far away holes and those holes near cars (see image of test n_89)
+            // but will probably exclude far away holes and those holes near cars (see image of test n_89)
             .colourRatioThresholdMax = 2.5
     };
 
@@ -161,7 +161,8 @@ int main(int argc, char*argv[]) {
 
             for (int i = 0; i < features.size(); ++i) {
 //                if (labels.at<float>(0, i) == 1) {
-                    imwrite("../results/Candidate_" + to_string(i) + (labels.at<float>(0, i) == 1 ? "_Pos" : "_Neg") + ".bmp", features[i].candidate);
+                imwrite("../results/Candidate_" + to_string(i) + (labels.at<float>(0, i) == 1 ? "_Pos" : "_Neg") +
+                        ".bmp", features[i].candidate);
 //                }
             }
 

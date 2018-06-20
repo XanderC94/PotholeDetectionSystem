@@ -4,6 +4,7 @@
 
 #include "FeaturesExtraction.h"
 #include "Segmentation.h"
+#include "HOG.h"
 
 using namespace cv;
 using namespace std;
@@ -50,6 +51,18 @@ Features candidateFeatureExtraction(const SuperPixel nativeSuperPixel, const Mat
     Mat candidateGrayScale;
     cvtColor(sample, candidateGrayScale, CV_BGR2GRAY);
 
+    //2. Calculate HoG
+    HoG hog;
+    hog = calculateHoG(sample, defaultConfig);
+    Mat hogImage = getHoGDescriptorVisualImage(candidateGrayScale,
+                                               hog.descriptors,
+                                               Size(candidateGrayScale.cols, candidateGrayScale.rows),
+                                               defaultConfig.cellSize,
+                                               5,
+                                               2.0);
+    imshow(c_name + " Hog matrix", hogImage);
+
+
     // 3. The histogram will be calculated
     Mat histogram = ExtractHistograms(candidateGrayScale, c_name);
 
@@ -73,7 +86,7 @@ Features candidateFeatureExtraction(const SuperPixel nativeSuperPixel, const Mat
         }
     }
 
-//    for (Point coordinates : nativeSuperPixel.points) {
+//    for (Point coordinates : candidateSuperPixel.points) {
 //        contrast = contrast + (coordinates.y - coordinates.x) * (coordinates.y - coordinates.x) * candidateGrayScale.at<uchar>(coordinates);
 //        entropy = entropy +
 //                  (candidateGrayScale.at<uchar>(coordinates) * log10f(candidateGrayScale.at<uchar>(coordinates)));
@@ -132,7 +145,7 @@ extractFeatures(const Mat &src, const vector<SuperPixel> &candidateSuperPixels, 
     //Mat imageGrayScale;
     //cvtColor(src, imageGrayScale, CV_BGR2GRAY);
     //Gradient grad = calculateGradient(imageGrayScale);
-    //imwrite("../data.all.128/gradiente/" + c_name + " gradientey.bmp", resulty);
+    //imwrite("../data/gradiente/" + c_name + " gradientey.bmp", resulty);
     //imshow("Gradient module", grad.module);
     //imshow("Gradient x", grad.x);
     //imshow("Gradient y", grad.y);

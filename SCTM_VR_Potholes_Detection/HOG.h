@@ -14,22 +14,41 @@ using namespace cv;
 using namespace std;
 
 typedef struct HOGConfig {
-    const int bin;
-    const Size window;
-    const Size block;
-    const Size block_stride;
-    const Size cell;
-    const Size window_stride;
+    const int binNumber;
+    const Size detenctionWindowSize;
+    const Size blockSize;
+    const Size blockStride;
+    const Size cellSize;
+    const Size windowStride;
     const Size padding;
 } HOGConfig;
 
-const HOGConfig defaultConfig = {9, Size(64, 64), Size(8, 8), Size(2, 2), Size(4, 4), Size(2, 2), Size(0, 0)};
+const HOGConfig defaultConfig = {
+        9,
+        Size(64, 64),
+        Size(4, 4),
+        Size(4, 4),
+        Size(2, 2),
+        Size(2, 2),
+        Size(0, 0)
+};
 
-void HOG(const Mat &src, vector<float> &descriptors, vector<Point> &locations, const HOGConfig config = defaultConfig);
+typedef struct HoG {
+    vector<float> descriptors = vector<float>();
+    vector<Point> locations = vector<Point>();;
+} Hog;
 
-Mat get_hogdescriptor_visual_image(const Mat &src, const vector<float> &descriptors,
-                                   const Size window, const Size cell, const int bins,
-                                   const int scaling_factor = 1, const double grad_viz = 5,
-                                   const bool isGrayscale = false, bool onlyMaxGrad = true);
+Mat overlayDescriptors(Mat src, HoG hogToOverlay);
+
+Mat getHoGDescriptorVisualImage(Mat &origImg,
+                                vector<float> &descriptorValues,
+                                Size winSize,
+                                Size cellSize,
+                                int scaleFactor,
+                                double viz_factor);
+
+
+HoG calculateHoG(const Mat &src, const HOGConfig config = defaultConfig);
+
 
 #endif //POTHOLEDETENCTIONSYSTEM_HOG_H

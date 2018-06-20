@@ -173,7 +173,7 @@ void saveFeatures(const vector<Features> &features, const string saveDirectory, 
             auto f = features[i];
             auto candidate = extractFileName(names[i]);
 
-            string c_name = set_format(candidate, "", false) + "_L" + to_string(f.SPLabel);
+            string c_name = set_format(candidate, "", false) + "_L" + to_string(f.label);
 
             cout << "Saving candidate " << c_name << endl;
 

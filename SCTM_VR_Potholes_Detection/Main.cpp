@@ -23,6 +23,7 @@ vector<Features> preClassification(const string &target) {
 
     Mat src = imread(target, IMREAD_COLOR), tmp;
 
+//    cvtColor(src, src, CV_RGB2BGR);
     /*
     *	The src image will be:
     *	1. Resized
@@ -55,7 +56,7 @@ vector<Features> preClassification(const string &target) {
 
     /*--------------------------------- Pre-Processing Phase ------------------------------*/
 
-    cout << "Preprocessing... ";
+    cout << "Pre-Processing... ";
     preprocessing(src, src, offsets.Horizon_Offset);
     cout << "Finished." << endl;
 
@@ -76,8 +77,8 @@ vector<Features> preClassification(const string &target) {
 
     /*--------------------------------- Feature Extraction Phase ------------------------------*/
 
-    cout << "Feature Extraction -- Starting " << endl;
-    auto features = extractFeatures(src, candidateSuperPixels, candidate_size);
+    cout << "Feature Extraction -- Started. " << endl;
+    auto features = extractFeatures(src, candidateSuperPixels, candidate_size, thresholds);
     cout << "Feature Extraction -- Finished." << endl;
 
     /*--------------------------------- End Feature Extraction Phase ------------------------------*/

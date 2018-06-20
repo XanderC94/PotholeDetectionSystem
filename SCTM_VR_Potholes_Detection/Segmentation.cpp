@@ -1,7 +1,7 @@
 #include "Segmentation.h"
-#include "MathUtils.h"
 
 #include <opencv2/photo.hpp>
+#include <iostream>
 
 using namespace cv;
 using namespace std;
@@ -23,8 +23,6 @@ void preprocessing(Mat &src, Mat &processedImage, const double Horizon_Offset) {
     Size scale(static_cast<int>(newWidth), static_cast<int>(newHeight));
 
     resize(src, processedImage, scale);
-    // Delete Reflection Noises
-//    fastNlMeansDenoisingColored(processedImage, processedImage, 3.0, 10.0, 7, 21);
 
     // Apply gaussian blur in order to smooth edges and gaining cleaner superpixels
     GaussianBlur(processedImage, processedImage, Size(3, 3), 0.0); // OK, do not change
@@ -41,14 +39,6 @@ void preprocessing(Mat &src, Mat &processedImage, const double Horizon_Offset) {
 bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel &superPixel,
                             ExtractionThresholds thresholds) {
 
-//    Point2d deviation =  calculateSuperPixelVariance(superPixel.points, superPixel.center);
-
-//    (deviation.x > thresholds.Variance_Threshold || deviation.y > thresholds.Variance_Threshold)
-
-    double density = calculateSuperPixelDensity(superPixel.points);
-
-    if (density > thresholds.Density_Threshold) return false;
-
     Mat1b selectionMask = (labels == -1);
 
     for (int n : superPixel.neighbors) selectionMask.setTo(Scalar(255), (labels == n));
@@ -62,46 +52,63 @@ bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel 
     ratioDark[2] = neighborsMeanColourValue.val[2] / superPixel.meanColourValue.val[2];
 
 //    if ((ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.colourRatioThresholdMin &&
-//        (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.colourRatioThresholdMax) {
+//        (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.colourRatioThresholdMax && src.rows <= 128) {
 //
-//        Mat tmp; src.copyTo(tmp, mask);
-//        tmp.setTo(Scalar(0, 0, 255), (labels == superPixel.SPLabel));
-//        imshow("TMask " + to_string(superPixel.SPLabel), tmp);
+//        Mat tmp; src.copyTo(tmp, selectionMask);
+//        tmp.setTo(Scalar(0, 0, 255), (labels == superPixel.label));
+//        imshow("TMask " + to_string(superPixel.label), tmp);
 //        waitKey();
 //
-//        cout << "SP n° " << superPixel.SPLabel
+//        cout << "SP n° " << superPixel.label
 //             << " \t| Ratio: [" << ratioDark[0] << ", " << ratioDark[1] << ", " << ratioDark[2] << "]"
-//             << " \t| Density:" << density
 //             << endl;
 //    }
 
     return (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.colourRatioThresholdMin &&
-            (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.colourRatioThresholdMax &&
-            superPixel.points.size() >= 16*16;
+           (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.colourRatioThresholdMax;
 }
 
 set<int> findNeighbors(const Point &candidate, const Mat &labels, const int edge) {
 
     vector<Point> testPoints = {
-            candidate + Point(edge, 0),       // Up
-            candidate - Point(edge, 0),       // Down
-            candidate + Point(0, edge),       // Right
-            candidate - Point(0, edge),       // Left
-            candidate + Point(edge, edge),    // Up Right
-            candidate - Point(edge, edge),    // Up Left
-            candidate + Point(-edge, edge),   // Down Right
-            candidate + Point(edge, -edge)    // Down Left
+            candidate + Point(edge, 0),         // Up
+            candidate + Point(-edge, 0),        // Down
+            candidate + Point(0, edge),         // Right
+            candidate + Point(0, -edge),        // Left
+            candidate + Point(edge, edge),      // Up Right
+            candidate + Point(-edge, -edge),    // Up Left
+            candidate + Point(-edge, edge),     // Down Right
+            candidate + Point(edge, -edge)      // Down Left
+    };
+
+    vector<Point> stepPoints = {
+            Point(edge, 0),         // Up
+            Point(-edge, 0),        // Down
+            Point(0, edge),         // Right
+            Point(0, -edge),        // Left
+            Point(edge, edge),      // Up Right
+            Point(-edge, -edge),    // Up Left
+            Point(-edge, edge),     // Down Right
+            Point(edge, -edge)      // Down Left
     };
 
     set<int> neighborhood;
 
-    for (Point &neighbor : testPoints) {
+    for (int i = 0; i < testPoints.size(); ++i) {
+        auto neighbor = testPoints[i];
+        auto step = stepPoints[i];
+        bool found = false;
         // Check if the pixel is inside the image boundaries
-        if (neighbor.y > 0 && neighbor.x > 0 && neighbor.y < labels.rows - 1 && neighbor.x < labels.cols - 1) {
-            // Get the SPLabel of the neighbor
+        while ((neighbor.y > 0 && neighbor.x > 0 && neighbor.y < labels.rows - 1 && neighbor.x < labels.cols - 1)
+               && !found) {
+            // Get the label of the neighbor
             int n = labels.at<int>(neighbor);
-            if (n > 0 && n != labels.at<int>(candidate)) {
+
+            if (n != labels.at<int>(candidate)) {
                 neighborhood.insert(labels.at<int>(neighbor));
+                found = true;
+            } else {
+                neighbor += step;
             }
         }
     }
@@ -118,7 +125,7 @@ int extractRegionsOfInterest(const Ptr<SuperpixelLSC> &superPixeler,
     Mat contour, mask, labels, meanColourMask;
 
     superPixeler->iterate(10);
-    superPixeler->getLabelContourMask(contour);
+//    superPixeler->getLabelContourMask(contour);
     superPixeler->getLabels(labels);
 
 //    src.copyTo(mask);
@@ -131,9 +138,11 @@ int extractRegionsOfInterest(const Ptr<SuperpixelLSC> &superPixeler,
 
 //        Scalar color_mask_value = Scalar(0, 0, 0);
 
-        if (isRoad(src.rows, src.cols, offsets, superPixel.center)) {
+        if (isRoad(src.rows, src.cols, offsets, superPixel.center)
+            && calculateSuperPixelDensity(superPixel.points) < thresholds.Density_Threshold
+            && superPixel.points.size() > 256) {
 
-            superPixel.neighbors = findNeighbors(superPixel.center, labels, superPixelEdge);
+            superPixel.neighbors = findNeighbors(superPixel.center, labels, superPixelEdge / 4);
 
             if (isSuperpixelOfInterest(src, labels, superPixel, thresholds)) {
 //                color_mask_value = Scalar(255, 255, 255);
@@ -184,13 +193,14 @@ bool isPothole(SuperPixel superPixel, SuperPixel previousSelected, Scalar meanCa
 /*
  * if there isn't a super pixel that is recognized as a pothole the function will return the first superpixel
  * */
-SuperPixel selectPothole(Mat src, int nSuperPixels, Mat labels, Mat contour) {
-    SuperPixel selected = getSuperPixel(src, 0, labels, defaultOffsets);
+SuperPixel selectPothole(const Mat &src, const int nSuperPixels, const Mat &labels) {
+
+    SuperPixel selected = getSuperPixel(src, 0, labels);
     double averagePixelValue = (double) mean(src)[0];
-    //vector<SuperPixel> possiblePotholes = vector<SuperPixel>();
+    // vector<SuperPixel> possiblePotholes = vector<SuperPixel>();
     //Select all possible potholes
     for (int l = 0; l < nSuperPixels; ++l) {
-        SuperPixel currSp = getSuperPixel(src, l, labels, defaultOffsets);
+        SuperPixel currSp = getSuperPixel(src, l, labels);
         //Point2d center = calculateSuperPixelCenter(currSp.points);
         if (isPothole(currSp, selected, averagePixelValue)) {
             selected = currSp;
@@ -207,7 +217,6 @@ SuperPixel selectPothole(Mat src, int nSuperPixels, Mat labels, Mat contour) {
         selected = possiblePotholes[possiblePotholes.size() - 1];
     } */
 
-
     return selected;
 }
 
@@ -217,15 +226,53 @@ SuperPixel selectPothole(Mat src, int nSuperPixels, Mat labels, Mat contour) {
  * In order to isolate the pothole super pixel from car's bumper
  * 3. Select the super pixel that is darker than the average pixel value and lighter than a specified threshold
  * */
-SuperPixel extractPotholeRegionFromCandidate(Mat &src, string candidateName) {
-    Mat res;
-    Mat mask;
-    Mat labels;
-    Mat contour;
-    Ptr<SuperpixelSLIC> superPixels = initSuperPixelingSLIC(src, contour, labels, mask);
+std::optional<SuperPixel> extractPotholeRegionFromCandidate(const Ptr<SuperpixelLSC> superPixeler, const Mat &src,
+                                                            const ExtractionThresholds thresholds) {
+    Mat res, labels, contours;
+    vector<SuperPixel> soi;
+    SuperPixel product;
 
-    SuperPixel selected = selectPothole(src, superPixels->getNumberOfSuperpixels(), labels, contour);
+    superPixeler->iterate(10);
+    superPixeler->getLabels(labels);
 
-    //cout << "SP, Size, Area, Variance, Density" << endl;
-    return selected;
+    for (int superPixelLabel = 0; superPixelLabel < superPixeler->getNumberOfSuperpixels(); ++superPixelLabel) {
+
+        SuperPixel superPixel = getSuperPixel(src, superPixelLabel, labels);
+
+        superPixel.neighbors = findNeighbors(superPixel.center, labels, src.rows / 8);
+
+        if (isSuperpixelOfInterest(src, labels, superPixel, thresholds)) {
+            // Add the superpixel to the candidates vector
+
+            soi.push_back(superPixel);
+        }
+    }
+
+    // Join the detected regions
+    if (!soi.empty()) {
+        product = soi[0];
+        if (soi.size() > 1) {
+            for (int i = 1; i < soi.size(); ++i) {
+                product.label += soi[i].label;
+                product.mask += soi[i].mask;
+                product.neighbors.merge(soi[i].neighbors);
+                product.meanColourValue = (product.meanColourValue + soi[i].meanColourValue) * 0.5;
+                product.points.insert(product.points.end(), soi[i].points.begin(), soi[i].points.end());
+            }
+            product.center = calculateSuperPixelCenter(product.points);
+            product.contour = getContours(product.mask);
+
+            src.copyTo(product.selection, product.mask);
+        }
+
+//        src.copyTo(res);
+//        res.setTo(Scalar(0,0,255), product.contour);
+//        imshow("S", res);
+//        imshow("M", product.mask);
+//        waitKey();
+
+        return optional(product);
+    }
+
+    return optional<SuperPixel>();
 }

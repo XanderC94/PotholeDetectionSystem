@@ -17,14 +17,19 @@ using namespace cv;
 using namespace std;
 using namespace cv::ximgproc;
 
+Mat getContours(const Mat &mask);
+
+SuperPixel getSuperPixel(const Mat &src, int superPixelLabel,
+                         const Mat &labels);
+
 SuperPixel getSuperPixel(const Mat &src, int superPixelLabel,
                          const Mat &labels, const RoadOffsets offsets);
 
 bool isRoad(const int H, const int W, const RoadOffsets offsets, const Point2d center);
 
-Ptr<SuperpixelLSC> initSuperPixelingLSC(const Mat &src, int superPixelEdge);
+Ptr<SuperpixelLSC> initSuperPixelingLSC(const Mat &src, const int superPixelEdge);
 
-Ptr<SuperpixelSLIC> initSuperPixelingSLIC(Mat &src, Mat &contour, Mat &labels, Mat &mask);
+Ptr<SuperpixelSLIC> initSuperPixelingSLIC(const Mat &src, const int superPixelEdge, const float ruler);
 
 Point2d calculateSuperPixelCenter(vector<cv::Point> pixelOfTheSuperPixel);
 

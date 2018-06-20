@@ -5,7 +5,6 @@
 #include "SuperPixelingUtils.h"
 #include "MathUtils.h"
 
-
 bool isRoad(const int H, const int W, const RoadOffsets offsets, const Point2d center) {
     // How to evaluate offsets in order to separate road super pixels?
     // Or directly identify RoI (Region of interest) where a pothole will be more likely detected?
@@ -23,6 +22,49 @@ bool isRoad(const int H, const int W, const RoadOffsets offsets, const Point2d c
     return isRoad;
 }
 
+Mat getContours(const Mat &mask) {
+    vector<vector<Point>> tmp;
+
+    Mat maskContours = Mat::zeros(mask.rows, mask.cols, CV_8UC1);
+    findContours(mask, tmp, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+    drawContours(maskContours, tmp, -1, Scalar(255));
+
+    return maskContours;
+}
+
+SuperPixel stub(const Mat &src, const int superPixelLabel, const Mat &mask) {
+
+    vector<cv::Point> superPixelPoints;
+    vector<vector<Point>> tmp;
+
+    Mat maskContours = getContours(mask);
+
+    Mat superPixelSelection;
+    src.copyTo(superPixelSelection, mask);
+    findNonZero(mask, superPixelPoints);
+    Scalar meanColourValue = mean(src, mask);
+
+    SuperPixel result = {
+            .label = superPixelLabel,
+            .points = superPixelPoints,
+            .center = calculateSuperPixelCenter(superPixelPoints),
+            .selection = superPixelSelection,
+            .mask = mask,
+            .contour = maskContours,
+            .meanColourValue = meanColourValue,
+            .neighbors= std::set<int>()
+    };
+
+    return result;
+}
+
+SuperPixel getSuperPixel(const Mat &src, const int superPixelLabel, const Mat &labels) {
+
+    Mat1b selectionMask = (labels == superPixelLabel);
+
+    return stub(src, superPixelLabel, selectionMask);
+}
+
 SuperPixel getSuperPixel(const Mat &src, const int superPixelLabel,
                          const Mat &labels, const RoadOffsets offsets) {
 
@@ -38,33 +80,10 @@ SuperPixel getSuperPixel(const Mat &src, const int superPixelLabel,
         }
     }
 
-    superPixelPoints.erase(superPixelPoints.begin(), superPixelPoints.end());
-
-    vector<vector<Point>> tmp;
-    Mat maskContours = Mat::zeros(src.rows, src.cols, CV_8UC1);
-    findContours(selectionMask, tmp, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
-    drawContours(maskContours, tmp, -1, Scalar(255));
-
-    Mat superPixelSelection;
-    src.copyTo(superPixelSelection, selectionMask);
-    findNonZero(selectionMask, superPixelPoints);
-    Scalar meanColourValue = mean(src, selectionMask);
-
-    SuperPixel result = {
-            .label = superPixelLabel,
-            .points = superPixelPoints,
-            .center = calculateSuperPixelCenter(superPixelPoints),
-            .selection = superPixelSelection,
-            .mask = selectionMask,
-            .contour = maskContours,
-            .meanColourValue = meanColourValue,
-            .neighbors= std::set<int>()
-    };
-
-    return result;
+    return stub(src, superPixelLabel, selectionMask);
 }
 
-Ptr<SuperpixelLSC> initSuperPixelingLSC(const Mat &src, int superPixelEdge) {
+Ptr<SuperpixelLSC> initSuperPixelingLSC(const Mat &src, const int superPixelEdge) {
     Mat imgCIELab;
 
     // Switch color space from RGB to CieLAB
@@ -75,24 +94,13 @@ Ptr<SuperpixelLSC> initSuperPixelingLSC(const Mat &src, int superPixelEdge) {
 }
 
 
-Ptr<SuperpixelSLIC> initSuperPixelingSLIC(Mat &src, Mat &contour, Mat &labels, Mat &mask) {
+Ptr<SuperpixelSLIC> initSuperPixelingSLIC(const Mat &src, const int superPixelEdge, float ruler) {
     Mat imgCIELab;
     // Switch color space from RGB to CieLAB
     cvtColor(src, imgCIELab, COLOR_BGR2Lab);
-//	imshow("CieLab color space", imgCIELab);
 
-    int regionSize = 48;
-    float ruler = 20.0;
-    Ptr<SuperpixelSLIC> superpixels = cv::ximgproc::createSuperpixelSLIC(imgCIELab, SLIC::MSLIC, regionSize, ruler);
+    return cv::ximgproc::createSuperpixelSLIC(imgCIELab, SLIC::MSLIC, superPixelEdge, ruler);
 
-    superpixels->iterate(10);
-    superpixels->getLabelContourMask(contour);
-    superpixels->getLabels(labels);
-
-    src.copyTo(mask);
-    mask.setTo(Scalar(255, 255, 255));
-
-    return superpixels;
 }
 
 

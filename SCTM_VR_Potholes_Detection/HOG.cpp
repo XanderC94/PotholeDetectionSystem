@@ -25,6 +25,57 @@ HoG calculateHoG(const Mat &src, const HOGConfig config) {
     return result;
 }
 
+typedef struct GradientLine {
+    Mat visual_image;
+    Point startPoint;
+    Point endPoint;
+    Scalar color;
+    int thickness;
+} GradienLine;
+
+
+void drawGradientLines(vector<GradientLine> lines) {
+    for (GradientLine gLine : lines) {
+        line(gLine.visual_image,
+             gLine.startPoint,
+             gLine.endPoint,
+             gLine.color,
+             gLine.thickness);
+    }
+}
+
+GradientLine calculateGradientLine(Mat visual_image,
+                                   int binIndex,
+                                   int scaleFactor,
+                                   float currentGradStrength,
+                                   float radRangeForOneBin,
+                                   Size cellSize,
+                                   double viz_factor,
+                                   int mx,
+                                   int my) {
+    float currRad = binIndex * radRangeForOneBin + radRangeForOneBin / 2;
+
+    float dirVecX = cos(currRad);
+    float dirVecY = sin(currRad);
+    float maxVecLen = cellSize.width / 2;
+    float scale = viz_factor; // just a visual_imagealization scale,
+    // to see the lines better
+
+    // compute line coordinates
+    float x1 = mx - dirVecX * currentGradStrength * maxVecLen * scale;
+    float y1 = my - dirVecY * currentGradStrength * maxVecLen * scale;
+    float x2 = mx + dirVecX * currentGradStrength * maxVecLen * scale;
+    float y2 = my + dirVecY * currentGradStrength * maxVecLen * scale;
+
+    // draw gradient visual_imagealization
+    GradientLine line = {visual_image,
+                         Point(x1 * scaleFactor, y1 * scaleFactor),
+                         Point(x2 * scaleFactor, y2 * scaleFactor),
+                         CV_RGB(0, 0, 255),
+                         1};
+    return line;
+}
+
 void drawGradientStrenghtsInCells(Mat visual_image,
                                   int scaleFactor,
                                   Size cellSize,
@@ -36,35 +87,68 @@ void drawGradientStrenghtsInCells(Mat visual_image,
                                   int mx,
                                   int my,
                                   int binNumber) {
+
+    vector<GradienLine> gLines = vector<GradienLine>();
+
     for (int bin = 0; bin < binNumber; bin++) {
         float currentGradStrength = gradientStrengths[celly][cellx][bin];
 
         // no line to draw?
-        if (currentGradStrength == 0)
-            continue;
-
-        float currRad = bin * radRangeForOneBin + radRangeForOneBin / 2;
-
-        float dirVecX = cos(currRad);
-        float dirVecY = sin(currRad);
-        float maxVecLen = cellSize.width / 2;
-        float scale = viz_factor; // just a visual_imagealization scale,
-        // to see the lines better
-
-        // compute line coordinates
-        float x1 = mx - dirVecX * currentGradStrength * maxVecLen * scale;
-        float y1 = my - dirVecY * currentGradStrength * maxVecLen * scale;
-        float x2 = mx + dirVecX * currentGradStrength * maxVecLen * scale;
-        float y2 = my + dirVecY * currentGradStrength * maxVecLen * scale;
-
-        // draw gradient visual_imagealization
-        line(visual_image,
-             Point(x1 * scaleFactor, y1 * scaleFactor),
-             Point(x2 * scaleFactor, y2 * scaleFactor),
-             CV_RGB(0, 0, 255),
-             1);
-
+        if (currentGradStrength != 0) {
+            GradientLine line = calculateGradientLine(visual_image,
+                                                      bin,
+                                                      scaleFactor,
+                                                      currentGradStrength,
+                                                      radRangeForOneBin,
+                                                      cellSize,
+                                                      viz_factor,
+                                                      mx,
+                                                      my);
+            gLines.push_back(line);
+        }
     } // for (all bins)
+
+    drawGradientLines(gLines);
+}
+
+void drawGreaterGradientStrenghtsInCells(Mat visual_image,
+                                         int scaleFactor,
+                                         Size cellSize,
+                                         float radRangeForOneBin,
+                                         float ***gradientStrengths,
+                                         int celly,
+                                         int cellx,
+                                         double viz_factor,
+                                         int mx,
+                                         int my,
+                                         int binNumber) {
+
+    GradienLine greaterGradient = {Mat(), Point(), Point(), Scalar(), 0};
+
+    float prevGradStrength = 0.0;
+
+    for (int bin = 0; bin < binNumber; bin++) {
+        float currentGradStrength = gradientStrengths[celly][cellx][bin];
+
+        // no line to draw?
+        if (currentGradStrength != 0 && prevGradStrength < currentGradStrength) {
+            prevGradStrength = currentGradStrength;
+            GradientLine line = calculateGradientLine(visual_image,
+                                                      bin,
+                                                      scaleFactor,
+                                                      currentGradStrength,
+                                                      radRangeForOneBin,
+                                                      cellSize,
+                                                      viz_factor,
+                                                      mx,
+                                                      my);
+            greaterGradient = line;
+        }
+    } // for (all bins)
+
+    vector<GradientLine> vec = vector<GradientLine>();
+    vec.push_back(greaterGradient);
+    drawGradientLines(vec);
 }
 
 
@@ -92,18 +176,17 @@ void drawCell(int cells_in_x_dir,
                       CV_RGB(100, 100, 100),
                       1);
 
-            // draw in each cellSize all 9 gradient strengths
-            drawGradientStrenghtsInCells(visual_image,
-                                         scaleFactor,
-                                         cellSize,
-                                         radRangeForOneBin,
-                                         gradientStrengths,
-                                         celly,
-                                         cellx,
-                                         viz_factor,
-                                         mx,
-                                         my,
-                                         binNumber);
+            drawGreaterGradientStrenghtsInCells(visual_image,
+                                                scaleFactor,
+                                                cellSize,
+                                                radRangeForOneBin,
+                                                gradientStrengths,
+                                                celly,
+                                                cellx,
+                                                viz_factor,
+                                                mx,
+                                                my,
+                                                binNumber);
 
         } // for (cellx)
     } // for (celly)

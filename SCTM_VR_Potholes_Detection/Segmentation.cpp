@@ -34,23 +34,6 @@ void preprocessing(Mat &src, Mat &processedImage, const double Horizon_Offset) {
             Rect(Point2d(0, newHeight * Horizon_Offset), Point2d(newWidth - 1, newHeight - 1)));
 }
 
-bool isRoad(const int H, const int W, const RoadOffsets offsets, const Point2d center) {
-    // How to evaluate offsets in order to separate road super pixels?
-    // Or directly identify RoI (Region of interest) where a pothole will be more likely detected?
-    // ...
-    // Possibilities
-    // => Gaussian 3D function
-    // => Evaluates the pixels through an Analytic Rect Function : F(x) > 0 is over the rect, F(x) < 0 is under, F(x) = 0 it lies on.
-
-    bool isRoad = AnalyticRect2D(cv::Point2d(W * offsets.SLine_X_Left_Offset, H * offsets.SLine_Y_Offset),
-                                 cv::Point2d(W * 0.4, 0.0), center) >= 0 &&
-                  AnalyticRect2D(
-                          cv::Point2d(W * (1.0 - offsets.SLine_X_Right_Offset), H * offsets.SLine_Y_Offset),
-                          cv::Point2d(W * 0.6, 0.0), center) >= 0;
-
-    return isRoad;
-}
-
 /*
  * Check if the super pixel is a pothole:
  *      - checking if its density il less than the specified density threshold
@@ -82,7 +65,7 @@ bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel 
 //    if ((ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.colourRatioThresholdMin &&
 //        (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.colourRatioThresholdMax) {
 //
-//        Mat tmp; src.copyTo(tmp, selectionMask);
+//        Mat tmp; src.copyTo(tmp, mask);
 //        tmp.setTo(Scalar(0, 0, 255), (labels == superPixel.SPLabel));
 //        imshow("TMask " + to_string(superPixel.SPLabel), tmp);
 //        waitKey();
@@ -94,7 +77,8 @@ bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel 
 //    }
 
     return (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.colourRatioThresholdMin &&
-            (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.colourRatioThresholdMax;
+            (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.colourRatioThresholdMax &&
+            superPixel.points.size() >= 16*16;
 }
 
 set<int> findNeighbors(const Point &candidate, const Mat &labels, const int edge) {
@@ -144,7 +128,7 @@ int extractRegionsOfInterest(const Ptr<SuperpixelLSC> &superPixeler,
 
     for (int superPixelLabel = 0; superPixelLabel < superPixeler->getNumberOfSuperpixels(); ++superPixelLabel) {
 
-        SuperPixel superPixel = getSuperPixel(src, superPixelLabel, labels, contour);
+        SuperPixel superPixel = getSuperPixel(src, superPixelLabel, labels, offsets);
 
 //        Scalar color_mask_value = Scalar(0, 0, 0);
 
@@ -159,8 +143,8 @@ int extractRegionsOfInterest(const Ptr<SuperpixelLSC> &superPixeler,
             }
         }
 
-//        meanColourMask.setTo(superPixel.meanColourValue, superPixel.selectionMask);
-//        mask.setTo(color_mask_value, superPixel.selectionMask);
+//        meanColourMask.setTo(superPixel.meanColourValue, superPixel.mask);
+//        mask.setTo(color_mask_value, superPixel.mask);
 
     }
 
@@ -202,12 +186,12 @@ bool isPothole(SuperPixel superPixel, SuperPixel previousSelected, Scalar meanCa
  * if there isn't a super pixel that is recognized as a pothole the function will return the first superpixel
  * */
 SuperPixel selectPothole(Mat src, int nSuperPixels, Mat labels, Mat contour) {
-    SuperPixel selected = getSuperPixel(src, 0, labels, contour);
+    SuperPixel selected = getSuperPixel(src, 0, labels, defaultOffsets);
     double averagePixelValue = (double) mean(src)[0];
     //vector<SuperPixel> possiblePotholes = vector<SuperPixel>();
     //Select all possible potholes
     for (int l = 0; l < nSuperPixels; ++l) {
-        SuperPixel currSp = getSuperPixel(src, l, labels, contour);
+        SuperPixel currSp = getSuperPixel(src, l, labels, defaultOffsets);
         //Point2d center = calculateSuperPixelCenter(currSp.points);
         if (isPothole(currSp, selected, averagePixelValue)) {
             selected = currSp;

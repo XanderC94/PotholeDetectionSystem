@@ -17,10 +17,10 @@ using namespace cv;
 using namespace std;
 using namespace cv::ximgproc;
 
-SuperPixel getSuperPixel(const Mat &src,
-                         int superPixelLabel,
-                         const Mat &labels,
-                         const Mat &contour);
+SuperPixel getSuperPixel(const Mat &src, int superPixelLabel,
+                         const Mat &labels, const RoadOffsets offsets);
+
+bool isRoad(const int H, const int W, const RoadOffsets offsets, const Point2d center);
 
 Ptr<SuperpixelLSC> initSuperPixelingLSC(const Mat &src, int superPixelEdge);
 

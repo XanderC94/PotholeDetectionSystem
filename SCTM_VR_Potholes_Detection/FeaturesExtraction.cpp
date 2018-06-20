@@ -29,24 +29,26 @@ typedef struct FeaturesVectors {
 *  7. Calculate Energy
 *  8. Calculate 3-order moments (is Skewness according to http://aishack.in/tutorials/image-moments/)
 * */
-Features candidateFeatureExtraction(const Point centroid, const Mat &src, const Size candidate_size) {
-    //tlc (top left corner) brc(bottom right corner)
+Features candidateFeatureExtraction(const SuperPixel nativeSuperPixel, const Mat &src, const Size candidate_size) {
+
+    auto centroid = nativeSuperPixel.center;
+
+    // tlc = top left corner brc = bottom right corner
     auto tlc = calculateTopLeftCorner(centroid, candidate_size);
     auto brc = calculateBottomRightCorner(centroid, src, candidate_size);
 
-    auto candidate = src(Rect(tlc, brc));
+    Mat sample = src(Rect(tlc, brc));
+//    sample.setTo(Scalar(0,0,255), nativeSuperPixel.contour);
+
     auto c_name = "Candidate @ (" + to_string(centroid.x) + ", " + to_string(centroid.y) + ")";
 
-    //candidates.push_back(candidate);
-    Mat candidateGrayScale;
-    // 1. Switch color-space from RGB to GreyScale
-    cvtColor(candidate, candidateGrayScale, CV_BGR2GRAY);
-
-    // 2. Extract only the pothole region
-//    Mat candidateForSuperPixeling;
+    // 1. Extract only the pothole region
+    Mat candidateForSuperPixeling;
 //    cvtColor(candidateGrayScale, candidateForSuperPixeling, CV_GRAY2BGR);
-//    SuperPixel selectedSuperPixel = extractPotholeRegionFromCandidate(candidateForSuperPixeling, c_name);
-
+//    SuperPixel candidateSuperPixel = extractPotholeRegionFromCandidate(candidateForSuperPixeling, c_name);
+    // 2. Switch color-space from RGB to GreyScale
+    Mat candidateGrayScale;
+    cvtColor(sample, candidateGrayScale, CV_BGR2GRAY);
 
     // 3. The histogram will be calculated
     Mat histogram = ExtractHistograms(candidateGrayScale, c_name);
@@ -71,32 +73,26 @@ Features candidateFeatureExtraction(const Point centroid, const Mat &src, const 
         }
     }
 
-//    for (Point coordinates : selectedSuperPixel.points) {
-//        contrast = contrast + powf((coordinates.y - coordinates.x), 2) * candidateGrayScale.at<uchar>(coordinates);
+//    for (Point coordinates : nativeSuperPixel.points) {
+//        contrast = contrast + (coordinates.y - coordinates.x) * (coordinates.y - coordinates.x) * candidateGrayScale.at<uchar>(coordinates);
 //        entropy = entropy +
 //                  (candidateGrayScale.at<uchar>(coordinates) * log10f(candidateGrayScale.at<uchar>(coordinates)));
-//        energy = energy + powf(candidateGrayScale.at<uchar>(coordinates), 2);
+//        energy = energy + candidateGrayScale.at<uchar>(coordinates) * candidateGrayScale.at<uchar>(coordinates);
 //    }
 
     entropy = 0 - entropy;
     energy = sqrtf(energy);
 
     //8. Calculate Skewness
-    float skewness = calculateSkewnessGrayImage(candidate, averageGreyValue);
-//    float skewness = calculateSkewnessGrayImageRegion(candidate, selectedSuperPixel.points, averageGreyValue);
+    float skewness = calculateSkewnessGrayImage(sample, averageGreyValue);
+//    float skewness = calculateSkewnessGrayImageRegion(nativeSuperPixel.selection, nativeSuperPixel.points, averageGreyValue);
 
     // Highlights the selected pothole region
-//    Mat markedCandidate;
-//    candidate.copyTo(markedCandidate);
-//    markedCandidate.setTo(Scalar(0, 0, 255), selectedSuperPixel.contour);
-//    imshow(c_name + " - Result", markedCandidate);
+//    imshow("Sample " + to_string(nativeSuperPixel.label), sample);
 //    waitKey();
-//    imshow(c_name + " - Contour", selectedSuperPixel.contour);
 
     return Features {
-          -1,  candidate,
-//        selectedSuperPixel.selectionMask, selectedSuperPixel.contour,
-        histogram, averageGreyValue, contrast, entropy, skewness, energy
+          -1,  sample, histogram, averageGreyValue, contrast, entropy, skewness, energy
     };
 }
 
@@ -143,7 +139,7 @@ extractFeatures(const Mat &src, const vector<SuperPixel> &candidateSuperPixels, 
 
     /*------------------------Candidate Extraction---------------------------*/
     for (auto candidate : candidateSuperPixels) {
-        Features candidateFeatures = candidateFeatureExtraction(candidate.center, src, candidate_size);
+        Features candidateFeatures = candidateFeatureExtraction(candidate, src, candidate_size);
         notNormalizedfeatures.push_back(candidateFeatures);
 
 //        cout << "SP" << candidate.SPLabel <<

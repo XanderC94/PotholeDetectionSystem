@@ -43,8 +43,8 @@ typedef struct SuperPixel {
     int label;
     vector<cv::Point> points;
     Point2d center;
-    Mat superPixelSelection;
-    Mat1b selectionMask;
+    Mat selection;
+    Mat1b mask;
     Mat contour;
     Scalar meanColourValue;
     std::set<int> neighbors;

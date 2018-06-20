@@ -3,40 +3,59 @@
 //
 
 #include "SuperPixelingUtils.h"
+#include "MathUtils.h"
 
-SuperPixel getSuperPixel(const Mat &src,
-                         const int superPixelLabel,
-                         const Mat &labels, const Mat &contour) {
+
+bool isRoad(const int H, const int W, const RoadOffsets offsets, const Point2d center) {
+    // How to evaluate offsets in order to separate road super pixels?
+    // Or directly identify RoI (Region of interest) where a pothole will be more likely detected?
+    // ...
+    // Possibilities
+    // => Gaussian 3D function
+    // => Evaluates the pixels through an Analytic Rect Function : F(x) > 0 is over the rect, F(x) < 0 is under, F(x) = 0 it lies on.
+
+    bool isRoad = AnalyticRect2D(cv::Point2d(W * offsets.SLine_X_Left_Offset, H * offsets.SLine_Y_Offset),
+                                 cv::Point2d(W * 0.4, 0.0), center) >= -0.01 &&
+                  AnalyticRect2D(
+                          cv::Point2d(W * (1.0 - offsets.SLine_X_Right_Offset), H * offsets.SLine_Y_Offset),
+                          cv::Point2d(W * 0.6, 0.0), center) >= -0.01;
+
+    return isRoad;
+}
+
+SuperPixel getSuperPixel(const Mat &src, const int superPixelLabel,
+                         const Mat &labels, const RoadOffsets offsets) {
 
     Mat1b selectionMask = (labels == superPixelLabel);
 
-//    Mat dilatedMask;
-//    auto dilateElem = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));
-//    dilate(selectionMask, dilatedMask, dilateElem);
+    vector<cv::Point> superPixelPoints;
+    findNonZero(selectionMask, superPixelPoints);
+
+    // delete all the mask pixels that are outside the boundaries
+    for (auto p : superPixelPoints) {
+        if (!isRoad(src.rows, src.cols, offsets, p)) {
+            selectionMask.at<uchar>(p) = 0;
+        }
+    }
+
+    superPixelPoints.erase(superPixelPoints.begin(), superPixelPoints.end());
+
     vector<vector<Point>> tmp;
     Mat maskContours = Mat::zeros(src.rows, src.cols, CV_8UC1);
     findContours(selectionMask, tmp, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
     drawContours(maskContours, tmp, -1, Scalar(255));
-//    approxPolyDP(maskContours, maskContours, 0.5, true);
 
     Mat superPixelSelection;
     src.copyTo(superPixelSelection, selectionMask);
-    vector<cv::Point> superPixelPoints;
     findNonZero(selectionMask, superPixelPoints);
     Scalar meanColourValue = mean(src, selectionMask);
-
-//    Mat cleanedContour;
-//    auto dilateElem = getStructuringElement(MORPH_ELLIPSE, Size(2, 2));
-//    dilate(contour, cleanedContour, dilateElem);
-//    Mat spContour;
-//    contour.copyTo(spContour, selectionMask);
 
     SuperPixel result = {
             .label = superPixelLabel,
             .points = superPixelPoints,
             .center = calculateSuperPixelCenter(superPixelPoints),
-            .superPixelSelection = superPixelSelection,
-            .selectionMask = selectionMask,
+            .selection = superPixelSelection,
+            .mask = selectionMask,
             .contour = maskContours,
             .meanColourValue = meanColourValue,
             .neighbors= std::set<int>()

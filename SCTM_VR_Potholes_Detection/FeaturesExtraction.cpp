@@ -84,6 +84,16 @@ std::optional<Features> candidateFeatureExtraction(const Mat &src,
 //                                               2.0);
 //    imshow(c_name + " Hog matrix", hogImage);
 
+    //2. Calculate HoG
+    HoG hog;
+    hog = calculateHoG(candidate, defaultConfig);
+    Mat hogImage = getHoGDescriptorVisualImage(candidateGrayScale,
+                                               hog.descriptors,
+                                               Size(candidateGrayScale.cols, candidateGrayScale.rows),
+                                               defaultConfig.cellSize,
+                                               8,
+                                               5.0);
+    imshow(c_name + " Hog matrix", hogImage);
 
     // 4. The histogram will be calculated
 //    Mat histogram = ExtractHistograms(candidateGrayScale, c_name);

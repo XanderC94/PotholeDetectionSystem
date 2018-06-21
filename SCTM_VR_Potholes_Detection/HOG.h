@@ -25,12 +25,12 @@ typedef struct HOGConfig {
 
 const HOGConfig defaultConfig = {
         9,
-        Size(64, 64),
-        Size(4, 4),
-        Size(4, 4),
-        Size(2, 2),
-        Size(2, 2),
-        Size(0, 0)
+        Size(64, 64),   //detenctionWindowSize
+        Size(16, 16),     //blockSize
+        Size(16, 16),     //blockStride
+        Size(2, 2),     //cellSize
+        Size(16, 16),     //windowStride
+        Size(4, 4)      //padding
 };
 
 typedef struct HoG {

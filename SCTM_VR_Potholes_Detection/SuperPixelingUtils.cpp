@@ -13,11 +13,11 @@ bool isRoad(const int H, const int W, const RoadOffsets offsets, const Point2d c
     // => Gaussian 3D function
     // => Evaluates the pixels through an Analytic Rect Function : F(x) > 0 is over the rect, F(x) < 0 is under, F(x) = 0 it lies on.
 
-    bool isRoad = AnalyticRect2D(cv::Point2d(W * offsets.SLine_X_Left_Offset, H * offsets.SLine_Y_Offset),
-                                 cv::Point2d(W * 0.4, 0.0), center) >= -0.01 &&
+    bool isRoad = AnalyticRect2D(cv::Point2d(W * offsets.SLine_X_Left_Offset, H * offsets.SLine_Y_Left_Offset),
+                                 cv::Point2d(W * offsets.SLine_Left_Escape_Offset, 0.0), center) >= -0.01 &&
                   AnalyticRect2D(
-                          cv::Point2d(W * (1.0 - offsets.SLine_X_Right_Offset), H * offsets.SLine_Y_Offset),
-                          cv::Point2d(W * 0.6, 0.0), center) >= -0.01;
+                          cv::Point2d(W * (1.0 - offsets.SLine_X_Right_Offset), H * offsets.SLine_Y_Right_Offset),
+                          cv::Point2d(W * (1.0 - offsets.SLine_Right_Escape_Offset), 0.0), center) >= -0.01;
 
     return isRoad;
 }
@@ -61,6 +61,24 @@ SuperPixel stub(const Mat &src, const int superPixelLabel, const Mat &mask) {
 SuperPixel getSuperPixel(const Mat &src, const int superPixelLabel, const Mat &labels) {
 
     Mat1b selectionMask = (labels == superPixelLabel);
+
+    return stub(src, superPixelLabel, selectionMask);
+}
+
+SuperPixel getSuperPixel(const Mat &src, const Mat1b &roadMask,
+                         const int superPixelLabel, const Mat &labels) {
+
+    Mat1b selectionMask = (labels == superPixelLabel);
+
+    vector<cv::Point> superPixelPoints;
+    findNonZero(selectionMask, superPixelPoints);
+
+    // delete all the mask pixels that are outside the boundaries
+    for (auto p : superPixelPoints) {
+        if (roadMask.at<uchar>(p) == 0) {
+            selectionMask.at<uchar>(p) = 0;
+        }
+    }
 
     return stub(src, superPixelLabel, selectionMask);
 }

@@ -18,6 +18,33 @@ const int BIN_THS_VALUE = 100;
 //waitKey(0);
 //bilateralFilter(tmp1, tmp2, blur_strength, blur_strength*2, blur_strength*0.5);
 
+//    Mat ft_data = ConvertFeatures(features);
+//
+//    cv::PCA pca(ft_data, Mat(), PCA::DATA_AS_ROW);
+//
+//    Mat compressed_data;
+//    pca.project(ft_data, compressed_data);
+//
+//    normalize(compressed_data, compressed_data, 1, 0, cv::NORM_L2);
+//
+//    cout << "REDUCED FEATURES n*2: " << endl;
+//
+//    for (int i = 0; i < features.size(); ++i) {
+////        cout
+////             << " \t " << compressed_data.at<float>(i, 0)
+////             << ",\t " << compressed_data.at<float>(i, 1)
+////             << ",\t " << compressed_data.at<float>(i, 2)
+////             << ",\t " << compressed_data.at<float>(i, 3)
+////             << ",\t " << compressed_data.at<float>(i, 4)
+////             << ",\t " << features[i].label
+////             << ",\t " << names[i]
+////             << endl;
+//    }
+//
+//    FileStorage pca_save_file;
+//    pca_save_file.open("../data/pca_model.yml", FileStorage::Mode::APPEND);
+//    pca.write(pca_save_file);
+//    pca_save_file.release();
 
 float RGBMean(const Mat &src) {
 

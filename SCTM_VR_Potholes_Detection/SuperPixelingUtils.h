@@ -25,6 +25,9 @@ SuperPixel getSuperPixel(const Mat &src, int superPixelLabel,
 SuperPixel getSuperPixel(const Mat &src, int superPixelLabel,
                          const Mat &labels, const RoadOffsets offsets);
 
+SuperPixel getSuperPixel(const Mat &src, const Mat1b &roadMask,
+                         const int superPixelLabel, const Mat &labels);
+
 bool isRoad(const int H, const int W, const RoadOffsets offsets, const Point2d center);
 
 Ptr<SuperpixelLSC> initSuperPixelingLSC(const Mat &src, const int superPixelEdge);

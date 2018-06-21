@@ -55,8 +55,8 @@ Features candidateFeatureExtraction(const Point centroid, const Mat &src, const 
                                                hog.descriptors,
                                                Size(candidateGrayScale.cols, candidateGrayScale.rows),
                                                defaultConfig.cellSize,
-                                               5,
-                                               2.0);
+                                               8,
+                                               5.0);
     imshow(c_name + " Hog matrix", hogImage);
 
 

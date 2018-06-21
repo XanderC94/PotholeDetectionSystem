@@ -33,17 +33,6 @@ typedef struct GradientLine {
     int thickness;
 } GradienLine;
 
-
-void drawGradientLines(vector<GradientLine> lines) {
-    for (GradientLine gLine : lines) {
-        line(gLine.visual_image,
-             gLine.startPoint,
-             gLine.endPoint,
-             gLine.color,
-             gLine.thickness);
-    }
-}
-
 GradientLine calculateGradientLine(Mat visual_image,
                                    int binIndex,
                                    int scaleFactor,
@@ -74,6 +63,16 @@ GradientLine calculateGradientLine(Mat visual_image,
                          CV_RGB(0, 0, 255),
                          1};
     return line;
+}
+
+void drawGradientLines(vector<GradientLine> lines) {
+    for (GradientLine gLine : lines) {
+        line(gLine.visual_image,
+             gLine.startPoint,
+             gLine.endPoint,
+             gLine.color,
+             gLine.thickness);
+    }
 }
 
 void drawGradientStrenghtsInCells(Mat visual_image,
@@ -169,12 +168,12 @@ void drawCell(int cells_in_x_dir,
             int mx = drawX + cellSize.width / 2;
             int my = drawY + cellSize.height / 2;
 
-            rectangle(visual_image,
-                      Point(drawX * scaleFactor, drawY * scaleFactor),
-                      Point((drawX + cellSize.width) * scaleFactor,
-                            (drawY + cellSize.height) * scaleFactor),
-                      CV_RGB(100, 100, 100),
-                      1);
+//            rectangle(visual_image,
+//                      Point(drawX * scaleFactor, drawY * scaleFactor),
+//                      Point((drawX + cellSize.width) * scaleFactor,
+//                            (drawY + cellSize.height) * scaleFactor),
+//                      CV_RGB(100, 100, 100),
+//                      1);
 
             drawGreaterGradientStrenghtsInCells(visual_image,
                                                 scaleFactor,

@@ -30,23 +30,47 @@ typedef struct FeaturesVectors {
 *  7. Calculate Energy
 *  8. Calculate 3-order moments (is Skewness according to http://aishack.in/tutorials/image-moments/)
 * */
-Features candidateFeatureExtraction(const Point centroid, const Mat &src, const Size candidate_size) {
-    //tlc (top left corner) brc(bottom right corner)
-    auto tlc = calculateTopLeftCorner(centroid, candidate_size);
-    auto brc = calculateBottomRightCorner(centroid, src, candidate_size);
+std::optional<Features> candidateFeatureExtraction(const SuperPixel nativeSuperPixel, const Mat &src,
+                                                   const Size candidateSize, const ExtractionThresholds thresholds) {
 
-    auto candidate = src(Rect(tlc, brc));
-    auto c_name = "Candidate @ (" + to_string(centroid.x) + ", " + to_string(centroid.y) + ")";
+    auto centroid = nativeSuperPixel.center;
 
-    //candidates.push_back(candidate);
+    // tlc = top left corner brc = bottom right corner
+    auto tlc = calculateTopLeftCorner(centroid, candidateSize);
+    auto brc = calculateBottomRightCorner(centroid, src, candidateSize);
+
+    const Mat sample = src(Rect(tlc, brc));
+
+//    auto c_name = "Candidate @ (" + to_string(centroid.x) + ", " + to_string(centroid.y) + ")";
+
+    // 1. Extract only the pothole region
+    Ptr<SuperpixelLSC> superPixeler = initSuperPixelingLSC(sample, 48); // or 32 are OK
+    auto opt = extractPotholeRegionFromCandidate(superPixeler, sample, thresholds);
+
+    if (!opt.has_value()) return std::optional<Features>();
+
+    auto candidateSuperPixel = opt.value();
+
+//    imshow("Sample", sample);
+//    Mat cnt; sample.copyTo(cnt);
+//    cnt.setTo(Scalar(0,0,255), candidateSuperPixel.contour);
+//    imshow("Candidate", cnt);
+//    waitKey();
+
+    // 2. Switch color-space from RGB to GreyScale
     Mat candidateGrayScale;
-    // 1. Switch color-space from RGB to GreyScale
-    cvtColor(candidate, candidateGrayScale, CV_BGR2GRAY);
+    cvtColor(sample, candidateGrayScale, CV_BGR2GRAY);
 
-    // 2. Extract only the pothole region
-//    Mat candidateForSuperPixeling;
-//    cvtColor(candidateGrayScale, candidateForSuperPixeling, CV_GRAY2BGR);
-//    SuperPixel selectedSuperPixel = extractPotholeRegionFromCandidate(candidateForSuperPixeling, c_name);
+    //3. Calculate HoG
+//    HoG hog;
+//    hog = calculateHoG(sample, defaultConfig);
+//    Mat hogImage = getHoGDescriptorVisualImage(candidateGrayScale,
+//                                               hog.descriptors,
+//                                               Size(candidateGrayScale.cols, candidateGrayScale.rows),
+//                                               defaultConfig.cellSize,
+//                                               5,
+//                                               2.0);
+//    imshow(c_name + " Hog matrix", hogImage);
 
     //2. Calculate HoG
     HoG hog;
@@ -59,57 +83,56 @@ Features candidateFeatureExtraction(const Point centroid, const Mat &src, const 
                                                5.0);
     imshow(c_name + " Hog matrix", hogImage);
 
+    // 4. The histogram will be calculated
+//    Mat histogram = ExtractHistograms(candidateGrayScale, c_name);
 
-    // 3. The histogram will be calculated
-    Mat histogram = ExtractHistograms(candidateGrayScale, c_name);
-
-    //4. Calculate the average gray value
+    // 5. Calculate the average gray value
     float averageGreyValue = (float) mean(candidateGrayScale)[0];
 
-    // 5. Calculate the contrast
-    // 6. Calculate Entropy
-    // 7. Calculate Energy
+    // 6. Calculate the contrast
+    // 7. Calculate Entropy
+    // 8. Calculate Energy
     // In order to reduce computation complexity
     // calculate the contrast, entropy and energy with in the same loops
     float contrast = 0.0;
     float entropy = 0.0;
     float energy = 0.0;
 
-    for (int i = 0; i < candidateGrayScale.rows; i++) {
-        for (int j = 0; j < candidateGrayScale.cols; j++) {
-            contrast = contrast + powf((i - j), 2) * candidateGrayScale.at<uchar>(i, j);
-            entropy = entropy + (candidateGrayScale.at<uchar>(i, j) * log10f(candidateGrayScale.at<uchar>(i, j)));
-            energy = energy + powf(candidateGrayScale.at<uchar>(i, j), 2);
-        }
-    }
-
-//    for (Point coordinates : selectedSuperPixel.points) {
-//        contrast = contrast + powf((coordinates.y - coordinates.x), 2) * candidateGrayScale.at<uchar>(coordinates);
-//        entropy = entropy +
-//                  (candidateGrayScale.at<uchar>(coordinates) * log10f(candidateGrayScale.at<uchar>(coordinates)));
-//        energy = energy + powf(candidateGrayScale.at<uchar>(coordinates), 2);
+//    for (int i = 0; i < candidateGrayScale.rows; i++) {
+//        for (int j = 0; j < candidateGrayScale.cols; j++) {
+//            contrast = contrast + powf((i - j), 2) * candidateGrayScale.at<uchar>(i, j);
+//            entropy = entropy + (candidateGrayScale.at<uchar>(i, j) * log10f(candidateGrayScale.at<uchar>(i, j)));
+//            energy = energy + powf(candidateGrayScale.at<uchar>(i, j), 2);
+//        }
 //    }
 
-    entropy = 0 - entropy;
+    for (Point coordinates : candidateSuperPixel.points) {
+        contrast += (coordinates.y - coordinates.x) * (coordinates.y - coordinates.x) *
+                    candidateGrayScale.at<uchar>(coordinates);
+        entropy += (candidateGrayScale.at<uchar>(coordinates) * log10f(candidateGrayScale.at<uchar>(coordinates)));
+        energy += candidateGrayScale.at<uchar>(coordinates) * candidateGrayScale.at<uchar>(coordinates);
+    }
+
+    entropy = -entropy;
     energy = sqrtf(energy);
 
-    //8. Calculate Skewness
-    float skewness = calculateSkewnessGrayImage(candidate, averageGreyValue);
-//    float skewness = calculateSkewnessGrayImageRegion(candidate, selectedSuperPixel.points, averageGreyValue);
+    //9. Calculate Skewness
+//    float skewness = calculateSkewnessGrayImage(candidateGrayScale, averageGreyValue);
+    float skewness = calculateSkewnessGrayImageRegion(candidateSuperPixel.selection, candidateSuperPixel.points,
+                                                      averageGreyValue);
 
     // Highlights the selected pothole region
-//    Mat markedCandidate;
-//    candidate.copyTo(markedCandidate);
-//    markedCandidate.setTo(Scalar(0, 0, 255), selectedSuperPixel.contour);
-//    imshow(c_name + " - Result", markedCandidate);
+//    imshow("Sample " + to_string(nativeSuperPixel.label), sample);
 //    waitKey();
-//    imshow(c_name + " - Contour", selectedSuperPixel.contour);
 
-    return Features {
-            -1, candidate,
-//        selectedSuperPixel.selectionMask, selectedSuperPixel.contour,
-        histogram, averageGreyValue, contrast, entropy, skewness, energy
-    };
+    Mat tmp;
+    sample.copyTo(tmp);
+    tmp.setTo(Scalar(0, 0, 255), candidateSuperPixel.contour);
+
+    return std::optional(Features{
+            candidateSuperPixel.label, tmp, Mat(),
+            averageGreyValue, contrast, entropy, skewness, energy
+    });
 }
 
 FeaturesVectors
@@ -136,8 +159,8 @@ normalizeFeatures(const double minValue, const double maxValue, const FeaturesVe
 }
 
 
-vector<Features>
-extractFeatures(const Mat &src, const vector<SuperPixel> &candidateSuperPixels, const Size candidate_size) {
+vector<Features> extractFeatures(const Mat &src, const vector<SuperPixel> &candidateSuperPixels,
+                                 const Size candidate_size, const ExtractionThresholds thresholds) {
 
 //    auto candidates = vector<Mat>();
     auto notNormalizedfeatures = vector<Features>();
@@ -155,22 +178,27 @@ extractFeatures(const Mat &src, const vector<SuperPixel> &candidateSuperPixels, 
 
     /*------------------------Candidate Extraction---------------------------*/
     for (auto candidate : candidateSuperPixels) {
-        Features candidateFeatures = candidateFeatureExtraction(candidate.center, src, candidate_size);
-        notNormalizedfeatures.push_back(candidateFeatures);
 
-//        cout << "SP" << candidate.SPLabel <<
+        std::optional<Features> optional = candidateFeatureExtraction(candidate, src, candidate_size, thresholds);
+
+        if (optional.has_value()) {
+            auto candidateFeatures = optional.value();
+            notNormalizedfeatures.push_back(candidateFeatures);
+
+//        cout << "SP" << candidate.label <<
 //             "| AvgGrayVal: " << candidateFeatures.averageGreyValue <<
 //             "| Contrast: " << candidateFeatures.contrast <<
 //             "| Skeweness: " << candidateFeatures.skewness <<
 //             "| Energy: " << candidateFeatures.energy <<
 //             "| Entropy: " << candidateFeatures.entropy << endl;
 
-        candidatesFeaturesVectors.histograms.push_back(candidateFeatures.histogram);
-        candidatesFeaturesVectors.contrasts.push_back(candidateFeatures.contrast);
-        candidatesFeaturesVectors.energies.push_back(candidateFeatures.energy);
-        candidatesFeaturesVectors.entropies.push_back(candidateFeatures.entropy);
-        candidatesFeaturesVectors.averageGreyLevels.push_back(candidateFeatures.averageGreyValue);
-        candidatesFeaturesVectors.skewnesses.push_back(candidateFeatures.skewness);
+            candidatesFeaturesVectors.histograms.push_back(candidateFeatures.histogram);
+            candidatesFeaturesVectors.contrasts.push_back(candidateFeatures.contrast);
+            candidatesFeaturesVectors.energies.push_back(candidateFeatures.energy);
+            candidatesFeaturesVectors.entropies.push_back(candidateFeatures.entropy);
+            candidatesFeaturesVectors.averageGreyLevels.push_back(candidateFeatures.averageGreyValue);
+            candidatesFeaturesVectors.skewnesses.push_back(candidateFeatures.skewness);
+        }
     }
 
     /*------------- Normalization Phase -------------*/
@@ -178,7 +206,7 @@ extractFeatures(const Mat &src, const vector<SuperPixel> &candidateSuperPixels, 
     //Normalize feature values to [1,10]
     FeaturesVectors normalizedFeaturesVectors = normalizeFeatures(1.0, 10.0, candidatesFeaturesVectors);
 
-    for (int i = 0; i < candidateSuperPixels.size(); i++) {
+    for (int i = 0; i < notNormalizedfeatures.size(); i++) {
         /*cout <<
              "Average Gray Value: " << normalizedFeaturesVectors.averageGreyLevels.at(i) <<
              " Contrast: " << normalizedFeaturesVectors.contrasts.at(i) <<
@@ -187,7 +215,7 @@ extractFeatures(const Mat &src, const vector<SuperPixel> &candidateSuperPixels, 
              " Entropy: " << normalizedFeaturesVectors.entropies.at(i) << endl;*/
 
         normalizedFeatures.push_back(Features{
-                candidateSuperPixels[i].label,
+                notNormalizedfeatures[i].label,
                 notNormalizedfeatures[i].candidate,
                 normalizedFeaturesVectors.histograms[i],
                 normalizedFeaturesVectors.averageGreyLevels[i],

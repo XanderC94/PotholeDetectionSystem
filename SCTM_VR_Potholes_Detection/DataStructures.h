@@ -29,7 +29,7 @@ typedef struct ExtractionThresholds {
 const ExtractionThresholds defaultThresholds = {0.80, 0.35, 0.60, 1.25, 4.0};
 
 typedef struct Features {
-    int SPLabel;
+    int label;
     Mat candidate;
     Mat histogram;
     float averageGreyValue;
@@ -43,8 +43,8 @@ typedef struct SuperPixel {
     int label;
     vector<cv::Point> points;
     Point2d center;
-    Mat superPixelSelection;
-    Mat1b selectionMask;
+    Mat selection;
+    Mat1b mask;
     Mat contour;
     Scalar meanColourValue;
     std::set<int> neighbors;

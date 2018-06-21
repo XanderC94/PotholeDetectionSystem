@@ -36,7 +36,7 @@ vector<Features> preClassification(const string &target) {
     RoadOffsets offsets = {
             .Horizon_Offset = 0.65,
             .SLine_X_Right_Offset = 0.0,
-            .SLine_X_Left_Offset = 0.4,
+            .SLine_X_Left_Offset = 0.3,
             .SLine_Y_Offset = 0.9
     };
 
@@ -56,7 +56,7 @@ vector<Features> preClassification(const string &target) {
 
     /*--------------------------------- Pre-Processing Phase ------------------------------*/
 
-    cout << "Preprocessing... ";
+    cout << "Pre-Processing... ";
     preprocessing(src, src, offsets.Horizon_Offset);
     cout << "Finished." << endl;
 
@@ -77,8 +77,8 @@ vector<Features> preClassification(const string &target) {
 
     /*--------------------------------- Feature Extraction Phase ------------------------------*/
 
-    cout << "Feature Extraction -- Starting " << endl;
-    auto features = extractFeatures(src, candidateSuperPixels, candidate_size);
+    cout << "Feature Extraction -- Started. " << endl;
+    auto features = extractFeatures(src, candidateSuperPixels, candidate_size, thresholds);
     cout << "Feature Extraction -- Finished." << endl;
 
     /*--------------------------------- End Feature Extraction Phase ------------------------------*/

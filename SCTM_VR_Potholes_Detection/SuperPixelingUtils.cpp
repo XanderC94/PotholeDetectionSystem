@@ -3,40 +3,53 @@
 //
 
 #include "SuperPixelingUtils.h"
+#include "MathUtils.h"
 
-SuperPixel getSuperPixel(const Mat &src,
-                         const int superPixelLabel,
-                         const Mat &labels, const Mat &contour) {
+bool isRoad(const int H, const int W, const RoadOffsets offsets, const Point2d center) {
+    // How to evaluate offsets in order to separate road super pixels?
+    // Or directly identify RoI (Region of interest) where a pothole will be more likely detected?
+    // ...
+    // Possibilities
+    // => Gaussian 3D function
+    // => Evaluates the pixels through an Analytic Rect Function : F(x) > 0 is over the rect, F(x) < 0 is under, F(x) = 0 it lies on.
 
-    Mat1b selectionMask = (labels == superPixelLabel);
+    bool isRoad = AnalyticRect2D(cv::Point2d(W * offsets.SLine_X_Left_Offset, H * offsets.SLine_Y_Offset),
+                                 cv::Point2d(W * 0.4, 0.0), center) >= -0.01 &&
+                  AnalyticRect2D(
+                          cv::Point2d(W * (1.0 - offsets.SLine_X_Right_Offset), H * offsets.SLine_Y_Offset),
+                          cv::Point2d(W * 0.6, 0.0), center) >= -0.01;
 
-//    Mat dilatedMask;
-//    auto dilateElem = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));
-//    dilate(selectionMask, dilatedMask, dilateElem);
+    return isRoad;
+}
+
+Mat getContours(const Mat &mask) {
     vector<vector<Point>> tmp;
-    Mat maskContours = Mat::zeros(src.rows, src.cols, CV_8UC1);
-    findContours(selectionMask, tmp, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+
+    Mat maskContours = Mat::zeros(mask.rows, mask.cols, CV_8UC1);
+    findContours(mask, tmp, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
     drawContours(maskContours, tmp, -1, Scalar(255));
-//    approxPolyDP(maskContours, maskContours, 0.5, true);
+
+    return maskContours;
+}
+
+SuperPixel stub(const Mat &src, const int superPixelLabel, const Mat &mask) {
+
+    vector<cv::Point> superPixelPoints;
+    vector<vector<Point>> tmp;
+
+    Mat maskContours = getContours(mask);
 
     Mat superPixelSelection;
-    src.copyTo(superPixelSelection, selectionMask);
-    vector<cv::Point> superPixelPoints;
-    findNonZero(selectionMask, superPixelPoints);
-    Scalar meanColourValue = mean(src, selectionMask);
-
-//    Mat cleanedContour;
-//    auto dilateElem = getStructuringElement(MORPH_ELLIPSE, Size(2, 2));
-//    dilate(contour, cleanedContour, dilateElem);
-//    Mat spContour;
-//    contour.copyTo(spContour, selectionMask);
+    src.copyTo(superPixelSelection, mask);
+    findNonZero(mask, superPixelPoints);
+    Scalar meanColourValue = mean(src, mask);
 
     SuperPixel result = {
             .label = superPixelLabel,
             .points = superPixelPoints,
             .center = calculateSuperPixelCenter(superPixelPoints),
-            .superPixelSelection = superPixelSelection,
-            .selectionMask = selectionMask,
+            .selection = superPixelSelection,
+            .mask = mask,
             .contour = maskContours,
             .meanColourValue = meanColourValue,
             .neighbors= std::set<int>()
@@ -45,7 +58,32 @@ SuperPixel getSuperPixel(const Mat &src,
     return result;
 }
 
-Ptr<SuperpixelLSC> initSuperPixelingLSC(const Mat &src, int superPixelEdge) {
+SuperPixel getSuperPixel(const Mat &src, const int superPixelLabel, const Mat &labels) {
+
+    Mat1b selectionMask = (labels == superPixelLabel);
+
+    return stub(src, superPixelLabel, selectionMask);
+}
+
+SuperPixel getSuperPixel(const Mat &src, const int superPixelLabel,
+                         const Mat &labels, const RoadOffsets offsets) {
+
+    Mat1b selectionMask = (labels == superPixelLabel);
+
+    vector<cv::Point> superPixelPoints;
+    findNonZero(selectionMask, superPixelPoints);
+
+    // delete all the mask pixels that are outside the boundaries
+    for (auto p : superPixelPoints) {
+        if (!isRoad(src.rows, src.cols, offsets, p)) {
+            selectionMask.at<uchar>(p) = 0;
+        }
+    }
+
+    return stub(src, superPixelLabel, selectionMask);
+}
+
+Ptr<SuperpixelLSC> initSuperPixelingLSC(const Mat &src, const int superPixelEdge) {
     Mat imgCIELab;
 
     // Switch color space from RGB to CieLAB
@@ -56,24 +94,13 @@ Ptr<SuperpixelLSC> initSuperPixelingLSC(const Mat &src, int superPixelEdge) {
 }
 
 
-Ptr<SuperpixelSLIC> initSuperPixelingSLIC(Mat &src, Mat &contour, Mat &labels, Mat &mask) {
+Ptr<SuperpixelSLIC> initSuperPixelingSLIC(const Mat &src, const int superPixelEdge, float ruler) {
     Mat imgCIELab;
     // Switch color space from RGB to CieLAB
     cvtColor(src, imgCIELab, COLOR_BGR2Lab);
-//	imshow("CieLab color space", imgCIELab);
 
-    int regionSize = 48;
-    float ruler = 20.0;
-    Ptr<SuperpixelSLIC> superpixels = cv::ximgproc::createSuperpixelSLIC(imgCIELab, SLIC::MSLIC, regionSize, ruler);
+    return cv::ximgproc::createSuperpixelSLIC(imgCIELab, SLIC::MSLIC, superPixelEdge, ruler);
 
-    superpixels->iterate(10);
-    superpixels->getLabelContourMask(contour);
-    superpixels->getLabels(labels);
-
-    src.copyTo(mask);
-    mask.setTo(Scalar(255, 255, 255));
-
-    return superpixels;
 }
 
 

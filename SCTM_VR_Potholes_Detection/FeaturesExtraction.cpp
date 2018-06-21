@@ -59,7 +59,7 @@ std::optional<Features> candidateFeatureExtraction(const SuperPixel nativeSuperP
 
     // 2. Switch color-space from RGB to GreyScale
     Mat candidateGrayScale;
-    cvtColor(sample, candidateGrayScale, CV_BGR2GRAY);
+    cvtColor(candidateSuperPixel.selection, candidateGrayScale, CV_BGR2GRAY);
 
     //3. Calculate HoG
 //    HoG hog;
@@ -120,7 +120,7 @@ std::optional<Features> candidateFeatureExtraction(const SuperPixel nativeSuperP
     tmp.setTo(Scalar(0, 0, 255), candidateSuperPixel.contour);
 
     return std::optional(Features{
-            candidateSuperPixel.label, tmp, Mat(),
+            nativeSuperPixel.label, tmp, Mat(),
             averageGreyValue, contrast, entropy, skewness, energy
     });
 }

@@ -52,7 +52,7 @@ bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel 
     ratioDark[2] = neighborsMeanColourValue.val[2] / superPixel.meanColourValue.val[2];
 
 //    if ((ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.colourRatioThresholdMin &&
-//        (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.colourRatioThresholdMax && src.rows <= 128) {
+//        (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.colourRatioThresholdMax) {
 //
 //        Mat tmp; src.copyTo(tmp, selectionMask);
 //        tmp.setTo(Scalar(0, 0, 255), (labels == superPixel.label));
@@ -60,6 +60,8 @@ bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel 
 //        waitKey();
 //
 //        cout << "SP n° " << superPixel.label
+//             << "\t| Mean color: " << superPixel.meanColourValue
+//             << " \t| Density: " << calculateSuperPixelDensity(superPixel.points)
 //             << " \t| Ratio: [" << ratioDark[0] << ", " << ratioDark[1] << ", " << ratioDark[2] << "]"
 //             << endl;
 //    }
@@ -134,7 +136,7 @@ int extractRegionsOfInterest(const Ptr<SuperpixelLSC> &superPixeler,
 
     for (int superPixelLabel = 0; superPixelLabel < superPixeler->getNumberOfSuperpixels(); ++superPixelLabel) {
 
-        SuperPixel superPixel = getSuperPixel(src, superPixelLabel, labels, offsets);
+        SuperPixel superPixel = getSuperPixel(src, superPixelLabel, labels);
 
 //        Scalar color_mask_value = Scalar(0, 0, 0);
 
@@ -228,51 +230,76 @@ SuperPixel selectPothole(const Mat &src, const int nSuperPixels, const Mat &labe
  * */
 std::optional<SuperPixel> extractPotholeRegionFromCandidate(const Ptr<SuperpixelLSC> superPixeler, const Mat &src,
                                                             const ExtractionThresholds thresholds) {
-    Mat res, labels, contours;
+    Mat res, labels, colorMask;
     vector<SuperPixel> soi;
     SuperPixel product;
 
-    superPixeler->iterate(10);
+    superPixeler->iterate(15);
     superPixeler->getLabels(labels);
+
+//    src.copyTo(colorMask);
 
     for (int superPixelLabel = 0; superPixelLabel < superPixeler->getNumberOfSuperpixels(); ++superPixelLabel) {
 
         SuperPixel superPixel = getSuperPixel(src, superPixelLabel, labels);
 
+//        colorMask.setTo(superPixel.meanColourValue, superPixel.mask);
+
         superPixel.neighbors = findNeighbors(superPixel.center, labels, src.rows / 8);
 
         if (isSuperpixelOfInterest(src, labels, superPixel, thresholds)) {
             // Add the superpixel to the candidates vector
-
             soi.push_back(superPixel);
         }
     }
+
+//    cvtColor(colorMask, colorMask, CV_BGR2GRAY);
+//    threshold(colorMask, product.mask, 0, 255, THRESH_OTSU | THRESH_BINARY_INV);
+    auto el = getStructuringElement(MORPH_ELLIPSE, Point(7, 7));
+//    dilate(product.mask, product.mask, el);
+//
+//    src.copyTo(product.selection, product.mask);
+//    product.contour = getContours(product.mask);
+//    findNonZero(product.mask, product.points);
+//    product.meanColourValue = mean(product.selection, product.mask);
+
+//    src.copyTo(res);
+//    res.setTo(Scalar(0,0,255), product.contour);
+//
+//    imshow("I", res);
+//    waitKey();
+//    return optional(product);
 
     // Join the detected regions
     if (!soi.empty()) {
         product = soi[0];
         if (soi.size() > 1) {
             for (int i = 1; i < soi.size(); ++i) {
-                product.label += soi[i].label;
                 product.mask += soi[i].mask;
-                product.neighbors.merge(soi[i].neighbors);
-                product.meanColourValue = (product.meanColourValue + soi[i].meanColourValue) * 0.5;
-                product.points.insert(product.points.end(), soi[i].points.begin(), soi[i].points.end());
             }
-            product.center = calculateSuperPixelCenter(product.points);
-            product.contour = getContours(product.mask);
-
-            src.copyTo(product.selection, product.mask);
         }
+
+        dilate(product.mask, product.mask, el);
+        src.copyTo(product.selection, product.mask);
+        product.contour = getContours(product.mask);
+        findNonZero(product.mask, product.points);
+        product.center = calculateSuperPixelCenter(product.points);
+        product.meanColourValue = mean(product.selection, product.mask);
 
 //        src.copyTo(res);
 //        res.setTo(Scalar(0,0,255), product.contour);
 //        imshow("S", res);
-//        imshow("M", product.mask);
 //        waitKey();
 
-        return optional(product);
+        if (product.points.size() < 16 * 16 || static_cast<float>(product.points.size()) / (src.rows * src.cols) > 0.7f
+            || product.meanColourValue.val[0] + product.meanColourValue.val[1] + product.meanColourValue.val[2] < 35 * 3
+            || product.meanColourValue.val[0] + product.meanColourValue.val[1] + product.meanColourValue.val[2] >
+               225 * 3) {
+            return optional<SuperPixel>();
+        } else {
+            return optional(product);
+        }
+    } else {
+        return optional<SuperPixel>();
     }
-
-    return optional<SuperPixel>();
 }

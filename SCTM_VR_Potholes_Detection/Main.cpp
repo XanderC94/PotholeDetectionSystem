@@ -5,7 +5,6 @@
 #include <opencv2/plot.hpp>
 #include "Segmentation.h"
 #include "FeaturesExtraction.h"
-#include "SuperPixelingUtils.h"
 #include "SVM.h"
 #include "Utils.h"
 
@@ -162,7 +161,7 @@ int main(int argc, char*argv[]) {
     timeElapsed = ((double) getTickCount() - timeElapsed) / getTickFrequency();
     cout << "Times passed in seconds: " << timeElapsed << endl;
 
-    waitKey();
+    //waitKey();
     return 1;
 }
 

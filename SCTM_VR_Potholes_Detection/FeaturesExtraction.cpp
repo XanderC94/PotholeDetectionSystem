@@ -4,12 +4,10 @@
 
 #include "FeaturesExtraction.h"
 #include "Segmentation.h"
-#include "HOG.h"
 #include "MathUtils.h"
-#include "SuperPixelingUtils.h"
+#include "HOG.h"
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
-#include <iostream>
 
 using namespace std;
 using namespace cv::ximgproc;
@@ -78,15 +76,15 @@ cv::Optional<Features> candidateFeatureExtraction(const Mat &src,
     cvtColor(candidateSuperPixel.selection, candidateGrayScale, CV_BGR2GRAY);
 
     //3. Calculate HoG
-//    HoG hog;
-//    hog = calculateHoG(sample, defaultConfig);
-//    Mat hogImage = getHoGDescriptorVisualImage(candidateGrayScale,
-//                                               hog.descriptors,
-//                                               Size(candidateGrayScale.cols, candidateGrayScale.rows),
-//                                               defaultConfig.cellSize,
-//                                               5,
-//                                               2.0);
-//    imshow(c_name + " Hog matrix", hogImage);
+    HoG hog;
+    hog = calculateHoG(sample, defaultConfig);
+    Mat hogImage = getHoGDescriptorVisualImage(candidateGrayScale,
+                                               hog.descriptors,
+                                               Size(candidateGrayScale.cols, candidateGrayScale.rows),
+                                               defaultConfig.cellSize,
+                                               5,
+                                               2.0);
+    imshow(c_name + " Hog matrix", hogImage);
 
     // 4. The histogram will be calculated
 //    Mat histogram = ExtractHistograms(candidateGrayScale, c_name);

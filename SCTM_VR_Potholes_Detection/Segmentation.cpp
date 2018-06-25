@@ -1,7 +1,5 @@
 #include <opencv2/photo.hpp>
-#include <iostream>
 #include "Segmentation.h"
-#include "SuperPixelingUtils.h"
 
 using namespace std;
 

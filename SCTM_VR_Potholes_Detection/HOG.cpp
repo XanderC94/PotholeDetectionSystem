@@ -2,8 +2,12 @@
 // Created by Xander_C on 15/06/2018.
 //
 
-#include <opencv2/objdetect.hpp>
 #include "HOG.h"
+
+#include <opencv2/imgproc.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/ml.hpp>
+#include <opencv2/objdetect.hpp>
 
 HoG calculateHoG(const Mat &src, const HOGConfig config) {
 

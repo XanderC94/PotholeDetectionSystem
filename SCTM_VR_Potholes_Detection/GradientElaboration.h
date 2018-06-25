@@ -8,7 +8,6 @@
 #include <opencv2/core.hpp>
 
 using namespace cv;
-using namespace std;
 
 typedef struct Gradient {
     Mat x;

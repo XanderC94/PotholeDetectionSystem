@@ -1,6 +1,9 @@
-#include <algorithm>
-#include <sys/stat.h>
 #include "Utils.h"
+#include <sys/stat.h>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
+#include <iostream>
+#include <fstream>
 
 int resize_all_in(const string parent, const string folder, const int width, const int height) {
 

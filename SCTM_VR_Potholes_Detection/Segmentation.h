@@ -2,11 +2,11 @@
 #define POTHOLEDETENCTIONSYSTEM_SEGMENTATION_H
 
 #include <opencv2/core.hpp>
+#include <opencv2/ximgproc.hpp>
 #include "DataStructures.h"
-#include "SuperPixelingUtils.h"
 
 using namespace cv;
-using namespace std;
+using namespace cv::ximgproc;
 
 void preprocessing(Mat &src, Mat &processedImage, const double Horizon_Offset);
 

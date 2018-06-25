@@ -2,8 +2,16 @@
 // Created by Matteo Gabellini on 11/06/2018.
 //
 
+#include <opencv2/imgproc.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/ximgproc.hpp>
+#include <set>
 #include "SuperPixelingUtils.h"
 #include "MathUtils.h"
+
+
+using namespace std;
+using namespace cv::ximgproc;
 
 bool isRoad(const int H, const int W, const RoadOffsets offsets, const Point2d center) {
     // How to evaluate offsets in order to separate road super pixels?

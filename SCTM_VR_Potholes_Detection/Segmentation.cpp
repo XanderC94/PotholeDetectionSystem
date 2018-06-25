@@ -1,11 +1,9 @@
-#include "Segmentation.h"
-
 #include <opencv2/photo.hpp>
 #include <iostream>
+#include "Segmentation.h"
+#include "SuperPixelingUtils.h"
 
-using namespace cv;
 using namespace std;
-using namespace cv::ximgproc;
 
 const int RESIZING_WIDTH = 640;
 const int RESIZING_HEIGHT = 480;

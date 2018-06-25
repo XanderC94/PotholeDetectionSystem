@@ -6,14 +6,11 @@
 #define POTHOLEDETENCTIONSYSTEM_SVMCLASSIFIER_H
 
 #include <opencv2/core.hpp>
-#include <opencv2/ml.hpp>
-#include <iostream>
 
 #include "FeaturesExtraction.h"
 
 using namespace cv;
 using namespace std;
-using namespace cv::ml;
 
 Mat ConvertFeatures(const vector<Features> &features);
 void Classifier(const vector<Features> &features, const int max_iter, const string model_path, Mat &labels);

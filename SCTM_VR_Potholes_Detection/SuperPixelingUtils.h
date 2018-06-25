@@ -7,14 +7,9 @@
 
 
 #include <opencv2/core.hpp>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/highgui.hpp>
-#include <opencv2/ximgproc.hpp>
-#include <set>
 #include "DataStructures.h"
 
 using namespace cv;
-using namespace std;
 using namespace cv::ximgproc;
 
 Mat getContours(const Mat &mask);

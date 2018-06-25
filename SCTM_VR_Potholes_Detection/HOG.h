@@ -6,9 +6,6 @@
 #define POTHOLEDETENCTIONSYSTEM_HOG_H
 
 #include <opencv2/core.hpp>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/highgui.hpp>
-#include <opencv2/ml.hpp>
 
 using namespace cv;
 using namespace std;
@@ -37,8 +34,6 @@ typedef struct HoG {
     vector<float> descriptors = vector<float>();
     vector<Point> locations = vector<Point>();;
 } Hog;
-
-Mat overlayDescriptors(Mat src, HoG hogToOverlay);
 
 Mat getHoGDescriptorVisualImage(Mat &origImg,
                                 vector<float> &descriptorValues,

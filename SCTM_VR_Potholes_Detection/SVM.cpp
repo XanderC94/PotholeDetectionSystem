@@ -3,6 +3,9 @@
 //
 
 #include "SVM.h"
+#include <opencv2/ml.hpp>
+
+using namespace cv::ml;
 
 Ptr<SVM> initSVM(const string model_path, int max_iter) {
     const double epsilon = exp(-6);

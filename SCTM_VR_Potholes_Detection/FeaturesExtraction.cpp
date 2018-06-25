@@ -1,12 +1,16 @@
 //
 // Created by Matteo Gabellini on 02/06/2018.
-//
+//¢¢
 
 #include "FeaturesExtraction.h"
 #include "Segmentation.h"
 #include "HOG.h"
+#include "MathUtils.h"
+#include "SuperPixelingUtils.h"
+#include <opencv2/imgproc.hpp>
+#include <opencv2/highgui.hpp>
+#include <iostream>
 
-using namespace cv;
 using namespace std;
 using namespace cv::ximgproc;
 
@@ -41,7 +45,7 @@ std::optional<Features> candidateFeatureExtraction(const SuperPixel nativeSuperP
 
     const Mat sample = src(Rect(tlc, brc));
 
-//    auto c_name = "Candidate @ (" + to_string(centroid.x) + ", " + to_string(centroid.y) + ")";
+    auto c_name = "Candidate @ (" + to_string(centroid.x) + ", " + to_string(centroid.y) + ")";
 
     // 1. Extract only the pothole region
     Ptr<SuperpixelLSC> superPixeler = initSuperPixelingLSC(sample, 48); // or 32 are OK
@@ -74,7 +78,7 @@ std::optional<Features> candidateFeatureExtraction(const SuperPixel nativeSuperP
 
     //2. Calculate HoG
     HoG hog;
-    hog = calculateHoG(candidate, defaultConfig);
+    hog = calculateHoG(sample, defaultConfig);
     Mat hogImage = getHoGDescriptorVisualImage(candidateGrayScale,
                                                hog.descriptors,
                                                Size(candidateGrayScale.cols, candidateGrayScale.rows),

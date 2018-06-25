@@ -1,13 +1,10 @@
 #ifndef POTHOLEDETENCTIONSYSTEM_UTILIS_H
 #define POTHOLEDETENCTIONSYSTEM_UTILIS_H
 
-#include <opencv2/core.hpp>
-#include <opencv2/imgcodecs.hpp>
-#include <opencv2/imgproc.hpp>
-#include <iostream>
-#include <fstream>
-#include <string>
+
+#include "DataStructures.h"
 #include "FeaturesExtraction.h"
+#include <opencv2/core.hpp>
 
 using namespace cv;
 using namespace std;

@@ -2,8 +2,8 @@
 // Created by Xander_C on 15/06/2018.
 //
 
-#ifndef POTHOLEDETENCTIONSYSTEM_HOG_H
-#define POTHOLEDETENCTIONSYSTEM_HOG_H
+#ifndef POTHOLEDETECTIONSYSTEM_HOG_H
+#define POTHOLEDETECTIONSYSTEM_HOG_H
 
 #include <opencv2/core.hpp>
 
@@ -46,4 +46,4 @@ Mat getHoGDescriptorVisualImage(Mat &origImg,
 HoG calculateHoG(const Mat &src, const HOGConfig config = defaultConfig);
 
 
-#endif //POTHOLEDETENCTIONSYSTEM_HOG_H
+#endif //POTHOLEDETECTIONSYSTEM_HOG_H

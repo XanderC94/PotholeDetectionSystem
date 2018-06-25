@@ -1,5 +1,5 @@
-#ifndef POTHOLEDETENCTIONSYSTEM_UTILIS_H
-#define POTHOLEDETENCTIONSYSTEM_UTILIS_H
+#ifndef POTHOLEDETECTIONSYSTEM_UTILIS_H
+#define POTHOLEDETECTIONSYSTEM_UTILIS_H
 
 
 #include "DataStructures.h"
@@ -31,4 +31,4 @@ string extractFileName(const string file_path, const string sep);
 
 vector<String> extractImagePath(const string targets);
 
-#endif //POTHOLEDETENCTIONSYSTEM_UTILIS_H
+#endif //POTHOLEDETECTIONSYSTEM_UTILIS_H

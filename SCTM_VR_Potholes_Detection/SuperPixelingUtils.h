@@ -2,8 +2,8 @@
 // Created by Matteo Gabellini on 11/06/2018.
 //
 
-#ifndef POTHOLEDETENCTIONSYSTEM_SUPERPIXELINGUTILS_H
-#define POTHOLEDETENCTIONSYSTEM_SUPERPIXELINGUTILS_H
+#ifndef POTHOLEDETECTIONSYSTEM_SUPERPIXELINGUTILS_H
+#define POTHOLEDETECTIONSYSTEM_SUPERPIXELINGUTILS_H
 
 
 #include <opencv2/core.hpp>
@@ -20,6 +20,9 @@ SuperPixel getSuperPixel(const Mat &src, int superPixelLabel,
 SuperPixel getSuperPixel(const Mat &src, int superPixelLabel,
                          const Mat &labels, const RoadOffsets offsets);
 
+SuperPixel getSuperPixel(const Mat &src, const Mat1b &roadMask,
+                         const int superPixelLabel, const Mat &labels);
+
 bool isRoad(const int H, const int W, const RoadOffsets offsets, const Point2d center);
 
 Ptr<SuperpixelLSC> initSuperPixelingLSC(const Mat &src, const int superPixelEdge);
@@ -33,4 +36,4 @@ Point2d calculateSuperPixelVariance(vector<cv::Point> superPixel, Point2d center
 double calculateSuperPixelDensity(vector<cv::Point> superPixel);
 
 
-#endif //POTHOLEDETENCTIONSYSTEM_SUPERPIXELINGUTILS_H
+#endif //POTHOLEDETECTIONSYSTEM_SUPERPIXELINGUTILS_H

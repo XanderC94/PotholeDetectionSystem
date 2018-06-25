@@ -67,7 +67,7 @@ void Training(const vector<Features> &features, const Mat &labels, const int max
 
     auto data = TrainData::create(data_mat, ROW_SAMPLE, labels);
 
-    svm->trainAuto(data, 3);
+    svm->trainAuto(data, 5);
 
     printf("Finished.\n");
 

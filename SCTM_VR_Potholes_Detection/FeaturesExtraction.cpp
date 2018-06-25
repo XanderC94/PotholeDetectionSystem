@@ -1,6 +1,6 @@
 //
 // Created by Matteo Gabellini on 02/06/2018.
-//¢¢
+//
 
 #include "FeaturesExtraction.h"
 #include "Segmentation.h"
@@ -34,26 +34,38 @@ typedef struct FeaturesVectors {
 *  7. Calculate Energy
 *  8. Calculate 3-order moments (is Skewness according to http://aishack.in/tutorials/image-moments/)
 * */
-std::optional<Features> candidateFeatureExtraction(const SuperPixel nativeSuperPixel, const Mat &src,
-                                                   const Size candidateSize, const ExtractionThresholds thresholds) {
+cv::Optional<Features> candidateFeatureExtraction(const Mat &src,
+                                                  const SuperPixel &nativeSuperPixel,
+                                                  const Size &candidateSize,
+                                                  const RoadOffsets &offsets,
+                                                  const ExtractionThresholds &thresholds) {
 
     auto centroid = nativeSuperPixel.center;
 
     // tlc = top left corner brc = bottom right corner
-    auto tlc = calculateTopLeftCorner(centroid, candidateSize);
-    auto brc = calculateBottomRightCorner(centroid, src, candidateSize);
+    Point2d tlc = calculateTopLeftCorner(centroid, candidateSize);
+    Point2d brc = calculateBottomRightCorner(centroid, src, candidateSize);
 
     const Mat sample = src(Rect(tlc, brc));
+    Mat1b sampleRoadMask = Mat::zeros(sample.rows, sample.cols, CV_8UC1);
+
+    for (int i = 0; i < sample.rows; ++i) {
+        for (int j = 0; j < sample.cols; ++j) {
+
+            if (isRoad(src.rows, src.cols, offsets, tlc + Point2d(j, i))) {
+                sampleRoadMask.at<uchar>(i, j) = 255;
+            }
+        }
+    }
 
     auto c_name = "Candidate @ (" + to_string(centroid.x) + ", " + to_string(centroid.y) + ")";
 
     // 1. Extract only the pothole region
-    Ptr<SuperpixelLSC> superPixeler = initSuperPixelingLSC(sample, 48); // or 32 are OK
-    auto opt = extractPotholeRegionFromCandidate(superPixeler, sample, thresholds);
+    auto opt = extractPotholeRegionFromCandidate(sample, sampleRoadMask, thresholds);
 
-    if (!opt.has_value()) return std::optional<Features>();
+    if (!opt.hasValue()) return cv::Optional<Features>();
 
-    auto candidateSuperPixel = opt.value();
+    auto candidateSuperPixel = opt.getValue();
 
 //    imshow("Sample", sample);
 //    Mat cnt; sample.copyTo(cnt);
@@ -63,7 +75,7 @@ std::optional<Features> candidateFeatureExtraction(const SuperPixel nativeSuperP
 
     // 2. Switch color-space from RGB to GreyScale
     Mat candidateGrayScale;
-    cvtColor(sample, candidateGrayScale, CV_BGR2GRAY);
+    cvtColor(candidateSuperPixel.selection, candidateGrayScale, CV_BGR2GRAY);
 
     //3. Calculate HoG
 //    HoG hog;
@@ -75,17 +87,6 @@ std::optional<Features> candidateFeatureExtraction(const SuperPixel nativeSuperP
 //                                               5,
 //                                               2.0);
 //    imshow(c_name + " Hog matrix", hogImage);
-
-    //2. Calculate HoG
-    HoG hog;
-    hog = calculateHoG(sample, defaultConfig);
-    Mat hogImage = getHoGDescriptorVisualImage(candidateGrayScale,
-                                               hog.descriptors,
-                                               Size(candidateGrayScale.cols, candidateGrayScale.rows),
-                                               defaultConfig.cellSize,
-                                               8,
-                                               5.0);
-    imshow(c_name + " Hog matrix", hogImage);
 
     // 4. The histogram will be calculated
 //    Mat histogram = ExtractHistograms(candidateGrayScale, c_name);
@@ -133,8 +134,8 @@ std::optional<Features> candidateFeatureExtraction(const SuperPixel nativeSuperP
     sample.copyTo(tmp);
     tmp.setTo(Scalar(0, 0, 255), candidateSuperPixel.contour);
 
-    return std::optional(Features{
-            candidateSuperPixel.label, tmp, Mat(),
+    return cv::Optional<Features>(Features{
+            nativeSuperPixel.label, tmp, Mat(),
             averageGreyValue, contrast, entropy, skewness, energy
     });
 }
@@ -164,7 +165,9 @@ normalizeFeatures(const double minValue, const double maxValue, const FeaturesVe
 
 
 vector<Features> extractFeatures(const Mat &src, const vector<SuperPixel> &candidateSuperPixels,
-                                 const Size candidate_size, const ExtractionThresholds thresholds) {
+                                 const Size &candidate_size,
+                                 const RoadOffsets &offsets,
+                                 const ExtractionThresholds &thresholds) {
 
 //    auto candidates = vector<Mat>();
     auto notNormalizedfeatures = vector<Features>();
@@ -183,10 +186,11 @@ vector<Features> extractFeatures(const Mat &src, const vector<SuperPixel> &candi
     /*------------------------Candidate Extraction---------------------------*/
     for (auto candidate : candidateSuperPixels) {
 
-        std::optional<Features> optional = candidateFeatureExtraction(candidate, src, candidate_size, thresholds);
+        cv::Optional<Features> optional = candidateFeatureExtraction(src, candidate, candidate_size, offsets,
+                                                                     thresholds);
 
-        if (optional.has_value()) {
-            auto candidateFeatures = optional.value();
+        if (optional.hasValue()) {
+            auto candidateFeatures = optional.getValue();
             notNormalizedfeatures.push_back(candidateFeatures);
 
 //        cout << "SP" << candidate.label <<

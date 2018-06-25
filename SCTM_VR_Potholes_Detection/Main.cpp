@@ -37,8 +37,11 @@ vector<Features> preClassification(const string &target) {
     RoadOffsets offsets = {
             .Horizon_Offset = 0.65,
             .SLine_X_Right_Offset = 0.0,
-            .SLine_X_Left_Offset = 0.3,
-            .SLine_Y_Offset = 0.9
+            .SLine_X_Left_Offset = 0.25,
+            .SLine_Y_Right_Offset = 0.9,
+            .SLine_Y_Left_Offset = 0.9,
+            .SLine_Right_Escape_Offset = 0.4,
+            .SLine_Left_Escape_Offset = 0.4
     };
 
     ExtractionThresholds thresholds = {
@@ -79,7 +82,7 @@ vector<Features> preClassification(const string &target) {
     /*--------------------------------- Feature Extraction Phase ------------------------------*/
 
     cout << "Feature Extraction -- Started. " << endl;
-    auto features = extractFeatures(src, candidateSuperPixels, candidate_size, thresholds);
+    auto features = extractFeatures(src, candidateSuperPixels, candidate_size, offsets, thresholds);
     cout << "Feature Extraction -- Finished." << endl;
 
     /*--------------------------------- End Feature Extraction Phase ------------------------------*/
@@ -106,35 +109,6 @@ void createCandidates (const string targets) {
     }
 
     saveFeatures(features, "data", names, "features");
-
-
-//    Mat ft_data = ConvertFeatures(features);
-//
-//    cv::PCA pca(ft_data, Mat(), PCA::DATA_AS_ROW);
-//
-//    Mat compressed_data;
-//    pca.project(ft_data, compressed_data);
-//
-//    normalize(compressed_data, compressed_data, 1, 0, cv::NORM_L2);
-//
-//    cout << "REDUCED FEATURES n*2: " << endl;
-//
-//    for (int i = 0; i < features.size(); ++i) {
-////        cout
-////             << " \t " << compressed_data.at<float>(i, 0)
-////             << ",\t " << compressed_data.at<float>(i, 1)
-////             << ",\t " << compressed_data.at<float>(i, 2)
-////             << ",\t " << compressed_data.at<float>(i, 3)
-////             << ",\t " << compressed_data.at<float>(i, 4)
-////             << ",\t " << features[i].label
-////             << ",\t " << names[i]
-////             << endl;
-//    }
-//
-//    FileStorage pca_save_file;
-//    pca_save_file.open("../data/pca_model.yml", FileStorage::Mode::APPEND);
-//    pca.write(pca_save_file);
-//    pca_save_file.release();
 
 }
 
@@ -179,7 +153,7 @@ int main(int argc, char*argv[]) {
 
             portable_mkdir("../svm/");
 
-            Training(candidates, labels, 1000, "../svm/" + string(argv[3]));
+            Training(candidates, labels, 100, "../svm/" + string(argv[3]));
         }
     }
 

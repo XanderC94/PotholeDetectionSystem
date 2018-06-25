@@ -1,9 +1,11 @@
-#ifndef POTHOLEDETENCTIONSYSTEM_SEGMENTATION_H
-#define POTHOLEDETENCTIONSYSTEM_SEGMENTATION_H
+#ifndef POTHOLEDETECTIONSYSTEM_SEGMENTATION_H
+#define POTHOLEDETECTIONSYSTEM_SEGMENTATION_H
 
 #include <opencv2/core.hpp>
 #include <opencv2/ximgproc.hpp>
 #include "DataStructures.h"
+#include "SuperPixelingUtils.h"
+#include "Optional.h"
 
 using namespace cv;
 using namespace cv::ximgproc;
@@ -16,8 +18,7 @@ int extractRegionsOfInterest(const Ptr<SuperpixelLSC> &algorithm,
                              const ExtractionThresholds thresholds = defaultThresholds,
                              const RoadOffsets offsets = defaultOffsets);
 
-std::optional<SuperPixel> extractPotholeRegionFromCandidate(const Ptr<SuperpixelLSC> superPixeler,
-                                                            const Mat &src,
-                                                            const ExtractionThresholds thresholds);
+cv::Optional<SuperPixel> extractPotholeRegionFromCandidate(const Mat &candidate, const Mat1b &roadMask,
+                                                           const ExtractionThresholds &thresholds);
 
-#endif //POTHOLEDETENCTIONSYSTEM_SEGMENTATION_H
+#endif //POTHOLEDETECTIONSYSTEM_SEGMENTATION_H

@@ -1,8 +1,8 @@
 //
 // Created by Matteo Gabellini on 25/05/2018.
 //
-#ifndef POTHOLEDETENCTIONSYSTEM_DATASTRUCTURES_H
-#define POTHOLEDETENCTIONSYSTEM_DATASTRUCTURES_H
+#ifndef POTHOLEDETECTIONSYSTEM_DATASTRUCTURES_H
+#define POTHOLEDETECTIONSYSTEM_DATASTRUCTURES_H
 
 #include <opencv2/core.hpp>
 #include <set>
@@ -14,9 +14,12 @@ typedef struct RoadOffsets {
     double Horizon_Offset;
     double SLine_X_Right_Offset;
     double SLine_X_Left_Offset;
-    double SLine_Y_Offset;
+    double SLine_Y_Right_Offset;
+    double SLine_Y_Left_Offset;
+    double SLine_Right_Escape_Offset;
+    double SLine_Left_Escape_Offset;
 } RoadOffsets;
-const RoadOffsets defaultOffsets = {0.60, 0.0, 0.4, 0.8};
+const RoadOffsets defaultOffsets = {0.60, 0.0, 0.4, 0.8, 0.8, 0.5, 0.5};
 
 typedef struct ExtractionThresholds {
     double Density_Threshold;
@@ -56,4 +59,4 @@ void printThresholds(ExtractionThresholds thresholds);
 void printOffsets(RoadOffsets of);
 
 
-#endif //POTHOLEDETENCTIONSYSTEM_DATASTRUCTURES_H
+#endif //POTHOLEDETECTIONSYSTEM_DATASTRUCTURES_H

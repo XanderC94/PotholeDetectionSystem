@@ -10,7 +10,6 @@ const int RESIZING_HEIGHT = 480;
 
 const int MAX_AREA = RESIZING_HEIGHT * RESIZING_WIDTH;
 
-
 void preprocessing(Mat &src, Mat &processedImage, const double Horizon_Offset) {
 
     float aspectRatio = static_cast<float>(src.cols) / static_cast<float>(src.rows);
@@ -50,7 +49,7 @@ bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel 
     ratioDark[2] = neighborsMeanColourValue.val[2] / superPixel.meanColourValue.val[2];
 
 //    if ((ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.colourRatioThresholdMin &&
-//        (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.colourRatioThresholdMax && src.rows <= 128) {
+//        (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.colourRatioThresholdMax) {
 //
 //        Mat tmp; src.copyTo(tmp, selectionMask);
 //        tmp.setTo(Scalar(0, 0, 255), (labels == superPixel.label));
@@ -58,6 +57,8 @@ bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel 
 //        waitKey();
 //
 //        cout << "SP n° " << superPixel.label
+//             << "\t| Mean color: " << superPixel.meanColourValue
+//             << " \t| Density: " << calculateSuperPixelDensity(superPixel.points)
 //             << " \t| Ratio: [" << ratioDark[0] << ", " << ratioDark[1] << ", " << ratioDark[2] << "]"
 //             << endl;
 //    }
@@ -132,7 +133,7 @@ int extractRegionsOfInterest(const Ptr<SuperpixelLSC> &superPixeler,
 
     for (int superPixelLabel = 0; superPixelLabel < superPixeler->getNumberOfSuperpixels(); ++superPixelLabel) {
 
-        SuperPixel superPixel = getSuperPixel(src, superPixelLabel, labels, offsets);
+        SuperPixel superPixel = getSuperPixel(src, superPixelLabel, labels);
 
 //        Scalar color_mask_value = Scalar(0, 0, 0);
 
@@ -189,7 +190,7 @@ bool isPothole(SuperPixel superPixel, SuperPixel previousSelected, Scalar meanCa
 }
 
 /*
- * if there isn't a super pixel that is recognized as a pothole the function will return the first superpixel
+ * If there isn't a super pixel that is recognized as a pothole the function will return the first superpixel
  * */
 SuperPixel selectPothole(const Mat &src, const int nSuperPixels, const Mat &labels) {
 
@@ -224,53 +225,62 @@ SuperPixel selectPothole(const Mat &src, const int nSuperPixels, const Mat &labe
  * In order to isolate the pothole super pixel from car's bumper
  * 3. Select the super pixel that is darker than the average pixel value and lighter than a specified threshold
  * */
-std::optional<SuperPixel> extractPotholeRegionFromCandidate(const Ptr<SuperpixelLSC> superPixeler, const Mat &src,
-                                                            const ExtractionThresholds thresholds) {
-    Mat res, labels, contours;
+cv::Optional<SuperPixel> extractPotholeRegionFromCandidate(const Mat &candidate, const Mat1b &roadMask,
+                                                           const ExtractionThresholds &thresholds) {
+    Mat res, labels;
     vector<SuperPixel> soi;
     SuperPixel product;
+
+    Ptr<SuperpixelLSC> superPixeler = initSuperPixelingLSC(candidate, 48); // or 32 are OK
 
     superPixeler->iterate(10);
     superPixeler->getLabels(labels);
 
     for (int superPixelLabel = 0; superPixelLabel < superPixeler->getNumberOfSuperpixels(); ++superPixelLabel) {
 
-        SuperPixel superPixel = getSuperPixel(src, superPixelLabel, labels);
+        SuperPixel superPixel = getSuperPixel(candidate, roadMask, superPixelLabel, labels);
 
-        superPixel.neighbors = findNeighbors(superPixel.center, labels, src.rows / 8);
+        superPixel.neighbors = findNeighbors(superPixel.center, labels, candidate.rows / 8);
 
-        if (isSuperpixelOfInterest(src, labels, superPixel, thresholds)) {
+        if (isSuperpixelOfInterest(candidate, labels, superPixel, thresholds)) {
             // Add the superpixel to the candidates vector
-
             soi.push_back(superPixel);
         }
     }
+
+    auto el = getStructuringElement(MORPH_ELLIPSE, Point(5, 5));
 
     // Join the detected regions
     if (!soi.empty()) {
         product = soi[0];
         if (soi.size() > 1) {
             for (int i = 1; i < soi.size(); ++i) {
-                product.label += soi[i].label;
                 product.mask += soi[i].mask;
-                product.neighbors.merge(soi[i].neighbors);
-                product.meanColourValue = (product.meanColourValue + soi[i].meanColourValue) * 0.5;
-                product.points.insert(product.points.end(), soi[i].points.begin(), soi[i].points.end());
             }
-            product.center = calculateSuperPixelCenter(product.points);
-            product.contour = getContours(product.mask);
-
-            src.copyTo(product.selection, product.mask);
         }
 
-//        src.copyTo(res);
+        dilate(product.mask, product.mask, el);
+        candidate.copyTo(product.selection, product.mask);
+        product.contour = getContours(product.mask);
+        findNonZero(product.mask, product.points);
+        product.center = calculateSuperPixelCenter(product.points);
+        product.meanColourValue = mean(product.selection, product.mask);
+
+//        candidate.copyTo(res);
 //        res.setTo(Scalar(0,0,255), product.contour);
 //        imshow("S", res);
-//        imshow("M", product.mask);
 //        waitKey();
 
-        return optional(product);
+        if (product.points.size() < 16 * 16 ||
+            static_cast<float>(product.points.size()) / (candidate.rows * candidate.cols) > 0.7f
+            || product.meanColourValue.val[0] + product.meanColourValue.val[1] + product.meanColourValue.val[2] < 35 * 3
+            || product.meanColourValue.val[0] + product.meanColourValue.val[1] + product.meanColourValue.val[2] >
+               225 * 3) {
+            return cv::Optional<SuperPixel>();
+        } else {
+            return cv::Optional<SuperPixel>(product);
+        }
+    } else {
+        return cv::Optional<SuperPixel>();
     }
-
-    return optional<SuperPixel>();
 }

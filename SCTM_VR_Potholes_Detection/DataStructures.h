@@ -1,8 +1,8 @@
 //
 // Created by Matteo Gabellini on 25/05/2018.
 //
-#ifndef POTHOLEDETENCTIONSYSTEM_DATASTRUCTURES_H
-#define POTHOLEDETENCTIONSYSTEM_DATASTRUCTURES_H
+#ifndef POTHOLEDETECTIONSYSTEM_DATASTRUCTURES_H
+#define POTHOLEDETECTIONSYSTEM_DATASTRUCTURES_H
 
 #include <opencv2/core.hpp>
 #include <set>
@@ -59,4 +59,4 @@ void printThresholds(ExtractionThresholds thresholds);
 void printOffsets(RoadOffsets of);
 
 
-#endif //POTHOLEDETENCTIONSYSTEM_DATASTRUCTURES_H
+#endif //POTHOLEDETECTIONSYSTEM_DATASTRUCTURES_H

@@ -30,11 +30,11 @@ typedef struct FeaturesVectors {
 *  7. Calculate Energy
 *  8. Calculate 3-order moments (is Skewness according to http://aishack.in/tutorials/image-moments/)
 * */
-std::optional<Features> candidateFeatureExtraction(const Mat &src,
-                                                   const SuperPixel &nativeSuperPixel,
-                                                   const Size &candidateSize,
-                                                   const RoadOffsets &offsets,
-                                                   const ExtractionThresholds &thresholds) {
+cv::Optional<Features> candidateFeatureExtraction(const Mat &src,
+                                                  const SuperPixel &nativeSuperPixel,
+                                                  const Size &candidateSize,
+                                                  const RoadOffsets &offsets,
+                                                  const ExtractionThresholds &thresholds) {
 
     auto centroid = nativeSuperPixel.center;
 
@@ -59,9 +59,9 @@ std::optional<Features> candidateFeatureExtraction(const Mat &src,
     // 1. Extract only the pothole region
     auto opt = extractPotholeRegionFromCandidate(sample, sampleRoadMask, thresholds);
 
-    if (!opt.has_value()) return std::optional<Features>();
+    if (!opt.hasValue()) return cv::Optional<Features>();
 
-    auto candidateSuperPixel = opt.value();
+    auto candidateSuperPixel = opt.getValue();
 
 //    imshow("Sample", sample);
 //    Mat cnt; sample.copyTo(cnt);
@@ -83,17 +83,6 @@ std::optional<Features> candidateFeatureExtraction(const Mat &src,
 //                                               5,
 //                                               2.0);
 //    imshow(c_name + " Hog matrix", hogImage);
-
-    //2. Calculate HoG
-    HoG hog;
-    hog = calculateHoG(candidate, defaultConfig);
-    Mat hogImage = getHoGDescriptorVisualImage(candidateGrayScale,
-                                               hog.descriptors,
-                                               Size(candidateGrayScale.cols, candidateGrayScale.rows),
-                                               defaultConfig.cellSize,
-                                               8,
-                                               5.0);
-    imshow(c_name + " Hog matrix", hogImage);
 
     // 4. The histogram will be calculated
 //    Mat histogram = ExtractHistograms(candidateGrayScale, c_name);
@@ -141,7 +130,7 @@ std::optional<Features> candidateFeatureExtraction(const Mat &src,
     sample.copyTo(tmp);
     tmp.setTo(Scalar(0, 0, 255), candidateSuperPixel.contour);
 
-    return std::optional(Features{
+    return cv::Optional<Features>(Features{
             nativeSuperPixel.label, tmp, Mat(),
             averageGreyValue, contrast, entropy, skewness, energy
     });
@@ -193,11 +182,11 @@ vector<Features> extractFeatures(const Mat &src, const vector<SuperPixel> &candi
     /*------------------------Candidate Extraction---------------------------*/
     for (auto candidate : candidateSuperPixels) {
 
-        std::optional<Features> optional = candidateFeatureExtraction(src, candidate, candidate_size, offsets,
-                                                                      thresholds);
+        cv::Optional<Features> optional = candidateFeatureExtraction(src, candidate, candidate_size, offsets,
+                                                                     thresholds);
 
-        if (optional.has_value()) {
-            auto candidateFeatures = optional.value();
+        if (optional.hasValue()) {
+            auto candidateFeatures = optional.getValue();
             notNormalizedfeatures.push_back(candidateFeatures);
 
 //        cout << "SP" << candidate.label <<

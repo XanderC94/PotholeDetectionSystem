@@ -2,8 +2,8 @@
 // Created by Matteo Gabellini on 11/06/2018.
 //
 
-#ifndef POTHOLEDETENCTIONSYSTEM_SUPERPIXELINGUTILS_H
-#define POTHOLEDETENCTIONSYSTEM_SUPERPIXELINGUTILS_H
+#ifndef POTHOLEDETECTIONSYSTEM_SUPERPIXELINGUTILS_H
+#define POTHOLEDETECTIONSYSTEM_SUPERPIXELINGUTILS_H
 
 
 #include <opencv2/core.hpp>
@@ -41,4 +41,4 @@ Point2d calculateSuperPixelVariance(vector<cv::Point> superPixel, Point2d center
 double calculateSuperPixelDensity(vector<cv::Point> superPixel);
 
 
-#endif //POTHOLEDETENCTIONSYSTEM_SUPERPIXELINGUTILS_H
+#endif //POTHOLEDETECTIONSYSTEM_SUPERPIXELINGUTILS_H

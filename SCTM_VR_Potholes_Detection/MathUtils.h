@@ -1,5 +1,5 @@
-#ifndef POTHOLEDETENCTIONSYSTEM_MATHUTILS_H
-#define POTHOLEDETENCTIONSYSTEM_MATHUTILS_H
+#ifndef POTHOLEDETECTIONSYSTEM_MATHUTILS_H
+#define POTHOLEDETECTIONSYSTEM_MATHUTILS_H
 
 #include <opencv2/core.hpp>
 
@@ -24,4 +24,4 @@ float calculateSkewnessGrayImage(Mat image, float averageColorVal);
 
 float calculateSkewnessGrayImageRegion(Mat image, vector<Point> region, float averageGrayVal);
 
-#endif //POTHOLEDETENCTIONSYSTEM_MATHUTILS_H
+#endif //POTHOLEDETECTIONSYSTEM_MATHUTILS_H

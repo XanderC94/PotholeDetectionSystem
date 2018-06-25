@@ -2,8 +2,8 @@
 // Created by Matteo Gabellini on 02/06/2018.
 //
 
-#ifndef POTHOLEDETENCTIONSYSTEM_FEATURESEXTRACTION_H
-#define POTHOLEDETENCTIONSYSTEM_FEATURESEXTRACTION_H
+#ifndef POTHOLEDETECTIONSYSTEM_FEATURESEXTRACTION_H
+#define POTHOLEDETECTIONSYSTEM_FEATURESEXTRACTION_H
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
@@ -22,4 +22,4 @@ vector<Features> extractFeatures(const Mat &src, const vector<SuperPixel> &candi
                                  const RoadOffsets &offsets,
                                  const ExtractionThresholds &thresholds);
 
-#endif //POTHOLEDETENCTIONSYSTEM_FEATURESEXTRACTION_H
+#endif //POTHOLEDETECTIONSYSTEM_FEATURESEXTRACTION_H

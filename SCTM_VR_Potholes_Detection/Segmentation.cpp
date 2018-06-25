@@ -1,7 +1,6 @@
 #include "Segmentation.h"
 
 #include <opencv2/photo.hpp>
-#include <iostream>
 
 using namespace cv;
 using namespace std;
@@ -11,7 +10,6 @@ const int RESIZING_WIDTH = 640;
 const int RESIZING_HEIGHT = 480;
 
 const int MAX_AREA = RESIZING_HEIGHT * RESIZING_WIDTH;
-
 
 void preprocessing(Mat &src, Mat &processedImage, const double Horizon_Offset) {
 
@@ -193,7 +191,7 @@ bool isPothole(SuperPixel superPixel, SuperPixel previousSelected, Scalar meanCa
 }
 
 /*
- * if there isn't a super pixel that is recognized as a pothole the function will return the first superpixel
+ * If there isn't a super pixel that is recognized as a pothole the function will return the first superpixel
  * */
 SuperPixel selectPothole(const Mat &src, const int nSuperPixels, const Mat &labels) {
 
@@ -228,8 +226,8 @@ SuperPixel selectPothole(const Mat &src, const int nSuperPixels, const Mat &labe
  * In order to isolate the pothole super pixel from car's bumper
  * 3. Select the super pixel that is darker than the average pixel value and lighter than a specified threshold
  * */
-std::optional<SuperPixel> extractPotholeRegionFromCandidate(const Mat &candidate, const Mat1b &roadMask,
-                                                            const ExtractionThresholds &thresholds) {
+cv::Optional<SuperPixel> extractPotholeRegionFromCandidate(const Mat &candidate, const Mat1b &roadMask,
+                                                           const ExtractionThresholds &thresholds) {
     Mat res, labels;
     vector<SuperPixel> soi;
     SuperPixel product;
@@ -279,11 +277,11 @@ std::optional<SuperPixel> extractPotholeRegionFromCandidate(const Mat &candidate
             || product.meanColourValue.val[0] + product.meanColourValue.val[1] + product.meanColourValue.val[2] < 35 * 3
             || product.meanColourValue.val[0] + product.meanColourValue.val[1] + product.meanColourValue.val[2] >
                225 * 3) {
-            return optional<SuperPixel>();
+            return cv::Optional<SuperPixel>();
         } else {
-            return optional(product);
+            return cv::Optional<SuperPixel>(product);
         }
     } else {
-        return optional<SuperPixel>();
+        return cv::Optional<SuperPixel>();
     }
 }

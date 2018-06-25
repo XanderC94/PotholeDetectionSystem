@@ -80,7 +80,6 @@ cv::Optional<Features> candidateFeatureExtraction(const Mat &src,
     hog = calculateHoG(sample, defaultConfig);
     Mat hogImage = getHoGDescriptorVisualImage(candidateGrayScale,
                                                hog.descriptors,
-                                               Size(candidateGrayScale.cols, candidateGrayScale.rows),
                                                defaultConfig.cellSize,
                                                5,
                                                2.0);

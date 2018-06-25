@@ -35,15 +35,16 @@ typedef struct HoG {
     vector<Point> locations = vector<Point>();;
 } Hog;
 
-Mat getHoGDescriptorVisualImage(Mat &origImg,
-                                vector<float> &descriptorValues,
-                                Size winSize,
-                                Size cellSize,
-                                int scaleFactor,
-                                double viz_factor);
+Mat getHoGDescriptorVisualImage(const Mat &origImg,
+                                const vector<float> &descriptorValues,
+                                const Size cellSize,
+                                const int scaleFactor,
+                                const double viz_factor);
 
 
 HoG calculateHoG(const Mat &src, const HOGConfig config = defaultConfig);
+
+vector<float> getHoGDescriptorOnPotholeCorner(vector<float> &descriptorValues);
 
 
 #endif //POTHOLEDETECTIONSYSTEM_HOG_H

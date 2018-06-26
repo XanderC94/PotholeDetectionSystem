@@ -35,14 +35,51 @@ typedef struct HoG {
     vector<Point> locations = vector<Point>();;
 } Hog;
 
-Mat getHoGDescriptorVisualImage(const Mat &origImg,
-                                const vector<float> &descriptorValues,
-                                const Size cellSize,
-                                const int scaleFactor,
-                                const double viz_factor);
+typedef struct GradientLine {
+    Point startPoint;
+    Point endPoint;
+    Scalar color;
+    int thickness;
+} GradienLine;
+
+typedef struct PointFloat{
+    float x;
+    float y;
+} PointFloat;
+
+typedef struct LineCoordinates{
+    PointFloat startPoint;
+    PointFloat endPoint;
+} LineCoordinates;
+
+typedef struct OrientedGradient{
+    float strength;
+    float directionInRadians;
+} OrientedGradient;
+
+typedef struct OrientedGradientInCell{
+    OrientedGradient orientedGradientValue;
+    Point cellCenter;
+} OrientedGradientInCell;
+
+Mat overlapOrientedGradientCellsOnImage(const Mat &origImg,
+                                        vector<OrientedGradientInCell> greaterOrientedGradientCells,
+                                        const Size cellSize,
+                                        const int scaleFactor,
+                                        const double viz_factor);
 
 
 HoG calculateHoG(const Mat &src, const HOGConfig config = defaultConfig);
+
+vector<OrientedGradientInCell> computeHoGCells(const Mat origImg,
+                                               const vector<float> &descriptorValues,
+                                               const Size cellSize,
+                                               const double viz_factor);
+
+vector<OrientedGradientInCell> computeGreaterHoGCells(const Mat origImg,
+                                                      const vector<float> &descriptorValues,
+                                                      const Size cellSize,
+                                                      const double viz_factor);
 
 vector<float> getHoGDescriptorOnPotholeCorner(vector<float> &descriptorValues);
 

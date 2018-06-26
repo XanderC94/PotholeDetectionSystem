@@ -79,15 +79,18 @@ cv::Optional<Features> candidateFeatureExtraction(const Mat &src,
     //3. Calculate HoG
     HoG hog;
     hog = calculateHoG(sample, defaultConfig);
-
-//    Mat hogImage = getHoGDescriptorVisualImage(sampleGS,
-//                                               hog.descriptors,
-//                                               Size(candidateGrayScale.cols, candidateGrayScale.rows),
-//                                               defaultConfig.cellSize,
-//                                               5,
-//                                               2.0);
-//    imshow(c_name + " Hog matrix", hogImage);
-//    waitKey();
+    int scaleFactor = 5;
+    double viz_factor = 5.0;
+    vector<OrientedGradientInCell> greaterOrientedGradientsVector = computeGreaterHoGCells(candidateGrayScale,
+                                                                                          hog.descriptors,
+                                                                                          defaultConfig.cellSize,
+                                                                                          viz_factor);
+    Mat hogImage = overlapOrientedGradientCellsOnImage(candidateGrayScale,
+                                                       greaterOrientedGradientsVector,
+                                                       defaultConfig.cellSize,
+                                                       scaleFactor,
+                                                       viz_factor);
+    imshow(c_name + " Hog matrix", hogImage);
 
     // 4. The histogram will be calculated
 //    Mat histogram = ExtractHistograms(candidateGrayScale, c_name);

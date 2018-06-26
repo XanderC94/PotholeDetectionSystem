@@ -72,19 +72,22 @@ cv::Optional<Features> candidateFeatureExtraction(const Mat &src,
 //    waitKey();
 
     // 2. Switch color-space from RGB to GreyScale
-    Mat candidateGrayScale;
+    Mat candidateGrayScale, sampleGS;
     cvtColor(candidateSuperPixel.selection, candidateGrayScale, CV_BGR2GRAY);
+    cvtColor(sample, sampleGS, CV_BGR2GRAY);
 
     //3. Calculate HoG
     HoG hog;
     hog = calculateHoG(sample, defaultConfig);
-    Mat hogImage = getHoGDescriptorVisualImage(candidateGrayScale,
-                                               hog.descriptors,
-                                               Size(candidateGrayScale.cols, candidateGrayScale.rows),
-                                               defaultConfig.cellSize,
-                                               5,
-                                               2.0);
-    imshow(c_name + " Hog matrix", hogImage);
+
+//    Mat hogImage = getHoGDescriptorVisualImage(sampleGS,
+//                                               hog.descriptors,
+//                                               Size(candidateGrayScale.cols, candidateGrayScale.rows),
+//                                               defaultConfig.cellSize,
+//                                               5,
+//                                               2.0);
+//    imshow(c_name + " Hog matrix", hogImage);
+//    waitKey();
 
     // 4. The histogram will be calculated
 //    Mat histogram = ExtractHistograms(candidateGrayScale, c_name);
@@ -132,10 +135,19 @@ cv::Optional<Features> candidateFeatureExtraction(const Mat &src,
     sample.copyTo(tmp);
     tmp.setTo(Scalar(0, 0, 255), candidateSuperPixel.contour);
 
-    return cv::Optional<Features>(Features{
-            nativeSuperPixel.label, tmp, Mat(),
-            averageGreyValue, contrast, entropy, skewness, energy
-    });
+    auto ft = Features{
+            .label = nativeSuperPixel.label,
+            .candidate = tmp,
+            .histogram = Mat(),
+            .averageGreyValue= averageGreyValue,
+            .contrast = contrast,
+            .entropy = entropy,
+            .skewness = skewness,
+            .energy = energy,
+            .hogDescriptors = Mat1f(1, hog.descriptors.size(), hog.descriptors.data())
+    };
+
+    return cv::Optional<Features>(ft);
 }
 
 FeaturesVectors

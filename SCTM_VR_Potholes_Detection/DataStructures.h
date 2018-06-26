@@ -40,6 +40,7 @@ typedef struct Features {
     float entropy;
     float skewness;
     float energy;
+    Mat1f hogDescriptors;
 } Features;
 
 typedef struct SuperPixel {

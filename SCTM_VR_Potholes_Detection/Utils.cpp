@@ -144,7 +144,7 @@ bool checkExistence(const string &target) {
         std::transform(line.begin(), line.end(), line.begin(), ::tolower);
 
         cout << line << endl;
-        if (line == "class,candidate,contrast,skewness,avggreyval,energy,entropy") {
+        if (line == "class,candidate,contrast,skewness,avggreyval,energy,entropy,hogdescriptors") {
             return true;
         }
 
@@ -168,7 +168,7 @@ void saveFeatures(const vector<Features> &features, const string saveDirectory, 
     if (csv.is_open()) {
 
         if (doesNotExist) {
-            csv << "Class,Candidate,Contrast,Skewness,AvgGreyVal,Energy,Entropy" << endl;
+            csv << "Class,Candidate,Contrast,Skewness,AvgGreyVal,Energy,Entropy,HOGDescriptors" << endl;
         }
 
         for (int i = 0; i < features.size(); ++i) {
@@ -186,7 +186,10 @@ void saveFeatures(const vector<Features> &features, const string saveDirectory, 
             csv << f.skewness << ",";
             csv << f.averageGreyValue << ",";
             csv << f.energy << ",";
-            csv << f.entropy << endl;
+            csv << f.entropy << ",";
+            csv << f.hogDescriptors << endl;
+
+
 
             imwrite("../" + saveDirectory + "/" + c_name + ".bmp", f.candidate);
 

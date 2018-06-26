@@ -19,7 +19,7 @@ HoG calculateHoG(const Mat &src, const HOGConfig config) {
                           config.binNumber);
 
     cvtColor(src, grayscale, CV_BGR2GRAY);
-    cout << "Computing HOG Descriptor...";
+    cout << "Computing HOG Descriptor..." << endl;
 
     vector<float> descriptors = vector<float>();
     vector<Point> locations = vector<Point>();

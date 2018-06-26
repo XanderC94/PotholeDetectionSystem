@@ -37,6 +37,35 @@ typedef struct GradientLine {
     int thickness;
 } GradienLine;
 
+typedef struct PointFloat{
+    float x;
+    float y;
+} PointFloat;
+
+typedef struct LineCoordinates{
+    PointFloat startPoint;
+    PointFloat endPoint;
+} LineCoordinates;
+
+LineCoordinates calculateLineCoordinates(const Point cellCenter,
+                                         const PointFloat lineVecDirection,
+                                         const float currentGradStrength,
+                                         const float maxVectorialLength,
+                                         const float scale){
+        float startPointX = cellCenter.x - lineVecDirection.x * currentGradStrength * maxVectorialLength * scale;
+        float startPointY = cellCenter.y - lineVecDirection.y * currentGradStrength * maxVectorialLength * scale;
+        float endPointX = cellCenter.x + lineVecDirection.x * currentGradStrength * maxVectorialLength * scale;
+        float endPointY = cellCenter.y + lineVecDirection.y * currentGradStrength * maxVectorialLength * scale;
+
+        PointFloat startPoint = PointFloat{startPointX,startPointY};
+        PointFloat endPoint = PointFloat{endPointX, endPointY};
+
+        LineCoordinates result;
+        result.startPoint =  startPoint;
+        result.endPoint = endPoint;
+        return result;
+};
+
 GradientLine calculateGradientLine(Mat visual_image,
                                    int binIndex,
                                    int scaleFactor,
@@ -44,26 +73,28 @@ GradientLine calculateGradientLine(Mat visual_image,
                                    float radRangeForOneBin,
                                    Size cellSize,
                                    double viz_factor,
-                                   int mx,
-                                   int my) {
+                                   Point cellCenter) {
     float currRad = binIndex * radRangeForOneBin + radRangeForOneBin / 2;
 
-    float dirVecX = cos(currRad);
-    float dirVecY = sin(currRad);
-    float maxVecLen = cellSize.width / 2;
+    float vectorialDirectionX = cos(currRad);
+    float vectorialDirectionY = sin(currRad);
+    PointFloat vectorialDirection = PointFloat{vectorialDirectionX, vectorialDirectionY};
+
+    float maxVectorialLength = cellSize.width / 2;
     float scale = viz_factor; // just a visual_imagealization scale,
     // to see the lines better
 
     // compute line coordinates
-    float x1 = mx - dirVecX * currentGradStrength * maxVecLen * scale;
-    float y1 = my - dirVecY * currentGradStrength * maxVecLen * scale;
-    float x2 = mx + dirVecX * currentGradStrength * maxVecLen * scale;
-    float y2 = my + dirVecY * currentGradStrength * maxVecLen * scale;
+    LineCoordinates coordinates = calculateLineCoordinates(cellCenter,
+                                                           vectorialDirection,
+                                                           currentGradStrength,
+                                                           maxVectorialLength,
+                                                           scale);
 
     // draw gradient visual_imagealization
     GradientLine line = {visual_image,
-                         Point(x1 * scaleFactor, y1 * scaleFactor),
-                         Point(x2 * scaleFactor, y2 * scaleFactor),
+                         Point(coordinates.startPoint.x * scaleFactor, coordinates.startPoint.y * scaleFactor),
+                         Point(coordinates.endPoint.x * scaleFactor, coordinates.endPoint.y * scaleFactor),
                          CV_RGB(0, 0, 255),
                          1};
     return line;
@@ -87,8 +118,7 @@ void drawGradientStrenghtsInCells(Mat visual_image,
                                   int celly,
                                   int cellx,
                                   double viz_factor,
-                                  int mx,
-                                  int my,
+                                  Point cellCenter,
                                   int binNumber) {
 
     vector<GradienLine> gLines = vector<GradienLine>();
@@ -105,8 +135,7 @@ void drawGradientStrenghtsInCells(Mat visual_image,
                                                       radRangeForOneBin,
                                                       cellSize,
                                                       viz_factor,
-                                                      mx,
-                                                      my);
+                                                      cellCenter);
             gLines.push_back(line);
         }
     } // for (all bins)
@@ -122,8 +151,7 @@ void drawGreaterGradientStrenghtsInCells(Mat visual_image,
                                          int celly,
                                          int cellx,
                                          double viz_factor,
-                                         int mx,
-                                         int my,
+                                         Point cellCenter,
                                          int binNumber) {
 
     GradienLine greaterGradient = {Mat(), Point(), Point(), Scalar(), 0};
@@ -143,8 +171,7 @@ void drawGreaterGradientStrenghtsInCells(Mat visual_image,
                                                       radRangeForOneBin,
                                                       cellSize,
                                                       viz_factor,
-                                                      mx,
-                                                      my);
+                                                      cellCenter);
             greaterGradient = line;
         }
     } // for (all bins)
@@ -155,8 +182,8 @@ void drawGreaterGradientStrenghtsInCells(Mat visual_image,
 }
 
 
-void drawCell(int cells_in_x_dir,
-              int cells_in_y_dir,
+void drawCell(int cellsColumns,
+              int cellsRows,
               Size cellSize,
               Mat visual_image,
               int scaleFactor,
@@ -164,18 +191,18 @@ void drawCell(int cells_in_x_dir,
               double viz_factor,
               float ***gradientStrengths,
               int binNumber) {
-    for (int celly = 0; celly < cells_in_y_dir; celly++) {
-        for (int cellx = 0; cellx < cells_in_x_dir; cellx++) {
-            int drawX = cellx * cellSize.width;
-            int drawY = celly * cellSize.height;
+    for (int cellRowIndex = 0; cellRowIndex < cellsRows; cellRowIndex++) {
+        for (int cellColIndex = 0; cellColIndex < cellsColumns; cellColIndex++) {
+            int cellBeginX = cellColIndex * cellSize.width;
+            int cellBeginY = cellRowIndex * cellSize.height;
 
-            int mx = drawX + cellSize.width / 2;
-            int my = drawY + cellSize.height / 2;
-
+            int cellCenterX = cellBeginX + cellSize.width / 2;
+            int cellCenterY = cellBeginY + cellSize.height / 2;
+            Point cellCenter = Point(cellCenterX, cellCenterY);
 //            rectangle(visual_image,
-//                      Point(drawX * scaleFactor, drawY * scaleFactor),
-//                      Point((drawX + cellSize.width) * scaleFactor,
-//                            (drawY + cellSize.height) * scaleFactor),
+//                      Point(cellBeginX * scaleFactor, cellBeginY * scaleFactor),
+//                      Point((cellBeginX + cellSize.width) * scaleFactor,
+//                            (cellBeginY + cellSize.height) * scaleFactor),
 //                      CV_RGB(100, 100, 100),
 //                      1);
 
@@ -184,61 +211,55 @@ void drawCell(int cells_in_x_dir,
                                                 cellSize,
                                                 radRangeForOneBin,
                                                 gradientStrengths,
-                                                celly,
-                                                cellx,
+                                                cellRowIndex,
+                                                cellColIndex,
                                                 viz_factor,
-                                                mx,
-                                                my,
+                                                cellCenter,
                                                 binNumber);
 
-        } // for (cellx)
-    } // for (celly)
+        }
+    }
 }
 
-int computeGradientStrengthPerCell(int cells_in_x_dir,
-                                   int cells_in_y_dir,
-                                   vector<float> &descriptorValues,
+int computeGradientStrengthPerCell(int cellsColumns,
+                                   int cellsRows,
+                                   const vector<float> &descriptorValues,
                                    float ***gradientStrengths,
                                    int gradientBinSize,
                                    int **cellUpdateCounter) {
-    // nr of blocks = nr of cells - 1
+    // number of blocks = number of cells - 1
     // since there is a new block on each cellSize (overlapping blocks!) but the last one
-    int blocks_in_x_dir = cells_in_x_dir - 1;
-    int blocks_in_y_dir = cells_in_y_dir - 1;
-
+    int blocksColumns = cellsColumns - 1;
+    int blocksRows = cellsRows - 1;
     int descriptorDataIdx = 0;
-    int cellx = 0;
-    int celly = 0;
 
-    for (int blockx = 0; blockx < blocks_in_x_dir; blockx++) {
-        for (int blocky = 0; blocky < blocks_in_y_dir; blocky++) {
+    for (int blockColIndex = 0; blockColIndex < blocksColumns; blockColIndex++) {
+        for (int blockRowIndex = 0; blockRowIndex < blocksRows; blockRowIndex++) {
             // 4 cells per block ...
-            for (int cellNr = 0; cellNr < 4; cellNr++) {
-                // compute corresponding cellSize nr
-                int cellx = blockx;
-                int celly = blocky;
-                if (cellNr == 1) celly++;
-                if (cellNr == 2) cellx++;
-                if (cellNr == 3) {
-                    cellx++;
-                    celly++;
+            for (int cellNumber = 0; cellNumber < 4; cellNumber++) {
+                // compute corresponding cellSize number
+                int cellColIndex = blockColIndex;
+                int cellRowIndex = blockRowIndex;
+                if (cellNumber == 1) cellRowIndex++;
+                if (cellNumber == 2) cellColIndex++;
+                if (cellNumber == 3) {
+                    cellColIndex++;
+                    cellRowIndex++;
                 }
 
                 for (int bin = 0; bin < gradientBinSize; bin++) {
                     float gradientStrength = descriptorValues[descriptorDataIdx];
                     descriptorDataIdx++;
 
-                    gradientStrengths[celly][cellx][bin] += gradientStrength;
-
-                } // for (all bins)
-
+                    gradientStrengths[cellRowIndex][cellColIndex][bin] += gradientStrength;
+                }
 
                 // note: overlapping blocks lead to multiple updates of this sum!
                 // we therefore keep track how often a cellSize was updated,
                 // to compute average gradient strengths
-                cellUpdateCounter[celly][cellx]++;
+                cellUpdateCounter[cellRowIndex][cellColIndex]++;
 
-            } // for (all cells)
+            }
 
 
         } // for (all block x pos)
@@ -248,38 +269,38 @@ int computeGradientStrengthPerCell(int cells_in_x_dir,
 }
 
 
-void computeAverageGradientStrengths(int cells_in_x_dir,
-                                     int cells_in_y_dir,
+void computeAverageGradientStrengths(int cellsColumns,
+                                     int cellsRows,
                                      float ***gradientStrengths,
                                      int **cellUpdateCounter,
                                      int gradientBinSize) {
-    for (int celly = 0; celly < cells_in_y_dir; celly++) {
-        for (int cellx = 0; cellx < cells_in_x_dir; cellx++) {
+    for (int cellRowIndex = 0; cellRowIndex < cellsRows; cellRowIndex++) {
+        for (int cellColIndex = 0; cellColIndex < cellsColumns; cellColIndex++) {
 
-            float NrUpdatesForThisCell = (float) cellUpdateCounter[celly][cellx];
+            float NrUpdatesForThisCell = (float) cellUpdateCounter[cellRowIndex][cellColIndex];
 
             // compute average gradient strenghts for each gradient bin direction
             for (int bin = 0; bin < gradientBinSize; bin++) {
-                gradientStrengths[celly][cellx][bin] /= NrUpdatesForThisCell;
+                gradientStrengths[cellRowIndex][cellColIndex][bin] /= NrUpdatesForThisCell;
             }
         }
     }
 }
 
 // HOGDescriptor visual_image analyzing
-// Adapted from http://www.juergenwiki.de/work/wiki/doku.php?id=public%3ahog_descriptor_computation_and_visualization
+// Adapted from http://www.juergenbrauer.org/old_wiki/doku.php?id=public:hog_descriptor_computation_and_visualization
 // ONLY PRECAUSIONS ARE
 // --> Image size width/heigth needs to be a multiple of block width/heigth
 // --> Block size width/heigth (multiple cells) needs to be a multiple of cellSize size (histogram region) width/heigth
 // --> Block stride needs to be a multiple of a cellSize size, however current code only allows to use a block stride = cellSize size!
 // --> ScaleFactor enlarges the image patch to make it visible (e.g. a patch of 50x50 could have a factor 10 to be visible at scale 500x500 for inspection)
 // --> viz_factor enlarges the maximum size of the maximal gradient length for normalization. At viz_factor = 1 it results in a length = half the cellSize width
-Mat getHoGDescriptorVisualImage(Mat &origImg,
-                                vector<float> &descriptorValues,
-                                Size winSize,
-                                Size cellSize,
-                                int scaleFactor,
-                                double viz_factor) {
+Mat getHoGDescriptorVisualImage(const Mat &origImg,
+                                const vector<float> &descriptorValues,
+                                const Size cellSize,
+                                const int scaleFactor,
+                                const double viz_factor) {
+
     Mat visual_image;
     resize(origImg, visual_image, Size(origImg.cols * scaleFactor, origImg.rows * scaleFactor));
 
@@ -287,16 +308,17 @@ Mat getHoGDescriptorVisualImage(Mat &origImg,
     // dividing 180° into 9 bins, how large (in rad) is one bin?
     float radRangeForOneBin = 3.14 / (float) binNumber;
 
+    Size winSize = origImg.size();
+    int cellsColumns = winSize.width / cellSize.width;
+    int cellsRows = winSize.height / cellSize.height;
+
     // prepare data structure: 9 orientation / gradient strenghts for each cellSize
-    int cells_in_x_dir = winSize.width / cellSize.width;
-    int cells_in_y_dir = winSize.height / cellSize.height;
-    int totalnrofcells = cells_in_x_dir * cells_in_y_dir;
-    float ***gradientStrengths = new float **[cells_in_y_dir];
-    int **cellUpdateCounter = new int *[cells_in_y_dir];
-    for (int y = 0; y < cells_in_y_dir; y++) {
-        gradientStrengths[y] = new float *[cells_in_x_dir];
-        cellUpdateCounter[y] = new int[cells_in_x_dir];
-        for (int x = 0; x < cells_in_x_dir; x++) {
+    float ***gradientStrengths = new float **[cellsRows];
+    int **cellUpdateCounter = new int *[cellsRows];
+    for (int y = 0; y < cellsRows; y++) {
+        gradientStrengths[y] = new float *[cellsColumns];
+        cellUpdateCounter[y] = new int[cellsColumns];
+        for (int x = 0; x < cellsColumns; x++) {
             gradientStrengths[y][x] = new float[binNumber];
             cellUpdateCounter[y][x] = 0;
 
@@ -306,8 +328,8 @@ Mat getHoGDescriptorVisualImage(Mat &origImg,
     }
 
     // compute gradient strengths per cell
-    int descriptorDataIdx = computeGradientStrengthPerCell(cells_in_x_dir,
-                                                           cells_in_y_dir,
+    int descriptorDataIdx = computeGradientStrengthPerCell(cellsColumns,
+                                                           cellsRows,
                                                            descriptorValues,
                                                            gradientStrengths,
                                                            binNumber,
@@ -315,15 +337,18 @@ Mat getHoGDescriptorVisualImage(Mat &origImg,
 
 
     // compute average gradient strengths
-    computeAverageGradientStrengths(cells_in_x_dir, cells_in_y_dir, gradientStrengths, cellUpdateCounter,
+    computeAverageGradientStrengths(cellsColumns,
+                                    cellsRows,
+                                    gradientStrengths,
+                                    cellUpdateCounter,
                                     binNumber);
 
 
     cout << "descriptorDataIdx = " << descriptorDataIdx << endl;
 
     // draw cells
-    drawCell(cells_in_x_dir,
-             cells_in_y_dir,
+    drawCell(cellsColumns,
+             cellsRows,
              cellSize,
              visual_image,
              scaleFactor,
@@ -334,8 +359,8 @@ Mat getHoGDescriptorVisualImage(Mat &origImg,
 
 
     // don't forget to free memory allocated by helper data structures!
-    for (int y = 0; y < cells_in_y_dir; y++) {
-        for (int x = 0; x < cells_in_x_dir; x++) {
+    for (int y = 0; y < cellsRows; y++) {
+        for (int x = 0; x < cellsColumns; x++) {
             delete[] gradientStrengths[y][x];
         }
         delete[] gradientStrengths[y];

@@ -74,7 +74,7 @@ cv::Optional<Features> candidateFeatureExtraction(const Mat &src,
     // 2. Switch color-space from RGB to GreyScale
     Mat candidateGrayScale, sampleGS;
     cvtColor(candidateSuperPixel.selection, candidateGrayScale, CV_BGR2GRAY);
-    cvtColor(sample, sampleGS, CV_BGR2GRAY);
+//    cvtColor(sample, sampleGS, CV_BGR2GRAY);
 
     //3. Calculate HoG
     HoG hog;

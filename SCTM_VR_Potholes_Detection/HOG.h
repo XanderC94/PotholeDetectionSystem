@@ -36,7 +36,6 @@ typedef struct HoG {
 } Hog;
 
 typedef struct GradientLine {
-    Mat visual_image;
     Point startPoint;
     Point endPoint;
     Scalar color;
@@ -57,6 +56,11 @@ typedef struct OrientedGradient{
     float strength;
     float directionInRadians;
 } OrientedGradient;
+
+typedef struct OrientedGradientInCell{
+    OrientedGradient orientedGradient;
+    Point cellCenter;
+} OrientedGradientInCell;
 
 Mat getHoGDescriptorVisualImage(const Mat &origImg,
                                 const vector<float> &descriptorValues,

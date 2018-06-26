@@ -62,8 +62,7 @@ OrientedGradient createOrientedGradient(float gradStrength, float radRangeForOne
     return result;
 }
 
-GradientLine calculateGradientLine(Mat visual_image,
-                                   OrientedGradient oGradient,
+GradientLine calculateGradientLine(OrientedGradient oGradient,
                                    int scaleFactor,
                                    Size cellSize,
                                    double viz_factor,
@@ -79,23 +78,55 @@ GradientLine calculateGradientLine(Mat visual_image,
                                                            maxVectorialLength,
                                                            scale);
 
-    // draw gradient visual_imagealization
-    GradientLine line = {visual_image,
-                         Point(coordinates.startPoint.x * scaleFactor, coordinates.startPoint.y * scaleFactor),
+    GradientLine line = {Point(coordinates.startPoint.x * scaleFactor, coordinates.startPoint.y * scaleFactor),
                          Point(coordinates.endPoint.x * scaleFactor, coordinates.endPoint.y * scaleFactor),
                          CV_RGB(0, 0, 255),
                          1};
     return line;
 }
 
-void drawGradientLines(vector<GradientLine> lines) {
+void drawGradientLines(Mat srcImage, vector<GradientLine> lines) {
     for (GradientLine gLine : lines) {
-        line(gLine.visual_image,
+        line(srcImage,
              gLine.startPoint,
              gLine.endPoint,
              gLine.color,
              gLine.thickness);
     }
+}
+
+vector<OrientedGradient> getOrientedGradientsInCell(int cellx,
+                                                    int celly,
+                                                    float ***gradientStrengths,
+                                                    int binNumber,
+                                                    float radRangeForOneBin){
+    vector<OrientedGradient> result = vector<OrientedGradient>();
+    for (int binIndex = 0; binIndex < binNumber; binIndex++) {
+        float currentGradStrength = gradientStrengths[celly][cellx][binIndex];
+        if (currentGradStrength != 0) {
+            OrientedGradient oGradient = createOrientedGradient(currentGradStrength, radRangeForOneBin, binIndex);
+            result.push_back(oGradient);
+        }
+    }
+    return result;
+}
+
+OrientedGradient getGreaterOrientedGradientInCell(int cellx,
+                                                  int celly,
+                                                  float ***gradientStrengths,
+                                                  int binNumber,
+                                                  float radRangeForOneBin){
+    OrientedGradient greaterGradient{ 0.0, 0.0};
+    float prevGradStrength = 0.0;
+    for (int binIndex = 0; binIndex < binNumber; binIndex++) {
+        float currentGradStrength = gradientStrengths[celly][cellx][binIndex];
+        // no line to draw?
+        if (prevGradStrength < currentGradStrength) {
+            prevGradStrength = currentGradStrength;
+            greaterGradient = createOrientedGradient(currentGradStrength, radRangeForOneBin, binIndex);
+        }
+    }
+    return greaterGradient;
 }
 
 void drawGradientStrenghtsInCells(Mat visual_image,
@@ -110,73 +141,37 @@ void drawGradientStrenghtsInCells(Mat visual_image,
                                   int binNumber) {
 
     vector<GradienLine> gLines = vector<GradienLine>();
+    vector<OrientedGradient> oGradients = getOrientedGradientsInCell(cellx, celly, gradientStrengths, binNumber,
+                                                                     radRangeForOneBin);
 
-    for (int binIndex = 0; binIndex < binNumber; binIndex++) {
-        float currentGradStrength = gradientStrengths[celly][cellx][binIndex];
-
-        // no line to draw?
-        if (currentGradStrength != 0) {
-            OrientedGradient oGradient = createOrientedGradient(currentGradStrength, radRangeForOneBin, binIndex);
-            GradientLine line = calculateGradientLine(visual_image,
-                                                      oGradient,
-                                                      scaleFactor,
-                                                      cellSize,
-                                                      viz_factor,
-                                                      cellCenter);
-            gLines.push_back(line);
-        }
-    } // for (all bins)
-
-    drawGradientLines(gLines);
+    for (OrientedGradient og : oGradients) {
+        GradientLine line = calculateGradientLine(og, scaleFactor, cellSize, viz_factor, cellCenter);
+        gLines.push_back(line);
+    }
+    drawGradientLines(visual_image, gLines);
 }
 
 void drawGreaterGradientStrenghtsInCells(Mat visual_image,
+                                         OrientedGradient greaterGradient,
                                          int scaleFactor,
                                          Size cellSize,
-                                         float radRangeForOneBin,
-                                         float ***gradientStrengths,
-                                         int celly,
-                                         int cellx,
                                          double viz_factor,
-                                         Point cellCenter,
-                                         int binNumber) {
+                                         Point cellCenter) {
 
-    GradienLine greaterGradient = {Mat(), Point(), Point(), Scalar(), 0};
-
-    float prevGradStrength = 0.0;
-
-    for (int binIndex = 0; binIndex < binNumber; binIndex++) {
-        float currentGradStrength = gradientStrengths[celly][cellx][binIndex];
-
-        // no line to draw?
-        if (currentGradStrength != 0 && prevGradStrength < currentGradStrength) {
-            prevGradStrength = currentGradStrength;
-            OrientedGradient currOrientedGradient = createOrientedGradient(currentGradStrength, radRangeForOneBin, binIndex);
-            GradientLine line = calculateGradientLine(visual_image,
-                                                      currOrientedGradient,
-                                                      scaleFactor,
-                                                      cellSize,
-                                                      viz_factor,
-                                                      cellCenter);
-            greaterGradient = line;
-        }
-    } // for (all bins)
+    GradientLine greaterGradientLine = calculateGradientLine(greaterGradient, scaleFactor, cellSize, viz_factor, cellCenter);
 
     vector<GradientLine> vec = vector<GradientLine>();
-    vec.push_back(greaterGradient);
-    drawGradientLines(vec);
+    vec.push_back(greaterGradientLine);
+    drawGradientLines(visual_image, vec);
 }
 
-
-void drawCell(int cellsColumns,
-              int cellsRows,
-              Size cellSize,
-              Mat visual_image,
-              int scaleFactor,
-              float radRangeForOneBin,
-              double viz_factor,
-              float ***gradientStrengths,
-              int binNumber) {
+vector<OrientedGradientInCell> calculateGreaterOrientedGradientCellsVector(int cellsRows,
+                                                int cellsColumns,
+                                                Size cellSize,
+                                                float radRangeForOneBin,
+                                                float ***gradientStrengths,
+                                                int binNumber){
+    vector<OrientedGradientInCell> result = vector<OrientedGradientInCell>();
     for (int cellRowIndex = 0; cellRowIndex < cellsRows; cellRowIndex++) {
         for (int cellColIndex = 0; cellColIndex < cellsColumns; cellColIndex++) {
             int cellBeginX = cellColIndex * cellSize.width;
@@ -192,18 +187,39 @@ void drawCell(int cellsColumns,
 //                      CV_RGB(100, 100, 100),
 //                      1);
 
-            drawGreaterGradientStrenghtsInCells(visual_image,
-                                                scaleFactor,
-                                                cellSize,
-                                                radRangeForOneBin,
-                                                gradientStrengths,
-                                                cellRowIndex,
-                                                cellColIndex,
-                                                viz_factor,
-                                                cellCenter,
-                                                binNumber);
+            OrientedGradient greaterGradient = getGreaterOrientedGradientInCell(cellColIndex,
+                                                                                cellRowIndex,
+                                                                                gradientStrengths,
+                                                                                binNumber,
+                                                                                radRangeForOneBin);
+            OrientedGradientInCell graterGradientInCell{ greaterGradient, cellCenter };
 
+            result.push_back(graterGradientInCell);
         }
+    }
+
+    return result;
+}
+
+void drawCell(int cellsColumns,
+              int cellsRows,
+              Size cellSize,
+              Mat visual_image,
+              int scaleFactor,
+              float radRangeForOneBin,
+              double viz_factor,
+              float ***gradientStrengths,
+              int binNumber) {
+    vector<OrientedGradientInCell> greaterOrientedGradients = calculateGreaterOrientedGradientCellsVector(cellsRows,
+                                                                                    cellsColumns,
+                                                                                    cellSize,
+                                                                                    radRangeForOneBin,
+                                                                                    gradientStrengths,
+                                                                                    binNumber);
+    for (OrientedGradientInCell ogInCell : greaterOrientedGradients){
+        drawGreaterGradientStrenghtsInCells(visual_image, ogInCell.orientedGradient, scaleFactor, cellSize, viz_factor,
+                                            ogInCell.cellCenter);
+
     }
 }
 
@@ -244,10 +260,7 @@ int computeGradientStrengthPerCell(int cellsColumns,
                 // we therefore keep track how often a cellSize was updated,
                 // to compute average gradient strengths
                 cellUpdateCounter[cellRowIndex][cellColIndex]++;
-
             }
-
-
         } // for (all block x pos)
     } // for (all block y pos)
 

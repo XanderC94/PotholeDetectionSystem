@@ -82,9 +82,9 @@ cv::Optional<Features> candidateFeatureExtraction(const Mat &src,
     int scaleFactor = 5;
     double viz_factor = 5.0;
     vector<OrientedGradientInCell> greaterOrientedGradientsVector = computeGreaterHoGCells(candidateGrayScale,
-                                                                                          hog.descriptors,
-                                                                                          defaultConfig.cellSize,
-                                                                                          viz_factor);
+                                                                                           hog.descriptors,
+                                                                                           defaultConfig.cellSize,
+                                                                                           viz_factor);
     Mat hogImage = overlapOrientedGradientCellsOnImage(candidateGrayScale,
                                                        greaterOrientedGradientsVector,
                                                        defaultConfig.cellSize,

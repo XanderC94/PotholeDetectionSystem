@@ -29,13 +29,13 @@ HoG calculateHoG(const Mat &src, const HOGConfig config) {
     return result;
 }
 
-OrientedGradient createOrientedGradient(float gradStrength, float radRangeForOneBin, int binIndex){
+OrientedGradient createOrientedGradient(float gradStrength, float radRangeForOneBin, int binIndex) {
     float directionInRadians = binIndex * radRangeForOneBin + radRangeForOneBin / 2;
-    OrientedGradient result { gradStrength, directionInRadians };
+    OrientedGradient result{gradStrength, directionInRadians};
     return result;
 }
 
-PointFloat convertRadiansToCartesian(float radiant){
+PointFloat convertRadiansToCartesian(float radiant) {
     float vectorialDirectionX = cos(radiant);
     float vectorialDirectionY = sin(radiant);
     PointFloat result = PointFloat{vectorialDirectionX, vectorialDirectionY};
@@ -46,12 +46,12 @@ LineCoordinates calculateLineCoordinates(const Point cellCenter,
                                          OrientedGradient oGradient,
                                          const float maxVectorialLength,
                                          const float scale){
-        PointFloat vectorialDirection = convertRadiansToCartesian(oGradient.directionInRadians);
+    PointFloat vectorialDirection = convertRadiansToCartesian(oGradient.directionInRadians);
 
-        float startPointX = cellCenter.x - vectorialDirection.x * oGradient.strength * maxVectorialLength * scale;
-        float startPointY = cellCenter.y - vectorialDirection.y * oGradient.strength * maxVectorialLength * scale;
-        float endPointX = cellCenter.x + vectorialDirection.x * oGradient.strength * maxVectorialLength * scale;
-        float endPointY = cellCenter.y + vectorialDirection.y * oGradient.strength * maxVectorialLength * scale;
+    float startPointX = cellCenter.x - vectorialDirection.x * oGradient.strength * maxVectorialLength * scale;
+    float startPointY = cellCenter.y - vectorialDirection.y * oGradient.strength * maxVectorialLength * scale;
+    float endPointX = cellCenter.x + vectorialDirection.x * oGradient.strength * maxVectorialLength * scale;
+    float endPointY = cellCenter.y + vectorialDirection.y * oGradient.strength * maxVectorialLength * scale;
 
         PointFloat startPoint = PointFloat{startPointX,startPointY};
         PointFloat endPoint = PointFloat{endPointX, endPointY};
@@ -99,7 +99,7 @@ vector<OrientedGradient> getOrientedGradientsInCell(int cellx,
                                                     int celly,
                                                     float ***gradientStrengths,
                                                     int binNumber,
-                                                    float radRangeForOneBin){
+                                                    float radRangeForOneBin) {
     vector<OrientedGradient> result = vector<OrientedGradient>();
     for (int binIndex = 0; binIndex < binNumber; binIndex++) {
         float currentGradStrength = gradientStrengths[celly][cellx][binIndex];
@@ -115,8 +115,8 @@ OrientedGradient getGreaterOrientedGradientInCell(int cellx,
                                                   int celly,
                                                   float ***gradientStrengths,
                                                   int binNumber,
-                                                  float radRangeForOneBin){
-    OrientedGradient greaterGradient{ 0.0, 0.0};
+                                                  float radRangeForOneBin) {
+    OrientedGradient greaterGradient{0.0, 0.0};
     float prevGradStrength = 0.0;
     for (int binIndex = 0; binIndex < binNumber; binIndex++) {
         float currentGradStrength = gradientStrengths[celly][cellx][binIndex];
@@ -147,11 +147,11 @@ void drawGradientStrengthInCells(Mat visual_image,
 }
 
 vector<OrientedGradientInCell> computeOrientedGradientsCellsVector(int cellsRows,
-                                                                         int cellsColumns,
-                                                                         Size cellSize,
-                                                                         float radRangeForOneBin,
-                                                                         float ***gradientStrengths,
-                                                                         int binNumber){
+                                                                   int cellsColumns,
+                                                                   Size cellSize,
+                                                                   float radRangeForOneBin,
+                                                                   float ***gradientStrengths,
+                                                                   int binNumber) {
     vector<OrientedGradientInCell> result = vector<OrientedGradientInCell>();
     for (int cellRowIndex = 0; cellRowIndex < cellsRows; cellRowIndex++) {
         for (int cellColIndex = 0; cellColIndex < cellsColumns; cellColIndex++) {
@@ -169,11 +169,11 @@ vector<OrientedGradientInCell> computeOrientedGradientsCellsVector(int cellsRows
 //                      1);
 
             vector<OrientedGradient> orietedGradients = getOrientedGradientsInCell(cellColIndex,
-                                                                                cellRowIndex,
-                                                                                gradientStrengths,
-                                                                                binNumber,
-                                                                                radRangeForOneBin);
-            for(OrientedGradient og : orietedGradients) {
+                                                                                   cellRowIndex,
+                                                                                   gradientStrengths,
+                                                                                   binNumber,
+                                                                                   radRangeForOneBin);
+            for (OrientedGradient og : orietedGradients) {
                 OrientedGradientInCell graterGradientInCell{og, cellCenter};
                 result.push_back(graterGradientInCell);
             }
@@ -188,7 +188,7 @@ vector<OrientedGradientInCell> computeGreaterOrientedGradientCellsVector(int cel
                                                                          Size cellSize,
                                                                          float radRangeForOneBin,
                                                                          float ***gradientStrengths,
-                                                                         int binNumber){
+                                                                         int binNumber) {
     vector<OrientedGradientInCell> result = vector<OrientedGradientInCell>();
     for (int cellRowIndex = 0; cellRowIndex < cellsRows; cellRowIndex++) {
         for (int cellColIndex = 0; cellColIndex < cellsColumns; cellColIndex++) {
@@ -210,7 +210,7 @@ vector<OrientedGradientInCell> computeGreaterOrientedGradientCellsVector(int cel
                                                                                 gradientStrengths,
                                                                                 binNumber,
                                                                                 radRangeForOneBin);
-            OrientedGradientInCell graterGradientInCell{ greaterGradient, cellCenter };
+            OrientedGradientInCell graterGradientInCell{greaterGradient, cellCenter};
 
             result.push_back(graterGradientInCell);
         }
@@ -224,7 +224,7 @@ void drawCell(vector<OrientedGradientInCell> greaterOrientedGradientCells,
               Mat visual_image,
               int scaleFactor,
               double viz_factor) {
-    for (OrientedGradientInCell ogInCell : greaterOrientedGradientCells){
+    for (OrientedGradientInCell ogInCell : greaterOrientedGradientCells) {
         drawGradientStrengthInCells(visual_image, ogInCell, scaleFactor, cellSize, viz_factor);
     }
 }
@@ -297,7 +297,7 @@ void initializeMemory(float ***gradientStrengths,
                       int **cellUpdateCounter,
                       const int cellsRows,
                       const int cellsColumns,
-                      int binNumber){
+                      int binNumber) {
     for (int y = 0; y < cellsRows; y++) {
         gradientStrengths[y] = new float *[cellsColumns];
         cellUpdateCounter[y] = new int[cellsColumns];
@@ -314,7 +314,7 @@ void initializeMemory(float ***gradientStrengths,
 void cleanMemory(float ***gradientStrengths,
                  int **cellUpdateCounter,
                  const int cellsRows,
-                 const int cellsColumns){
+                 const int cellsColumns) {
     for (int y = 0; y < cellsRows; y++) {
         for (int x = 0; x < cellsColumns; x++) {
             delete[] gradientStrengths[y][x];
@@ -341,7 +341,7 @@ vector<OrientedGradientInCell> computeHoGCells(const Mat origImg,
 
     float ***gradientStrengths = new float **[cellsRows];
     int **cellUpdateCounter = new int *[cellsRows];
-    initializeMemory(gradientStrengths,cellUpdateCounter, cellsRows, cellsColumns, binNumber);
+    initializeMemory(gradientStrengths, cellUpdateCounter, cellsRows, cellsColumns, binNumber);
 
     // compute gradient strengths per cell
     int descriptorDataIdx = computeGradientStrengthPerCell(cellsColumns,
@@ -363,13 +363,13 @@ vector<OrientedGradientInCell> computeHoGCells(const Mat origImg,
     //cout << "descriptorDataIdx = " << descriptorDataIdx << endl;
 
     vector<OrientedGradientInCell> greaterOrientedGradientCells = computeOrientedGradientsCellsVector(cellsRows,
-                                                                                                            cellsColumns,
-                                                                                                            cellSize,
-                                                                                                            radRangeForOneBin,
-                                                                                                            gradientStrengths,
-                                                                                                            binNumber);
+                                                                                                      cellsColumns,
+                                                                                                      cellSize,
+                                                                                                      radRangeForOneBin,
+                                                                                                      gradientStrengths,
+                                                                                                      binNumber);
     // don't forget to free memory allocated by helper data structures!
-    cleanMemory(gradientStrengths,cellUpdateCounter, cellsRows, cellsColumns);
+    cleanMemory(gradientStrengths, cellUpdateCounter, cellsRows, cellsColumns);
 
     return greaterOrientedGradientCells;
 }
@@ -389,7 +389,7 @@ vector<OrientedGradientInCell> computeGreaterHoGCells(const Mat origImg,
 
     float ***gradientStrengths = new float **[cellsRows];
     int **cellUpdateCounter = new int *[cellsRows];
-    initializeMemory(gradientStrengths,cellUpdateCounter, cellsRows, cellsColumns, binNumber);
+    initializeMemory(gradientStrengths, cellUpdateCounter, cellsRows, cellsColumns, binNumber);
 
     // compute gradient strengths per cell
     int descriptorDataIdx = computeGradientStrengthPerCell(cellsColumns,
@@ -417,7 +417,7 @@ vector<OrientedGradientInCell> computeGreaterHoGCells(const Mat origImg,
                                                                                                             gradientStrengths,
                                                                                                             binNumber);
     // don't forget to free memory allocated by helper data structures!
-    cleanMemory(gradientStrengths,cellUpdateCounter, cellsRows, cellsColumns);
+    cleanMemory(gradientStrengths, cellUpdateCounter, cellsRows, cellsColumns);
 
     return greaterOrientedGradientCells;
 }

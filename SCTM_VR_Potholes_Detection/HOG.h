@@ -42,22 +42,22 @@ typedef struct GradientLine {
     int thickness;
 } GradienLine;
 
-typedef struct PointFloat{
+typedef struct PointFloat {
     float x;
     float y;
 } PointFloat;
 
-typedef struct LineCoordinates{
+typedef struct LineCoordinates {
     PointFloat startPoint;
     PointFloat endPoint;
 } LineCoordinates;
 
-typedef struct OrientedGradient{
+typedef struct OrientedGradient {
     float strength;
     float directionInRadians;
 } OrientedGradient;
 
-typedef struct OrientedGradientInCell{
+typedef struct OrientedGradientInCell {
     OrientedGradient orientedGradientValue;
     Point cellCenter;
 } OrientedGradientInCell;

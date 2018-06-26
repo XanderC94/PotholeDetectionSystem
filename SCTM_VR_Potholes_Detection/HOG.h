@@ -58,18 +58,28 @@ typedef struct OrientedGradient{
 } OrientedGradient;
 
 typedef struct OrientedGradientInCell{
-    OrientedGradient orientedGradient;
+    OrientedGradient orientedGradientValue;
     Point cellCenter;
 } OrientedGradientInCell;
 
-Mat getHoGDescriptorVisualImage(const Mat &origImg,
-                                const vector<float> &descriptorValues,
-                                const Size cellSize,
-                                const int scaleFactor,
-                                const double viz_factor);
+Mat overlapOrientedGradientCellsOnImage(const Mat &origImg,
+                                        vector<OrientedGradientInCell> greaterOrientedGradientCells,
+                                        const Size cellSize,
+                                        const int scaleFactor,
+                                        const double viz_factor);
 
 
 HoG calculateHoG(const Mat &src, const HOGConfig config = defaultConfig);
+
+vector<OrientedGradientInCell> computeHoGCells(const Mat origImg,
+                                               const vector<float> &descriptorValues,
+                                               const Size cellSize,
+                                               const double viz_factor);
+
+vector<OrientedGradientInCell> computeGreaterHoGCells(const Mat origImg,
+                                                      const vector<float> &descriptorValues,
+                                                      const Size cellSize,
+                                                      const double viz_factor);
 
 vector<float> getHoGDescriptorOnPotholeCorner(vector<float> &descriptorValues);
 

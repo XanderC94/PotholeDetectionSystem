@@ -29,6 +29,12 @@ HoG calculateHoG(const Mat &src, const HOGConfig config) {
     return result;
 }
 
+OrientedGradient createOrientedGradient(float gradStrength, float radRangeForOneBin, int binIndex){
+    float directionInRadians = binIndex * radRangeForOneBin + radRangeForOneBin / 2;
+    OrientedGradient result { gradStrength, directionInRadians };
+    return result;
+}
+
 PointFloat convertRadiansToCartesian(float radiant){
     float vectorialDirectionX = cos(radiant);
     float vectorialDirectionY = sin(radiant);
@@ -56,25 +62,19 @@ LineCoordinates calculateLineCoordinates(const Point cellCenter,
         return result;
 }
 
-OrientedGradient createOrientedGradient(float gradStrength, float radRangeForOneBin, int binIndex){
-    float directionInRadians = binIndex * radRangeForOneBin + radRangeForOneBin / 2;
-    OrientedGradient result { gradStrength, directionInRadians };
-    return result;
-}
 
-GradientLine calculateGradientLine(OrientedGradient oGradient,
+GradientLine calculateGradientLine(OrientedGradientInCell oGradientInCell,
                                    int scaleFactor,
                                    Size cellSize,
-                                   double viz_factor,
-                                   Point cellCenter) {
+                                   double viz_factor) {
 
     float maxVectorialLength = cellSize.width / 2;
     float scale = viz_factor; // just a visual_imagealization scale,
     // to see the lines better
 
     // compute line coordinates
-    LineCoordinates coordinates = calculateLineCoordinates(cellCenter,
-                                                           oGradient,
+    LineCoordinates coordinates = calculateLineCoordinates(oGradientInCell.cellCenter,
+                                                           oGradientInCell.orientedGradientValue,
                                                            maxVectorialLength,
                                                            scale);
 
@@ -129,48 +129,66 @@ OrientedGradient getGreaterOrientedGradientInCell(int cellx,
     return greaterGradient;
 }
 
-void drawGradientStrenghtsInCells(Mat visual_image,
-                                  int scaleFactor,
-                                  Size cellSize,
-                                  float radRangeForOneBin,
-                                  float ***gradientStrengths,
-                                  int celly,
-                                  int cellx,
-                                  double viz_factor,
-                                  Point cellCenter,
-                                  int binNumber) {
 
-    vector<GradienLine> gLines = vector<GradienLine>();
-    vector<OrientedGradient> oGradients = getOrientedGradientsInCell(cellx, celly, gradientStrengths, binNumber,
-                                                                     radRangeForOneBin);
+void drawGradientStrengthInCells(Mat visual_image,
+                                 OrientedGradientInCell gradientInCells,
+                                 int scaleFactor,
+                                 Size cellSize,
+                                 double viz_factor) {
 
-    for (OrientedGradient og : oGradients) {
-        GradientLine line = calculateGradientLine(og, scaleFactor, cellSize, viz_factor, cellCenter);
-        gLines.push_back(line);
-    }
-    drawGradientLines(visual_image, gLines);
-}
-
-void drawGreaterGradientStrenghtsInCells(Mat visual_image,
-                                         OrientedGradient greaterGradient,
-                                         int scaleFactor,
-                                         Size cellSize,
-                                         double viz_factor,
-                                         Point cellCenter) {
-
-    GradientLine greaterGradientLine = calculateGradientLine(greaterGradient, scaleFactor, cellSize, viz_factor, cellCenter);
+    GradientLine greaterGradientLine = calculateGradientLine(gradientInCells,
+                                                             scaleFactor,
+                                                             cellSize,
+                                                             viz_factor);
 
     vector<GradientLine> vec = vector<GradientLine>();
     vec.push_back(greaterGradientLine);
     drawGradientLines(visual_image, vec);
 }
 
-vector<OrientedGradientInCell> calculateGreaterOrientedGradientCellsVector(int cellsRows,
-                                                int cellsColumns,
-                                                Size cellSize,
-                                                float radRangeForOneBin,
-                                                float ***gradientStrengths,
-                                                int binNumber){
+vector<OrientedGradientInCell> computeOrientedGradientsCellsVector(int cellsRows,
+                                                                         int cellsColumns,
+                                                                         Size cellSize,
+                                                                         float radRangeForOneBin,
+                                                                         float ***gradientStrengths,
+                                                                         int binNumber){
+    vector<OrientedGradientInCell> result = vector<OrientedGradientInCell>();
+    for (int cellRowIndex = 0; cellRowIndex < cellsRows; cellRowIndex++) {
+        for (int cellColIndex = 0; cellColIndex < cellsColumns; cellColIndex++) {
+            int cellBeginX = cellColIndex * cellSize.width;
+            int cellBeginY = cellRowIndex * cellSize.height;
+
+            int cellCenterX = cellBeginX + cellSize.width / 2;
+            int cellCenterY = cellBeginY + cellSize.height / 2;
+            Point cellCenter = Point(cellCenterX, cellCenterY);
+//            rectangle(visual_image,
+//                      Point(cellBeginX * scaleFactor, cellBeginY * scaleFactor),
+//                      Point((cellBeginX + cellSize.width) * scaleFactor,
+//                            (cellBeginY + cellSize.height) * scaleFactor),
+//                      CV_RGB(100, 100, 100),
+//                      1);
+
+            vector<OrientedGradient> orietedGradients = getOrientedGradientsInCell(cellColIndex,
+                                                                                cellRowIndex,
+                                                                                gradientStrengths,
+                                                                                binNumber,
+                                                                                radRangeForOneBin);
+            for(OrientedGradient og : orietedGradients) {
+                OrientedGradientInCell graterGradientInCell{og, cellCenter};
+                result.push_back(graterGradientInCell);
+            }
+        }
+    }
+
+    return result;
+}
+
+vector<OrientedGradientInCell> computeGreaterOrientedGradientCellsVector(int cellsRows,
+                                                                         int cellsColumns,
+                                                                         Size cellSize,
+                                                                         float radRangeForOneBin,
+                                                                         float ***gradientStrengths,
+                                                                         int binNumber){
     vector<OrientedGradientInCell> result = vector<OrientedGradientInCell>();
     for (int cellRowIndex = 0; cellRowIndex < cellsRows; cellRowIndex++) {
         for (int cellColIndex = 0; cellColIndex < cellsColumns; cellColIndex++) {
@@ -201,25 +219,13 @@ vector<OrientedGradientInCell> calculateGreaterOrientedGradientCellsVector(int c
     return result;
 }
 
-void drawCell(int cellsColumns,
-              int cellsRows,
+void drawCell(vector<OrientedGradientInCell> greaterOrientedGradientCells,
               Size cellSize,
               Mat visual_image,
               int scaleFactor,
-              float radRangeForOneBin,
-              double viz_factor,
-              float ***gradientStrengths,
-              int binNumber) {
-    vector<OrientedGradientInCell> greaterOrientedGradients = calculateGreaterOrientedGradientCellsVector(cellsRows,
-                                                                                    cellsColumns,
-                                                                                    cellSize,
-                                                                                    radRangeForOneBin,
-                                                                                    gradientStrengths,
-                                                                                    binNumber);
-    for (OrientedGradientInCell ogInCell : greaterOrientedGradients){
-        drawGreaterGradientStrenghtsInCells(visual_image, ogInCell.orientedGradient, scaleFactor, cellSize, viz_factor,
-                                            ogInCell.cellCenter);
-
+              double viz_factor) {
+    for (OrientedGradientInCell ogInCell : greaterOrientedGradientCells){
+        drawGradientStrengthInCells(visual_image, ogInCell, scaleFactor, cellSize, viz_factor);
     }
 }
 
@@ -287,35 +293,11 @@ void computeAverageGradientStrengths(int cellsColumns,
 }
 
 
-
-// HOGDescriptor visual_image analyzing
-// Adapted from http://www.juergenbrauer.org/old_wiki/doku.php?id=public:hog_descriptor_computation_and_visualization
-// ONLY PRECAUSIONS ARE
-// --> Image size width/heigth needs to be a multiple of block width/heigth
-// --> Block size width/heigth (multiple cells) needs to be a multiple of cellSize size (histogram region) width/heigth
-// --> Block stride needs to be a multiple of a cellSize size, however current code only allows to use a block stride = cellSize size!
-// --> ScaleFactor enlarges the image patch to make it visible (e.g. a patch of 50x50 could have a factor 10 to be visible at scale 500x500 for inspection)
-// --> viz_factor enlarges the maximum size of the maximal gradient length for normalization. At viz_factor = 1 it results in a length = half the cellSize width
-Mat getHoGDescriptorVisualImage(const Mat &origImg,
-                                const vector<float> &descriptorValues,
-                                const Size cellSize,
-                                const int scaleFactor,
-                                const double viz_factor) {
-
-    Mat visual_image;
-    resize(origImg, visual_image, Size(origImg.cols * scaleFactor, origImg.rows * scaleFactor));
-
-    int binNumber = 9;
-    // dividing 180° into 9 bins, how large (in rad) is one bin?
-    float radRangeForOneBin = 3.14 / (float) binNumber;
-
-    Size winSize = origImg.size();
-    int cellsColumns = winSize.width / cellSize.width;
-    int cellsRows = winSize.height / cellSize.height;
-
-    // prepare data structure: 9 orientation / gradient strenghts for each cellSize
-    float ***gradientStrengths = new float **[cellsRows];
-    int **cellUpdateCounter = new int *[cellsRows];
+void initializeMemory(float ***gradientStrengths,
+                      int **cellUpdateCounter,
+                      const int cellsRows,
+                      const int cellsColumns,
+                      int binNumber){
     for (int y = 0; y < cellsRows; y++) {
         gradientStrengths[y] = new float *[cellsColumns];
         cellUpdateCounter[y] = new int[cellsColumns];
@@ -327,6 +309,39 @@ Mat getHoGDescriptorVisualImage(const Mat &origImg,
                 gradientStrengths[y][x][bin] = 0.0;
         }
     }
+}
+
+void cleanMemory(float ***gradientStrengths,
+                 int **cellUpdateCounter,
+                 const int cellsRows,
+                 const int cellsColumns){
+    for (int y = 0; y < cellsRows; y++) {
+        for (int x = 0; x < cellsColumns; x++) {
+            delete[] gradientStrengths[y][x];
+        }
+        delete[] gradientStrengths[y];
+        delete[] cellUpdateCounter[y];
+    }
+    delete[] gradientStrengths;
+    delete[] cellUpdateCounter;
+}
+
+vector<OrientedGradientInCell> computeHoGCells(const Mat origImg,
+                                               const vector<float> &descriptorValues,
+                                               const Size cellSize,
+                                               const double viz_factor) {
+    Size winSize = origImg.size();
+    // prepare data structure: 9 orientation / gradient strenghts for each cellSize
+    int binNumber = 9;
+    // dividing 180° into 9 bins, how large (in rad) is one bin?
+    float radRangeForOneBin = 3.14 / (float) binNumber;
+
+    int cellsColumns = winSize.width / cellSize.width;
+    int cellsRows = winSize.height / cellSize.height;
+
+    float ***gradientStrengths = new float **[cellsRows];
+    int **cellUpdateCounter = new int *[cellsRows];
+    initializeMemory(gradientStrengths,cellUpdateCounter, cellsRows, cellsColumns, binNumber);
 
     // compute gradient strengths per cell
     int descriptorDataIdx = computeGradientStrengthPerCell(cellsColumns,
@@ -345,30 +360,85 @@ Mat getHoGDescriptorVisualImage(const Mat &origImg,
                                     binNumber);
 
 
-    cout << "descriptorDataIdx = " << descriptorDataIdx << endl;
+    //cout << "descriptorDataIdx = " << descriptorDataIdx << endl;
 
-    // draw cells
-    drawCell(cellsColumns,
-             cellsRows,
-             cellSize,
-             visual_image,
-             scaleFactor,
-             radRangeForOneBin,
-             viz_factor,
-             gradientStrengths,
-             binNumber);
-
-
+    vector<OrientedGradientInCell> greaterOrientedGradientCells = computeOrientedGradientsCellsVector(cellsRows,
+                                                                                                            cellsColumns,
+                                                                                                            cellSize,
+                                                                                                            radRangeForOneBin,
+                                                                                                            gradientStrengths,
+                                                                                                            binNumber);
     // don't forget to free memory allocated by helper data structures!
-    for (int y = 0; y < cellsRows; y++) {
-        for (int x = 0; x < cellsColumns; x++) {
-            delete[] gradientStrengths[y][x];
-        }
-        delete[] gradientStrengths[y];
-        delete[] cellUpdateCounter[y];
-    }
-    delete[] gradientStrengths;
-    delete[] cellUpdateCounter;
-    return visual_image;
+    cleanMemory(gradientStrengths,cellUpdateCounter, cellsRows, cellsColumns);
 
+    return greaterOrientedGradientCells;
+}
+
+vector<OrientedGradientInCell> computeGreaterHoGCells(const Mat origImg,
+                                                      const vector<float> &descriptorValues,
+                                                      const Size cellSize,
+                                                      const double viz_factor) {
+    Size winSize = origImg.size();
+    // prepare data structure: 9 orientation / gradient strenghts for each cellSize
+    int binNumber = 9;
+    // dividing 180° into 9 bins, how large (in rad) is one bin?
+    float radRangeForOneBin = 3.14 / (float) binNumber;
+
+    int cellsColumns = winSize.width / cellSize.width;
+    int cellsRows = winSize.height / cellSize.height;
+
+    float ***gradientStrengths = new float **[cellsRows];
+    int **cellUpdateCounter = new int *[cellsRows];
+    initializeMemory(gradientStrengths,cellUpdateCounter, cellsRows, cellsColumns, binNumber);
+
+    // compute gradient strengths per cell
+    int descriptorDataIdx = computeGradientStrengthPerCell(cellsColumns,
+                                                           cellsRows,
+                                                           descriptorValues,
+                                                           gradientStrengths,
+                                                           binNumber,
+                                                           cellUpdateCounter);
+
+
+    // compute average gradient strengths
+    computeAverageGradientStrengths(cellsColumns,
+                                    cellsRows,
+                                    gradientStrengths,
+                                    cellUpdateCounter,
+                                    binNumber);
+
+
+    //cout << "descriptorDataIdx = " << descriptorDataIdx << endl;
+
+    vector<OrientedGradientInCell> greaterOrientedGradientCells = computeGreaterOrientedGradientCellsVector(cellsRows,
+                                                                                                            cellsColumns,
+                                                                                                            cellSize,
+                                                                                                            radRangeForOneBin,
+                                                                                                            gradientStrengths,
+                                                                                                            binNumber);
+    // don't forget to free memory allocated by helper data structures!
+    cleanMemory(gradientStrengths,cellUpdateCounter, cellsRows, cellsColumns);
+
+    return greaterOrientedGradientCells;
+}
+
+// HOGDescriptor visual_image analyzing
+// Adapted from http://www.juergenbrauer.org/old_wiki/doku.php?id=public:hog_descriptor_computation_and_visualization
+// ONLY PRECAUSIONS ARE
+// --> Image size width/heigth needs to be a multiple of block width/heigth
+// --> Block size width/heigth (multiple cells) needs to be a multiple of cellSize size (histogram region) width/heigth
+// --> Block stride needs to be a multiple of a cellSize size, however current code only allows to use a block stride = cellSize size!
+// --> ScaleFactor enlarges the image patch to make it visible (e.g. a patch of 50x50 could have a factor 10 to be visible at scale 500x500 for inspection)
+// --> viz_factor enlarges the maximum size of the maximal gradient length for normalization. At viz_factor = 1 it results in a length = half the cellSize width
+Mat overlapOrientedGradientCellsOnImage(const Mat &origImg,
+                                        vector<OrientedGradientInCell> greaterOrientedGradientCells,
+                                        const Size cellSize,
+                                        const int scaleFactor,
+                                        const double viz_factor) {
+
+    Mat visual_image;
+    resize(origImg, visual_image, Size(origImg.cols * scaleFactor, origImg.rows * scaleFactor));
+    // draw cells
+    drawCell(greaterOrientedGradientCells, cellSize, visual_image, scaleFactor, viz_factor);
+    return visual_image;
 }

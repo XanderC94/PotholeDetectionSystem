@@ -29,33 +29,23 @@ HoG calculateHoG(const Mat &src, const HOGConfig config) {
     return result;
 }
 
-typedef struct GradientLine {
-    Mat visual_image;
-    Point startPoint;
-    Point endPoint;
-    Scalar color;
-    int thickness;
-} GradienLine;
-
-typedef struct PointFloat{
-    float x;
-    float y;
-} PointFloat;
-
-typedef struct LineCoordinates{
-    PointFloat startPoint;
-    PointFloat endPoint;
-} LineCoordinates;
+PointFloat convertRadiansToCartesian(float radiant){
+    float vectorialDirectionX = cos(radiant);
+    float vectorialDirectionY = sin(radiant);
+    PointFloat result = PointFloat{vectorialDirectionX, vectorialDirectionY};
+    return result;
+}
 
 LineCoordinates calculateLineCoordinates(const Point cellCenter,
-                                         const PointFloat lineVecDirection,
-                                         const float currentGradStrength,
+                                         OrientedGradient oGradient,
                                          const float maxVectorialLength,
                                          const float scale){
-        float startPointX = cellCenter.x - lineVecDirection.x * currentGradStrength * maxVectorialLength * scale;
-        float startPointY = cellCenter.y - lineVecDirection.y * currentGradStrength * maxVectorialLength * scale;
-        float endPointX = cellCenter.x + lineVecDirection.x * currentGradStrength * maxVectorialLength * scale;
-        float endPointY = cellCenter.y + lineVecDirection.y * currentGradStrength * maxVectorialLength * scale;
+        PointFloat vectorialDirection = convertRadiansToCartesian(oGradient.directionInRadians);
+
+        float startPointX = cellCenter.x - vectorialDirection.x * oGradient.strength * maxVectorialLength * scale;
+        float startPointY = cellCenter.y - vectorialDirection.y * oGradient.strength * maxVectorialLength * scale;
+        float endPointX = cellCenter.x + vectorialDirection.x * oGradient.strength * maxVectorialLength * scale;
+        float endPointY = cellCenter.y + vectorialDirection.y * oGradient.strength * maxVectorialLength * scale;
 
         PointFloat startPoint = PointFloat{startPointX,startPointY};
         PointFloat endPoint = PointFloat{endPointX, endPointY};
@@ -64,21 +54,20 @@ LineCoordinates calculateLineCoordinates(const Point cellCenter,
         result.startPoint =  startPoint;
         result.endPoint = endPoint;
         return result;
-};
+}
+
+OrientedGradient createOrientedGradient(float gradStrength, float radRangeForOneBin, int binIndex){
+    float directionInRadians = binIndex * radRangeForOneBin + radRangeForOneBin / 2;
+    OrientedGradient result { gradStrength, directionInRadians };
+    return result;
+}
 
 GradientLine calculateGradientLine(Mat visual_image,
-                                   int binIndex,
+                                   OrientedGradient oGradient,
                                    int scaleFactor,
-                                   float currentGradStrength,
-                                   float radRangeForOneBin,
                                    Size cellSize,
                                    double viz_factor,
                                    Point cellCenter) {
-    float currRad = binIndex * radRangeForOneBin + radRangeForOneBin / 2;
-
-    float vectorialDirectionX = cos(currRad);
-    float vectorialDirectionY = sin(currRad);
-    PointFloat vectorialDirection = PointFloat{vectorialDirectionX, vectorialDirectionY};
 
     float maxVectorialLength = cellSize.width / 2;
     float scale = viz_factor; // just a visual_imagealization scale,
@@ -86,8 +75,7 @@ GradientLine calculateGradientLine(Mat visual_image,
 
     // compute line coordinates
     LineCoordinates coordinates = calculateLineCoordinates(cellCenter,
-                                                           vectorialDirection,
-                                                           currentGradStrength,
+                                                           oGradient,
                                                            maxVectorialLength,
                                                            scale);
 
@@ -123,16 +111,15 @@ void drawGradientStrenghtsInCells(Mat visual_image,
 
     vector<GradienLine> gLines = vector<GradienLine>();
 
-    for (int bin = 0; bin < binNumber; bin++) {
-        float currentGradStrength = gradientStrengths[celly][cellx][bin];
+    for (int binIndex = 0; binIndex < binNumber; binIndex++) {
+        float currentGradStrength = gradientStrengths[celly][cellx][binIndex];
 
         // no line to draw?
         if (currentGradStrength != 0) {
+            OrientedGradient oGradient = createOrientedGradient(currentGradStrength, radRangeForOneBin, binIndex);
             GradientLine line = calculateGradientLine(visual_image,
-                                                      bin,
+                                                      oGradient,
                                                       scaleFactor,
-                                                      currentGradStrength,
-                                                      radRangeForOneBin,
                                                       cellSize,
                                                       viz_factor,
                                                       cellCenter);
@@ -158,17 +145,16 @@ void drawGreaterGradientStrenghtsInCells(Mat visual_image,
 
     float prevGradStrength = 0.0;
 
-    for (int bin = 0; bin < binNumber; bin++) {
-        float currentGradStrength = gradientStrengths[celly][cellx][bin];
+    for (int binIndex = 0; binIndex < binNumber; binIndex++) {
+        float currentGradStrength = gradientStrengths[celly][cellx][binIndex];
 
         // no line to draw?
         if (currentGradStrength != 0 && prevGradStrength < currentGradStrength) {
             prevGradStrength = currentGradStrength;
+            OrientedGradient currOrientedGradient = createOrientedGradient(currentGradStrength, radRangeForOneBin, binIndex);
             GradientLine line = calculateGradientLine(visual_image,
-                                                      bin,
+                                                      currOrientedGradient,
                                                       scaleFactor,
-                                                      currentGradStrength,
-                                                      radRangeForOneBin,
                                                       cellSize,
                                                       viz_factor,
                                                       cellCenter);
@@ -286,6 +272,8 @@ void computeAverageGradientStrengths(int cellsColumns,
         }
     }
 }
+
+
 
 // HOGDescriptor visual_image analyzing
 // Adapted from http://www.juergenbrauer.org/old_wiki/doku.php?id=public:hog_descriptor_computation_and_visualization

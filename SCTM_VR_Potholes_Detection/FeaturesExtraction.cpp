@@ -76,27 +76,23 @@ cv::Optional<Features> candidateFeatureExtraction(const Mat &src,
     cvtColor(candidateSuperPixel.selection, candidateGrayScale, CV_BGR2GRAY);
 //    cvtColor(sample, sampleGS, CV_BGR2GRAY);
 
-    //3. Calculate HoG
-    HoG hog;
-    hog = calculateHoG(sample, defaultConfig);
+    //3. Calculate HOG
+    HOG hog;
+    hog = calculateHOG(sample, defaultConfig);
     int scaleFactor = 5;
     double viz_factor = 5.0;
-
-    vector<OrientedGradientInCell> greaterOrientedGradientsVector = computeGreaterHoGCells(candidateGrayScale,
+    vector<OrientedGradientInCell> greaterOrientedGradientsVector = computeGreaterHOGCells(candidateGrayScale,
                                                                                            hog.descriptors,
                                                                                            defaultConfig.cellSize);
-
     Mat hogImage = overlapOrientedGradientCellsOnImage(candidateGrayScale,
                                                        greaterOrientedGradientsVector,
                                                        defaultConfig.cellSize,
                                                        scaleFactor,
                                                        viz_factor);
 
-    vector<Point> contourPoints;
-    findNonZero(candidateSuperPixel.contour, contourPoints);
 
-    vector<OrientedGradientInCell> orientedGradientOfTheSuperPixel = selectNeighbourhoodCellsAtContour(contourPoints,
-                                                                                                       greaterOrientedGradientsVector);
+    auto orientedGradientOfTheSuperPixel = selectNeighbourhoodCellsAtContour(candidateSuperPixel.contour,
+                                                                             greaterOrientedGradientsVector);
 
 //    Mat superPixelHogImage = overlapOrientedGradientCellsOnImage(candidateGrayScale,
 //                                                                 orientedGradientOfTheSuperPixel,

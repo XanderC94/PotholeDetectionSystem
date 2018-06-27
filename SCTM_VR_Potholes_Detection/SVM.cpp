@@ -42,9 +42,33 @@ Mat ConvertFeatures(const vector<Features> &features) {
     return data;
 }
 
+Mat ConvertHOGFeatures(const vector<Features> &features) {
+
+    // Find max
+    int max_length = 0;
+    for (auto ft : features) {
+        if (ft.hogDescriptors.cols > max_length) {
+            max_length = ft.hogDescriptors.cols;
+        }
+    }
+
+    cout << max_length << endl;
+
+    Mat hog = Mat::zeros(features.size(), max_length, CV_32FC1);
+
+    for (int i = 0; i < features.size(); ++i) {
+        const int L = features[i].hogDescriptors.cols;
+        for (int j = 0; j < L; ++j) {
+            hog.at<float>(i, j) = features[i].hogDescriptors.at<float>(0, j);
+        }
+    }
+
+    return hog;
+}
+
 void Classifier(const vector<Features> &features, const int max_iter, const string model_path, Mat &labels){
 
-    Mat data_mat = ConvertFeatures(features);
+    Mat data_mat = ConvertHOGFeatures(features);
 
     Ptr<SVM> svm = initSVM(model_path, max_iter);
 
@@ -57,7 +81,11 @@ void Classifier(const vector<Features> &features, const int max_iter, const stri
 
 void Training(const vector<Features> &features, const Mat &labels, const int max_iter, const string model_path) {
 
-    Mat data_mat = ConvertFeatures(features);
+//    Mat data_mat = ConvertFeatures(features);
+
+    Mat data_mat = ConvertHOGFeatures(features);
+
+    cout << "HOG FT size " << data_mat.rows << "*" << data_mat.cols << endl;
 
     printf("SVM Initialization\n");
 
@@ -67,7 +95,7 @@ void Training(const vector<Features> &features, const Mat &labels, const int max
 
     auto data = TrainData::create(data_mat, ROW_SAMPLE, labels);
 
-    svm->trainAuto(data, 5);
+    svm->trainAuto(data, 3);
 
     printf("Finished.\n");
 

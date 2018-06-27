@@ -132,13 +132,15 @@ int main(int argc, char*argv[]) {
             auto features = preClassification(string(argv[2]));
             Mat labels((int) features.size(), 1, CV_32SC1);
 
-            Classifier(features, 1000, "../svm/" + string(argv[3]), labels);
+            if (features.size() > 0) {
+                Classifier(features, 1000, "../svm/" + string(argv[3]), labels);
 
-            for (int i = 0; i < features.size(); ++i) {
+                for (int i = 0; i < features.size(); ++i) {
 //                if (labels.at<float>(0, i) == 1) {
-                imwrite("../results/Candidate_" + to_string(i) + (labels.at<float>(0, i) == 1 ? "_Pos" : "_Neg") +
-                        ".bmp", features[i].candidate);
+                    imwrite("../results/Candidate_" + to_string(i) + (labels.at<float>(0, i) == 1 ? "_Pos" : "_Neg") +
+                            ".bmp", features[i].candidate);
 //                }
+                }
             }
 
         } else if (mode == "-t" && argc > 3) {
@@ -152,7 +154,7 @@ int main(int argc, char*argv[]) {
 
             portable_mkdir("../svm/");
 
-            Training(candidates, labels, 100, "../svm/" + string(argv[3]));
+            Training(candidates, labels, 1000, "../svm/" + string(argv[3]));
         }
     }
 

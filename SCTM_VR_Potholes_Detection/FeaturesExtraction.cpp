@@ -85,12 +85,21 @@ cv::Optional<Features> candidateFeatureExtraction(const Mat &src,
                                                                                            hog.descriptors,
                                                                                            defaultConfig.cellSize,
                                                                                            viz_factor);
-    Mat hogImage = overlapOrientedGradientCellsOnImage(candidateGrayScale,
-                                                       greaterOrientedGradientsVector,
-                                                       defaultConfig.cellSize,
-                                                       scaleFactor,
-                                                       viz_factor);
-    imshow(c_name + " Hog matrix", hogImage);
+//    Mat hogImage = overlapOrientedGradientCellsOnImage(candidateGrayScale,
+//                                                       greaterOrientedGradientsVector,
+//                                                       defaultConfig.cellSize,
+//                                                       scaleFactor,
+//                                                       viz_factor);
+//    imshow(c_name + " Hog matrix", hogImage);
+
+    Mat1f svmParameters;
+
+    for (auto ogc : greaterOrientedGradientsVector) {
+        svmParameters.push_back(
+                ogc.orientedGradientValue.strength * (ogc.orientedGradientValue.directionInRadians + 1));
+    }
+
+    transpose(svmParameters, svmParameters);
 
     // 4. The histogram will be calculated
 //    Mat histogram = ExtractHistograms(candidateGrayScale, c_name);
@@ -147,7 +156,7 @@ cv::Optional<Features> candidateFeatureExtraction(const Mat &src,
             .entropy = entropy,
             .skewness = skewness,
             .energy = energy,
-            .hogDescriptors = Mat1f(1, hog.descriptors.size(), hog.descriptors.data())
+            .hogDescriptors = svmParameters
     };
 
     return cv::Optional<Features>(ft);
@@ -243,7 +252,9 @@ vector<Features> extractFeatures(const Mat &src, const vector<SuperPixel> &candi
                 normalizedFeaturesVectors.contrasts[i],
                 normalizedFeaturesVectors.entropies[i],
                 normalizedFeaturesVectors.skewnesses[i],
-                normalizedFeaturesVectors.energies[i]
+                normalizedFeaturesVectors.energies[i],
+                notNormalizedfeatures[i].hogDescriptors
+
         });
     }
 

@@ -4,6 +4,7 @@
 #include <opencv2/imgproc.hpp>
 #include <iostream>
 #include <fstream>
+#include "rapidjson/document.h"
 
 int resize_all_in(const string parent, const string folder, const int width, const int height) {
 
@@ -61,15 +62,27 @@ string set_format(string of_file_name_path, string to_new_format, bool use_separ
 
 vector<string> CSVTokenizer(const string str, const char delimiter) {
 
+    // Delete spaces
     string tmp(str);
     auto end_pos = remove(tmp.begin(), tmp.end(), ' ');
     tmp.erase(end_pos, tmp.end());
+    end_pos = remove(tmp.begin(), tmp.end(), '\"');
+    tmp.erase(end_pos, tmp.end());
+
+    // Detect arrays
+    auto array_start = tmp.find_first_of('[');
+    auto array_end = tmp.find_first_of(']');
 
     vector<string> tokens;
-
-    std::istringstream iss(str);
+    auto offset = array_start > 0 && array_start < tmp.size() ? array_start - 2 : tmp.size(); // jump over ",["
+    std::istringstream iss(tmp.substr(0, offset));
     string token;
     while (std::getline(iss, token, delimiter)) tokens.push_back(token);
+
+    if (array_start > 0 && array_start < tmp.size()) {
+        auto v = tmp.substr(array_start + 1, array_end - 1);
+        tokens.push_back(v);
+    }
 
     return tokens;
 }
@@ -93,6 +106,13 @@ Features objectify(const vector<string> &headers, const vector<string> &tokens, 
             ft.energy = stof(tokens[i]);
         } else if (header == "entropy") {
             ft.entropy = stof(tokens[i]);
+        } else if (header == "hog") {
+
+            auto array_values = CSVTokenizer(tokens[i], ',');
+            ft.hogDescriptors = Mat1f(1, static_cast<int>(array_values.size()));
+            for (int j = 0; j < array_values.size(); ++j) {
+                ft.hogDescriptors.at<float>(0, j) = stof(array_values[j]);
+            }
         }
     }
 
@@ -114,12 +134,17 @@ void loadFromCSV(const string target, vector<Features> &ft, Mat &labels) {
         // Do something with headers ...
         vector<string> headers = CSVTokenizer(line, ',');
 
+        for (auto str : headers) cout << str << " ";
+
+        cout << endl;
+
         while (std::getline(csv, line)) {
+
             vector<string> tokens = CSVTokenizer(line, ',');
+
             auto f = objectify(headers, tokens, labels);
 
             ft.push_back(f);
-
         }
         csv.close();
     } else {
@@ -144,7 +169,7 @@ bool checkExistence(const string &target) {
         std::transform(line.begin(), line.end(), line.begin(), ::tolower);
 
         cout << line << endl;
-        if (line == "class,candidate,contrast,skewness,avggreyval,energy,entropy,hogdescriptors") {
+        if (line == "class,candidate,contrast,skewness,avggreyval,energy,entropy,hog") {
             return true;
         }
 
@@ -168,7 +193,7 @@ void saveFeatures(const vector<Features> &features, const string saveDirectory, 
     if (csv.is_open()) {
 
         if (doesNotExist) {
-            csv << "Class,Candidate,Contrast,Skewness,AvgGreyVal,Energy,Entropy,HOGDescriptors" << endl;
+            csv << "Class,Candidate,Contrast,Skewness,AvgGreyVal,Energy,Entropy,HOG" << endl;
         }
 
         for (int i = 0; i < features.size(); ++i) {
@@ -187,9 +212,7 @@ void saveFeatures(const vector<Features> &features, const string saveDirectory, 
             csv << f.averageGreyValue << ",";
             csv << f.energy << ",";
             csv << f.entropy << ",";
-            csv << f.hogDescriptors << endl;
-
-
+            csv << "\"" << f.hogDescriptors << "\"" << endl;
 
             imwrite("../" + saveDirectory + "/" + c_name + ".bmp", f.candidate);
 

@@ -328,8 +328,7 @@ void cleanMemory(float ***gradientStrengths,
 
 vector<OrientedGradientInCell> computeHoGCells(const Mat origImg,
                                                const vector<float> &descriptorValues,
-                                               const Size cellSize,
-                                               const double viz_factor) {
+                                               const Size cellSize) {
     Size winSize = origImg.size();
     // prepare data structure: 9 orientation / gradient strenghts for each cellSize
     int binNumber = 9;
@@ -376,8 +375,7 @@ vector<OrientedGradientInCell> computeHoGCells(const Mat origImg,
 
 vector<OrientedGradientInCell> computeGreaterHoGCells(const Mat origImg,
                                                       const vector<float> &descriptorValues,
-                                                      const Size cellSize,
-                                                      const double viz_factor) {
+                                                      const Size cellSize) {
     Size winSize = origImg.size();
     // prepare data structure: 9 orientation / gradient strenghts for each cellSize
     int binNumber = 9;
@@ -441,4 +439,21 @@ Mat overlapOrientedGradientCellsOnImage(const Mat &origImg,
     // draw cells
     drawCell(greaterOrientedGradientCells, cellSize, visual_image, scaleFactor, viz_factor);
     return visual_image;
+}
+
+vector<OrientedGradientInCell> selectNeighbourhoodCellsAtContour(vector<Point> contourPoints,
+                                                                 vector<OrientedGradientInCell> orientedGradientsCells,
+                                                                 int neighbourhood){
+    vector<OrientedGradientInCell> result;
+    for(OrientedGradientInCell oGCell : orientedGradientsCells){
+        bool alreadyAdded = false;
+        for(Point sPPoint : contourPoints){
+            double distance = cv::norm(oGCell.cellCenter - sPPoint);
+            if(distance <= neighbourhood && !alreadyAdded){
+                result.push_back(oGCell);
+                alreadyAdded = true;
+            }
+        }
+    }
+    return result;
 }

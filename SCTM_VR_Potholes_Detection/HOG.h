@@ -73,15 +73,15 @@ HoG calculateHoG(const Mat &src, const HOGConfig config = defaultConfig);
 
 vector<OrientedGradientInCell> computeHoGCells(const Mat origImg,
                                                const vector<float> &descriptorValues,
-                                               const Size cellSize,
-                                               const double viz_factor);
+                                               const Size cellSize);
 
 vector<OrientedGradientInCell> computeGreaterHoGCells(const Mat origImg,
                                                       const vector<float> &descriptorValues,
-                                                      const Size cellSize,
-                                                      const double viz_factor);
+                                                      const Size cellSize);
 
 vector<float> getHoGDescriptorOnPotholeCorner(vector<float> &descriptorValues);
 
-
+vector<OrientedGradientInCell> selectNeighbourhoodCellsAtContour(vector<Point> contourPoints,
+                                                                 vector<OrientedGradientInCell> orientedGradientsCells,
+                                                                 int neighbourhood = 2);
 #endif //POTHOLEDETECTIONSYSTEM_HOG_H

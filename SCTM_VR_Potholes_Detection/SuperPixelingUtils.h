@@ -12,7 +12,9 @@
 using namespace cv;
 using namespace cv::ximgproc;
 
-Mat getContours(const Mat &mask);
+vector<vector<cv::Point>> getContours(const Mat &mask);
+
+Mat getContoursMask(const Mat &mask);
 
 SuperPixel getSuperPixel(const Mat &src, int superPixelLabel,
                          const Mat &labels);

@@ -30,14 +30,45 @@ bool isRoad(const int H, const int W, const RoadOffsets offsets, const Point2d c
     return isRoad;
 }
 
-Mat getContours(const Mat &mask) {
-    vector<vector<Point>> tmp;
+vector<vector<cv::Point>> getContours(const Mat &mask){
+    vector<vector<Point>> result;
+
+    findContours(mask, result, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+
+    return result;
+}
+
+
+Mat getContoursMask(const Mat &mask) {
+    vector<vector<Point>> tmp = getContours(mask);
 
     Mat maskContours = Mat::zeros(mask.rows, mask.cols, CV_8UC1);
-    findContours(mask, tmp, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
     drawContours(maskContours, tmp, -1, Scalar(255));
 
     return maskContours;
+}
+
+vector<cv::Point> getContourPoints(const Mat &mask){
+    vector<cv::Point> result;
+
+    vector<vector<cv::Point>> contourMatrix = getContours(mask);
+
+    for(vector<cv::Point> row : contourMatrix){
+        for(cv::Point p : row) {
+            result.push_back(p);
+        }
+    }
+//
+//    Mat contourMask = getContoursMask(mask);
+//    for(int y = 0; y < contourMask.rows; y++){
+//        for(int x = 0 ; x < contourMask.cols; x++){
+//            if(contourMask.at<uchar>(y,x) != 0){
+//                result.push_back(Point(x,y));
+//            }
+//        }
+//    }
+
+    return result;
 }
 
 SuperPixel stub(const Mat &src, const int superPixelLabel, const Mat &mask) {
@@ -45,7 +76,7 @@ SuperPixel stub(const Mat &src, const int superPixelLabel, const Mat &mask) {
     vector<cv::Point> superPixelPoints;
     vector<vector<Point>> tmp;
 
-    Mat maskContours = getContours(mask);
+    Mat maskContours = getContoursMask(mask);
 
     Mat superPixelSelection;
     src.copyTo(superPixelSelection, mask);
@@ -58,6 +89,7 @@ SuperPixel stub(const Mat &src, const int superPixelLabel, const Mat &mask) {
             .center = calculateSuperPixelCenter(superPixelPoints),
             .selection = superPixelSelection,
             .mask = mask,
+            .contourPoints = getContourPoints(mask),
             .contour = maskContours,
             .meanColourValue = meanColourValue,
             .neighbors= std::set<int>()

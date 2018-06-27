@@ -259,7 +259,7 @@ cv::Optional<SuperPixel> extractPotholeRegionFromCandidate(const Mat &candidate,
 
         dilate(product.mask, product.mask, el);
         candidate.copyTo(product.selection, product.mask);
-        product.contour = getContours(product.mask);
+        product.contour = getContoursMask(product.mask);
         findNonZero(product.mask, product.points);
         product.center = calculateSuperPixelCenter(product.points);
         product.meanColourValue = mean(product.selection, product.mask);

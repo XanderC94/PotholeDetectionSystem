@@ -82,14 +82,25 @@ cv::Optional<Features> candidateFeatureExtraction(const Mat &src,
     double viz_factor = 5.0;
     vector<OrientedGradientInCell> greaterOrientedGradientsVector = computeGreaterHoGCells(candidateGrayScale,
                                                                                           hog.descriptors,
-                                                                                          defaultConfig.cellSize,
-                                                                                          viz_factor);
+                                                                                          defaultConfig.cellSize);
     Mat hogImage = overlapOrientedGradientCellsOnImage(candidateGrayScale,
                                                        greaterOrientedGradientsVector,
                                                        defaultConfig.cellSize,
                                                        scaleFactor,
                                                        viz_factor);
-    imshow(c_name + " Hog matrix", hogImage);
+
+    auto orientedGradientOfTheSuperPixel = selectNeighbourhoodCellsAtContour(candidateSuperPixel.contourPoints,
+                                                                             greaterOrientedGradientsVector);
+
+    Mat superPixelHogImage = overlapOrientedGradientCellsOnImage(candidateGrayScale,
+                                                                 orientedGradientOfTheSuperPixel,
+                                                                 defaultConfig.cellSize,
+                                                                 scaleFactor,
+                                                                 viz_factor);
+    //imshow(c_name + " Hog matrix", hogImage);
+//    imshow(c_name + " super pixel Hog matrix", superPixelHogImage);
+//    imshow(c_name + " Sample", sample);
+//    imshow(c_name + " Superpixel contour", candidateSuperPixel.contour);
 
     // 4. The histogram will be calculated
 //    Mat histogram = ExtractHistograms(candidateGrayScale, c_name);

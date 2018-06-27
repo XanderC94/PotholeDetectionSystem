@@ -6,14 +6,15 @@
 #define POTHOLEDETECTIONSYSTEM_SVMCLASSIFIER_H
 
 #include <opencv2/core.hpp>
-
-#include "FeaturesExtraction.h"
+#include <opencv2/ml.hpp>
 
 using namespace cv;
 using namespace std;
 
-Mat ConvertFeatures(const vector<Features> &features);
-void Classifier(const vector<Features> &features, const int max_iter, const string model_path, Mat &labels);
-void Training(const vector<Features> &features, const Mat &labels, const int max_iter, const string model_path);
+namespace mysvm {
+    void Classifier(const Mat &features, Mat &labels, const int max_iter, const string model_path);
+
+    void Training(const Mat &features, const Mat &labels, const int max_iter, const string model_path);
+}
 
 #endif //POTHOLEDETECTIONSYSTEM_SVMCLASSIFIER_H

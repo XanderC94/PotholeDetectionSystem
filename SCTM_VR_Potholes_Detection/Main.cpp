@@ -1,12 +1,11 @@
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
-#include <opencv2/ml.hpp>
-#include <opencv2/plot.hpp>
 #include "Segmentation.h"
 #include "FeaturesExtraction.h"
 #include "SVM.h"
 #include "Utils.h"
+#include "MLUtils.h"
 
 using namespace cv;
 using namespace std;
@@ -106,7 +105,6 @@ void createCandidates (const string targets) {
         }
     }
 
-//    saveFeaturesCSV(features, "data", names, "features");
     saveFeaturesJSON(features, "data", names, "features");
 
 }
@@ -123,39 +121,58 @@ int main(int argc, char*argv[]) {
 
         if (mode == "-d" && argc > 2) {
             createCandidates(string(argv[2]));
-        } else if (mode == "-i" && argc > 3) {
+        } else if (mode == "-c" && argc > 4) {
 
-            /*--------------------------------- Classification Phase ------------------------------*/
+            auto method = string(argv[2]);
+
+            cout << method << endl;
 
             portable_mkdir("../results");
 
-            auto features = preClassification(string(argv[2]));
+            auto features = preClassification(string(argv[3]));
             Mat labels((int) features.size(), 1, CV_32SC1);
 
-            if (features.size() > 0) {
-                Classifier(features, 1000, "../svm/" + string(argv[3]), labels);
+            if (!features.empty()) {
 
-                for (int i = 0; i < features.size(); ++i) {
-//                if (labels.at<float>(0, i) == 1) {
-                    imwrite("../results/Candidate_" + to_string(i) + (labels.at<float>(0, i) == 1 ? "_Pos" : "_Neg") +
-                            ".bmp", features[i].candidate);
-//                }
+            /*--------------------------------- Classification Phase ------------------------------*/
+
+                if (method == "-svm") {
+
+                    Mat data = mlutils::ConvertFeatures(features);
+
+                    mysvm::Classifier(data, labels, 1000, "../svm/" + string(argv[4]));
+
+                    for (int i = 0; i < features.size(); ++i) {
+                        imwrite("../results/Candidate_" + to_string(i) +
+                                (labels.at<float>(0, i) == 1 ? "_Pos" : "_Neg") +
+                                ".bmp", features[i].candidate);
+                    }
+
+                } else if (method == "-bayes") {
+                    // TO DO ...
+                } else {
+                    cerr << "Undefined method " << method << endl;
                 }
-            }
 
-        } else if (mode == "-t" && argc > 3) {
+            } else return -1;
+
+        } else if (mode == "-t" && argc > 4) {
 
             /*--------------------------------- Training Phase ------------------------------*/
+            auto method = string(argv[2]);
 
             Mat labels(0, 0, CV_32SC1);
             vector<Features> candidates;
 
-//            loadFromCSV("../data/" + string(argv[2]), candidates, labels);
-            loadFromJSON("../data/" + string(argv[2]), candidates, labels);
+            loadFromJSON("../data/" + string(argv[3]), candidates, labels);
 
-            portable_mkdir("../svm/");
-
-            Training(candidates, labels, 1000, "../svm/" + string(argv[3]));
+            if (method == "-svm") {
+                portable_mkdir("../svm/");
+                Mat data = mlutils::ConvertFeatures(candidates);
+                mysvm::Training(data, labels, 1000, "../svm/" + string(argv[4]));
+            } else if (method == "-bayes") {
+                // TO DO ...
+            }
         }
     }
 

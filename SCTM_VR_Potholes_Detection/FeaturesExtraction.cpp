@@ -81,45 +81,37 @@ cv::Optional<Features> candidateFeatureExtraction(const Mat &src,
     hog = calculateHoG(sample, defaultConfig);
     int scaleFactor = 5;
     double viz_factor = 5.0;
+
     vector<OrientedGradientInCell> greaterOrientedGradientsVector = computeGreaterHoGCells(candidateGrayScale,
                                                                                            hog.descriptors,
-                                                                                           defaultConfig.cellSize,
-                                                                                           viz_factor);
-//    Mat hogImage = overlapOrientedGradientCellsOnImage(candidateGrayScale,
-//                                                       greaterOrientedGradientsVector,
-//                                                       defaultConfig.cellSize,
-//                                                       scaleFactor,
-//                                                       viz_factor);
-//    imshow(c_name + " Hog matrix", hogImage);
+                                                                                           defaultConfig.cellSize);
 
-    Mat1f svmParameters;
-
-    for (auto ogc : greaterOrientedGradientsVector) {
-        svmParameters.push_back(
-                ogc.orientedGradientValue.strength * (ogc.orientedGradientValue.directionInRadians + 1));
-    }
-
-    transpose(svmParameters, svmParameters);
-                                                                                          hog.descriptors,
-                                                                                          defaultConfig.cellSize);
     Mat hogImage = overlapOrientedGradientCellsOnImage(candidateGrayScale,
                                                        greaterOrientedGradientsVector,
                                                        defaultConfig.cellSize,
                                                        scaleFactor,
                                                        viz_factor);
 
-    auto orientedGradientOfTheSuperPixel = selectNeighbourhoodCellsAtContour(candidateSuperPixel.contourPoints,
-                                                                             greaterOrientedGradientsVector);
+    vector<Point> contourPoints;
+    findNonZero(candidateSuperPixel.contour, contourPoints);
 
-    Mat superPixelHogImage = overlapOrientedGradientCellsOnImage(candidateGrayScale,
-                                                                 orientedGradientOfTheSuperPixel,
-                                                                 defaultConfig.cellSize,
-                                                                 scaleFactor,
-                                                                 viz_factor);
-    //imshow(c_name + " Hog matrix", hogImage);
-//    imshow(c_name + " super pixel Hog matrix", superPixelHogImage);
-//    imshow(c_name + " Sample", sample);
-//    imshow(c_name + " Superpixel contour", candidateSuperPixel.contour);
+    vector<OrientedGradientInCell> orientedGradientOfTheSuperPixel = selectNeighbourhoodCellsAtContour(contourPoints,
+                                                                                                       greaterOrientedGradientsVector);
+
+//    Mat superPixelHogImage = overlapOrientedGradientCellsOnImage(candidateGrayScale,
+//                                                                 orientedGradientOfTheSuperPixel,
+//                                                                 defaultConfig.cellSize,
+//                                                                 scaleFactor,
+//                                                                 viz_factor);
+
+    Mat1f svmParameters;
+
+    for (auto ogc : orientedGradientOfTheSuperPixel) {
+        svmParameters.push_back(
+                ogc.orientedGradientValue.strength * (ogc.orientedGradientValue.directionInRadians + 1));
+    }
+
+    transpose(svmParameters, svmParameters);
 
     // 4. The histogram will be calculated
 //    Mat histogram = ExtractHistograms(candidateGrayScale, c_name);

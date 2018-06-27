@@ -254,110 +254,6 @@ bool Box::contains(Point2i p) {
 	return p.x <= this->bottom_right.x && p.x >= this->top_left.x && p.y <= this->bottom_right.y && p.y >= this->top_left.y;
 }
 
-void set_format(string & of_file_name_path, string to_new_format, bool use_separator = true) {
-	size_t image_format_offset_begin = of_file_name_path.find_last_of(".");
-	string image_format = of_file_name_path.substr(image_format_offset_begin);
-	size_t image_format_offset_end = image_format.length() + image_format_offset_begin;
-
-	of_file_name_path.replace(image_format_offset_begin, image_format_offset_end, (use_separator ? "." : "") + to_new_format);
-}
-
-void images_load(const vector<Annotation> & annotations, vector< Mat > & loaded_images)
-{
-	for (size_t i = 0; i < annotations.size(); ++i)
-	{
-		Mat img = imread(annotations[i].image_path, IMREAD_COLOR);
-		if (img.empty())
-		{
-			cout << annotations[i].image_path << " is invalid!" << endl;
-		}
-		else {
-			loaded_images.push_back(img);
-		}
-	}
-}
-
-void load_from_annotations(const string & filename, vector<Annotation> & annotations) 
-{
-	ifstream infile(filename);
-	string line;
-	while (std::getline(infile, line))
-	{
-
-		istringstream iss(line);
-		vector<string> results(istream_iterator<string>{iss}, istream_iterator<string>());
-		vector<Box> locators;
-
-		for (size_t i = 2; i < results.size(); i += 4) 
-		{
-
-			Point2i bottom_right(stoi(results[i]), stoi(results[i + 1]));
-			Point2i top_left(stoi(results[i + 2]), stoi(results[i + 3]));
-
-			Box b = { bottom_right, top_left };
-
-			locators.push_back(b);
-		}
-
-		string image_name = results[0].substr(results[0].find_last_of("\\")+1);
-
-		clog << image_name << endl;
-
-		struct Annotation a = {results[0], image_name, locators };
-
-		annotations.push_back(a);
-	}
-}
-
-void build_training_structures(const vector<Mat> & images, const vector<Annotation> & annotations, vector<Mat> & training_set, vector<Mat> & probability_mask) {
-	
-	vector<Mat> bin_masks;
-	build_binaries(images, annotations, bin_masks);
-
-	for (size_t i = 0; i < images.size(); ++i) 
-	{
-
-		Mat img = images[i];
-		training_set.push_back(img.reshape(img.rows*img.cols, 1));
-
-		vector<Box> boxes = annotations[i].objects;
-		Mat mask(img.rows, img.cols, CV_32SC1);
-
-		for (size_t row = 0; row < mask.rows; ++row) 
-		{
-			for (size_t col = 0; col < mask.cols; ++col) 
-			{
-				for (size_t j = 0; j < boxes.size(); ++j) 
-				{
-					if (boxes[j].isInside(Point2i(row, col))) //  && bin_masks[i].at<int>(row, col) == 255
-					{
-						mask.at<int>(row, col) = 255;
-					}
-					else {
-						mask.at<int>(row, col) = 0;
-					}
-				}
-			}
-		}
-
-		probability_mask.push_back(mask.reshape(mask.rows*mask.cols, 1));
-
-		string image_path	= annotations[i].image_path;
-		string mask_path	= image_path.insert(image_path.find_last_of("\\") + 1, "masks\\");
-		mask_path			= mask_path.insert(mask_path.find_last_of("."), "_mask");
-
-		size_t image_format_offset_begin	= mask_path.find_last_of(".");
-		string image_format					= mask_path.substr(image_format_offset_begin);
-		size_t image_format_offset_end		= image_format.length() + image_format_offset_begin;
-
-		string mask_name = mask_path.replace(image_format_offset_begin, image_format_offset_end, ".bmp");
-
-		imwrite(mask_name, mask);
-
-		clog << "Saved mask of " << annotations[i].image_path << " as " << mask_name << endl;
-	}
-}
-
 /*
 Mat BW = Mat();
 cvtColor(image, BW, COLOR_RGB2GRAY);
@@ -421,259 +317,97 @@ void labeling(const vector<Mat> & images, Mat & training_set, Mat & classes_set,
 	}
 }
 
-Mat get_hogdescriptor_visual_image(const Mat& or_img, const vector< float>& dscr, const Size win, const Size cell, const int bins = 9, const int scale = 1, const double grad_viz = 5, const bool isGrayscale = false, bool onlyMaxGrad = true)
-{
-	Mat visual_image;
-	if (scale == 1) {
-		resize(or_img, visual_image, Size(or_img.cols*scale, or_img.rows*scale));
-	}
-	
-	if (isGrayscale) {
-		cvtColor(visual_image, visual_image, CV_GRAY2BGR);
-	}
-	
-	// dividing 180� into 9 bins, how large (in rad) is one bin?
-	float radRangeForOneBin = 3.14 / (float)bins;
+vector<string> CSVTokenizer(const string str, const char delimiter) {
 
-	// prepare data structure: 9 orientation / gradient strenghts for each cell
-	int cells_in_x_dir = win.width / cell.width;
-	int cells_in_y_dir = win.height / cell.height;
-	int totalnrofcells = cells_in_x_dir * cells_in_y_dir;
-	float*** gradientStrengths = new float**[cells_in_y_dir];
-	int** cellUpdateCounter = new int*[cells_in_y_dir];
-	for (int y = 0; y< cells_in_y_dir; y++)
-	{
-		gradientStrengths[y] = new float*[cells_in_x_dir];
-		cellUpdateCounter[y] = new int[cells_in_x_dir];
-		for (int x = 0; x< cells_in_x_dir; x++)
-		{
-			gradientStrengths[y][x] = new float[bins];
-			cellUpdateCounter[y][x] = 0;
+    // Delete spaces
+    string tmp(str);
+    auto end_pos = remove(tmp.begin(), tmp.end(), ' ');
+    tmp.erase(end_pos, tmp.end());
+    end_pos = remove(tmp.begin(), tmp.end(), '\"');
+    tmp.erase(end_pos, tmp.end());
 
-			for (int bin = 0; bin< bins; bin++)
-				gradientStrengths[y][x][bin] = 0.0;
-		}
-	}
+    // Detect arrays
+    auto array_start = tmp.find_first_of('[');
+    auto array_end = tmp.find_first_of(']');
 
-	// nr of blocks = nr of cells - 1
-	// since there is a new block on each cell (overlapping blocks!) but the last one
-	int blocks_in_x_dir = cells_in_x_dir - 1;
-	int blocks_in_y_dir = cells_in_y_dir - 1;
+    vector<string> tokens;
+    auto offset = array_start > 0 && array_start < tmp.size() ? array_start - 2 : tmp.size(); // jump over ",["
+    std::istringstream iss(tmp.substr(0, offset));
+    string token;
+    while (std::getline(iss, token, delimiter)) tokens.push_back(token);
 
-	// compute gradient strengths per cell
-	int descriptorDataIdx = 0;
-	int cellx = 0;
-	int celly = 0;
+    if (array_start > 0 && array_start < tmp.size()) {
+        auto v = tmp.substr(array_start + 1, array_end - 1);
+        tokens.push_back(v);
+    }
 
-	for (int blockx = 0; blockx< blocks_in_x_dir; blockx++)
-	{
-		for (int blocky = 0; blocky< blocks_in_y_dir; blocky++)
-		{
-			// 4 cells per block ...
-			for (int cellNr = 0; cellNr< 4; cellNr++)
-			{
-				// compute corresponding cell nr
-				int cellx = blockx;
-				int celly = blocky;
-				if (cellNr == 1) celly++;
-				if (cellNr == 2) cellx++;
-				if (cellNr == 3)
-				{
-					cellx++;
-					celly++;
-				}
-
-				for (int bin = 0; bin< bins; bin++)
-				{
-					float gradientStrength = dscr[descriptorDataIdx];
-					descriptorDataIdx++;
-
-					gradientStrengths[celly][cellx][bin] += gradientStrength;
-
-				} // for (all bins)
-
-
-				  // note: overlapping blocks lead to multiple updates of this sum!
-				  // we therefore keep track how often a cell was updated,
-				  // to compute average gradient strengths
-				cellUpdateCounter[celly][cellx]++;
-
-			} // for (all cells)
-
-
-		} // for (all block x pos)
-	} // for (all block y pos)
-
-
-	// compute average gradient strengths
-	for (int celly = 0; celly< cells_in_y_dir; celly++)
-	{
-		for (int cellx = 0; cellx< cells_in_x_dir; cellx++)
-		{
-
-			float NrUpdatesForThisCell = (float)cellUpdateCounter[celly][cellx];
-
-			// compute average gradient strenghts for each gradient bin direction
-			for (int bin = 0; bin< bins; bin++)
-			{
-				gradientStrengths[celly][cellx][bin] /= NrUpdatesForThisCell;
-			}
-		}
-	}
-
-
-	cout << "descriptorDataIdx = " << descriptorDataIdx << endl;
-
-	// draw cells
-	for (int celly = 0; celly< cells_in_y_dir; celly++)
-	{
-		for (int cellx = 0; cellx< cells_in_x_dir; cellx++)
-		{
-			int drawX = cellx * cell.width;
-			int drawY = celly * cell.height;
-
-			int mx = drawX + cell.width / 2;
-			int my = drawY + cell.height / 2;
-
-			rectangle(visual_image,
-				Point(drawX*scale, drawY*scale),
-				Point((drawX + cell.width)*scale,
-				(drawY + cell.height)*scale),
-				CV_RGB(100, 100, 100),
-				1);
-
-			if (onlyMaxGrad) {
-				double maxGrad = 0.0; int idx = 0;
-				
-				for (int bin = 0; bin < bins; bin++) {
-					if (gradientStrengths[celly][cellx][bin] > maxGrad) {
-						maxGrad = gradientStrengths[celly][cellx][bin];
-						idx = bin;
-					}
-				}
-
-				// no line to draw?
-				if (maxGrad == 0)
-					continue;
-
-				float currRad = idx * radRangeForOneBin + radRangeForOneBin / 2;
-
-				float dirVecX = cos(currRad);
-				float dirVecY = sin(currRad);
-				float maxVecLen = cell.width / 2;
-				float scale = grad_viz; // just a visual_imagealization scale,
-										  // to see the lines better
-
-										  // compute line coordinates
-				float x1 = mx - dirVecX * maxGrad * maxVecLen * scale;
-				float y1 = my - dirVecY * maxGrad * maxVecLen * scale;
-				float x2 = mx + dirVecX * maxGrad * maxVecLen * scale;
-				float y2 = my + dirVecY * maxGrad * maxVecLen * scale;
-
-				// draw gradient visual_imagealization
-				line(visual_image,
-					Point(x1*scale, y1*scale),
-					Point(x2*scale, y2*scale),
-					CV_RGB(0, 0, 255),
-					1);
-			}
-			else {
-				// draw in each cell all 9 gradient strengths
-				for (int bin = 0; bin < bins; bin++)
-				{
-					float currentGradStrength = gradientStrengths[celly][cellx][bin];
-
-					// no line to draw?
-					if (currentGradStrength == 0)
-						continue;
-
-					float currRad = bin * radRangeForOneBin + radRangeForOneBin / 2;
-
-					float dirVecX = cos(currRad);
-					float dirVecY = sin(currRad);
-					float maxVecLen = cell.width / 2;
-					float scale = grad_viz; // just a visual_imagealization scale,
-											  // to see the lines better
-
-											  // compute line coordinates
-					float x1 = mx - dirVecX * currentGradStrength * maxVecLen * scale;
-					float y1 = my - dirVecY * currentGradStrength * maxVecLen * scale;
-					float x2 = mx + dirVecX * currentGradStrength * maxVecLen * scale;
-					float y2 = my + dirVecY * currentGradStrength * maxVecLen * scale;
-
-					// draw gradient visual_imagealization
-					line(visual_image,
-						Point(x1*scale, y1*scale),
-						Point(x2*scale, y2*scale),
-						CV_RGB(0, 0, 255),
-						1);
-
-				} // for (all bins)
-			}
-
-		} // for (cellx)
-	} // for (celly)
-
-
-	  // don't forget to free memory allocated by helper data structures!
-	for (int y = 0; y< cells_in_y_dir; y++)
-	{
-		for (int x = 0; x< cells_in_x_dir; x++)
-		{
-			delete[] gradientStrengths[y][x];
-		}
-		delete[] gradientStrengths[y];
-		delete[] cellUpdateCounter[y];
-	}
-	delete[] gradientStrengths;
-	delete[] cellUpdateCounter;
-
-	return visual_image;
-
+    return tokens;
 }
 
-void HOG() {
+Features objectify(const vector<string> &headers, const vector<string> &tokens, Mat &labels) {
 
-	vector<Mat> set;
-	Mat classes;
-	Mat training_set;
-	vector<string> ids;
+    Features ft;
 
-	load_from_directory(positive_training_set_directory, ids, set, classes, CLASSES::POTHOLE);
-	//loadFromCSV(negative_training_set_directory, ids, set, classes, CLASSES::NORMAL);
+    for (int i = 0; i < tokens.size(); ++i) {
+        const string header = headers[i];
 
-	const Size window(640, 480), block(64, 64), block_stride(16, 16), cell(16, 16), stride(8, 8), padding(0, 0);
-	const int bin = 9;
-	cv::HOGDescriptor hog = HOGDescriptor(window, block, block_stride, cell, bin);
-	vector<Mat> descriptors;
+        if (header == "class") {
+            labels.push_back(stoi(tokens[i]));
+        } else if (header == "contrast") {
+            ft.contrast = stof(tokens[i]);
+        } else if (header == "skewness") {
+            ft.skewness = stof(tokens[i]);
+        } else if (header == "avggreyval") {
+            ft.averageGreyValue = stof(tokens[i]);
+        } else if (header == "energy") {
+            ft.energy = stof(tokens[i]);
+        } else if (header == "entropy") {
+            ft.entropy = stof(tokens[i]);
+        } else if (header == "hog") {
 
-	for (int i = 0; i < set.size(); ++i) {
+            auto array_values = CSVTokenizer(tokens[i], ',');
+            ft.hogDescriptors = Mat1f(1, static_cast<int>(array_values.size()));
+            for (int j = 0; j < array_values.size(); ++j) {
+                ft.hogDescriptors.at<float>(0, j) = stof(array_values[j]);
+            }
+        }
+    }
 
-		vector<float> ft;
-		vector<Point> locs;
-		Mat image = set[i];
-		//Mat edges;
+    return ft;
+}
 
-		cvtColor(image, image, CV_RGB2GRAY);
+void loadFromCSV(const string target, vector<Features> &ft, Mat &labels) {
 
-		/*
-		string canny_save_loc = training_set_directory + (classes.at<int>(i) == 1 ? "Positive\\" : "Negative\\") + "Canny\\" + ids[i];
-		Canny(image, edges, 15, 70);
-		imwrite(canny_save_loc, edges);
-		*/
+    ifstream csv(target);
 
-		cout << "Resizing image number " << i << " @ " << window << endl;
-		resize(image, image, window);
+    if (csv.is_open()) {
 
-		cout << "Computing HOG Descriptor...";
-		hog.compute(image, ft, stride, padding, locs);
+        cout << "Opened file " << target << endl;
 
-		Mat d = get_hogdescriptor_visual_image(image, ft, window, cell);
+        string line;
+        // Get Headers;
+        std::getline(csv, line);
+        std::transform(line.begin(), line.end(), line.begin(), ::tolower);
+        // Do something with headers ...
+        vector<string> headers = CSVTokenizer(line, ',');
 
-		//descriptors.push_back(d);
-		string dscr_save_loc = training_set_directory + (classes.at<int>(i) == 1 ? "Positive\\" : "Negative\\") + "HOG\\" + ids[i];
-		cout << "Saving Descriptor @ " << dscr_save_loc << endl;
+        for (auto str : headers) cout << str << " ";
 
-		imwrite(dscr_save_loc, d);
-	}
+        cout << endl;
+
+        while (std::getline(csv, line)) {
+
+            vector<string> tokens = CSVTokenizer(line, ',');
+
+            auto f = objectify(headers, tokens, labels);
+
+            ft.push_back(f);
+        }
+        csv.close();
+    } else {
+        cerr << "Unable to open file " << target << endl;
+    }
+
+    cout << labels.rows << " " << ft.size() << endl;
+
 }

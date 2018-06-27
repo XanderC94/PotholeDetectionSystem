@@ -4,7 +4,14 @@
 #include <opencv2/imgproc.hpp>
 #include <iostream>
 #include <fstream>
-#include "rapidjson/document.h"
+
+#include <rapidjson/document.h>
+#include <rapidjson/writer.h>
+#include <rapidjson/ostreamwrapper.h>
+#include <rapidjson/istreamwrapper.h>
+#include <rapidjson/prettywriter.h>
+
+using namespace rapidjson;
 
 int resize_all_in(const string parent, const string folder, const int width, const int height) {
 
@@ -60,98 +67,67 @@ string set_format(string of_file_name_path, string to_new_format, bool use_separ
                               (use_separator ? "." : "") + to_new_format);
 }
 
-vector<string> CSVTokenizer(const string str, const char delimiter) {
+void loadFromJSON(const string target, vector<Features> &features, Mat &labels) {
 
-    // Delete spaces
-    string tmp(str);
-    auto end_pos = remove(tmp.begin(), tmp.end(), ' ');
-    tmp.erase(end_pos, tmp.end());
-    end_pos = remove(tmp.begin(), tmp.end(), '\"');
-    tmp.erase(end_pos, tmp.end());
+    ifstream json(target, fstream::in);
 
-    // Detect arrays
-    auto array_start = tmp.find_first_of('[');
-    auto array_end = tmp.find_first_of(']');
+    IStreamWrapper wrapper(json);
 
-    vector<string> tokens;
-    auto offset = array_start > 0 && array_start < tmp.size() ? array_start - 2 : tmp.size(); // jump over ",["
-    std::istringstream iss(tmp.substr(0, offset));
-    string token;
-    while (std::getline(iss, token, delimiter)) tokens.push_back(token);
+    Document document;
 
-    if (array_start > 0 && array_start < tmp.size()) {
-        auto v = tmp.substr(array_start + 1, array_end - 1);
-        tokens.push_back(v);
-    }
+    document.ParseStream(wrapper);
 
-    return tokens;
-}
-
-Features objectify(const vector<string> &headers, const vector<string> &tokens, Mat &labels) {
-
-    Features ft;
-
-    for (int i = 0; i < tokens.size(); ++i) {
-        const string header = headers[i];
-
-        if (header == "class") {
-            labels.push_back(stoi(tokens[i]));
-        } else if (header == "contrast") {
-            ft.contrast = stof(tokens[i]);
-        } else if (header == "skewness") {
-            ft.skewness = stof(tokens[i]);
-        } else if (header == "avggreyval") {
-            ft.averageGreyValue = stof(tokens[i]);
-        } else if (header == "energy") {
-            ft.energy = stof(tokens[i]);
-        } else if (header == "entropy") {
-            ft.entropy = stof(tokens[i]);
-        } else if (header == "hog") {
-
-            auto array_values = CSVTokenizer(tokens[i], ',');
-            ft.hogDescriptors = Mat1f(1, static_cast<int>(array_values.size()));
-            for (int j = 0; j < array_values.size(); ++j) {
-                ft.hogDescriptors.at<float>(0, j) = stof(array_values[j]);
-            }
-        }
-    }
-
-    return ft;
-}
-
-void loadFromCSV(const string target, vector<Features> &ft, Mat &labels) {
-
-    ifstream csv(target);
-
-    if (csv.is_open()) {
+    if (json.is_open() && document.IsObject()) {
 
         cout << "Opened file " << target << endl;
 
-        string line;
-        // Get Headers;
-        std::getline(csv, line);
-        std::transform(line.begin(), line.end(), line.begin(), ::tolower);
-        // Do something with headers ...
-        vector<string> headers = CSVTokenizer(line, ',');
+        for (const auto &ft : document["features"].GetArray()) {
 
-        for (auto str : headers) cout << str << " ";
+            assert(ft.HasMember("label"));
+            assert(ft.HasMember("contrast"));
+            assert(ft.HasMember("avgGreyValue"));
+            assert(ft.HasMember("skewness"));
+            assert(ft.HasMember("energy"));
+            assert(ft.HasMember("entropy"));
+            assert(ft.HasMember("hog"));
 
-        cout << endl;
+            assert(ft["label"].IsInt());
+            assert(ft["contrast"].IsFloat());
+            assert(ft["avgGreyValue"].IsFloat());
+            assert(ft["skewness"].IsFloat());
+            assert(ft["energy"].IsFloat());
+            assert(ft["entropy"].IsFloat());
+            assert(ft["hog"].IsArray());
 
-        while (std::getline(csv, line)) {
+            Mat1f hog;
 
-            vector<string> tokens = CSVTokenizer(line, ',');
+            for (const auto &value : ft["hog"].GetArray()) {
+                hog.push_back(value.GetFloat());
+            }
 
-            auto f = objectify(headers, tokens, labels);
+            transpose(hog, hog);
 
-            ft.push_back(f);
+            Features f = {
+                    ft["label"].GetInt(),
+                    Mat(),
+                    Mat(),
+                    ft["avgGreyValue"].GetFloat(),
+                    ft["contrast"].GetFloat(),
+                    ft["energy"].GetFloat(),
+                    ft["skewness"].GetFloat(),
+                    ft["entropy"].GetFloat(),
+                    hog
+            };
+
+            features.push_back(f);
+            labels.push_back(ft["label"].GetInt());
         }
-        csv.close();
+
     } else {
         cerr << "Unable to open file " << target << endl;
     }
 
-    cout << labels.rows << " " << ft.size() << endl;
+    cout << labels.rows << " " << features.size() << endl;
 
 }
 
@@ -181,8 +157,8 @@ bool checkExistence(const string &target) {
     return false;
 }
 
-void saveFeatures(const vector<Features> &features, const string saveDirectory, const vector<string> names,
-                  const string saveFile) {
+void saveFeaturesCSV(const vector<Features> &features, const string saveDirectory, const vector<string> names,
+                     const string saveFile) {
 
     bool doesNotExist = !checkExistence("../" + saveDirectory + "/" + saveFile + ".csv");
 
@@ -222,6 +198,61 @@ void saveFeatures(const vector<Features> &features, const string saveDirectory, 
     } else {
         cerr << "Ops, we got a problem opening the feature file!" << endl;
     }
+}
+
+void saveFeaturesJSON(const vector<Features> &features, const string saveDirectory, const vector<string> names,
+                      const string saveFile) {
+
+    portable_mkdir(("../" + saveDirectory).data());
+
+    ofstream json("../" + saveDirectory + "/" + saveFile + ".json", fstream::out | fstream::app);
+
+    OStreamWrapper wrapper(json);
+    PrettyWriter<OStreamWrapper> sw(wrapper);
+
+    sw.StartObject();
+    sw.Key("features");
+    sw.StartArray();
+
+    for (int i = 0; i < features.size(); ++i) {
+
+        const auto ft = features[i];
+
+        const auto c_name = set_format(extractFileName(names[i]), "", false) + "_L" + to_string(ft.label);
+
+        sw.StartObject();
+        sw.Key("label");
+        sw.Int(-1);
+        sw.Key("sample");
+        sw.String(c_name.data());
+        sw.Key("contrast");
+        sw.Double(ft.contrast);
+        sw.Key("avgGreyValue");
+        sw.Double(ft.averageGreyValue);
+        sw.Key("skewness");
+        sw.Double(ft.skewness);
+        sw.Key("energy");
+        sw.Double(ft.energy);
+        sw.Key("entropy");
+        sw.Double(ft.entropy);
+        sw.Key("hog");
+        sw.StartArray();
+
+        for (unsigned i = 0; i < ft.hogDescriptors.cols; i++) sw.Double(ft.hogDescriptors.at<float>(0, i));
+
+        sw.EndArray();
+        sw.EndObject();
+
+        sw.Flush();
+
+        imwrite("../" + saveDirectory + "/" + c_name + ".bmp", ft.candidate);
+    }
+
+    sw.EndArray();
+    sw.EndObject();
+
+    json.close();
+
 }
 
 vector<String> extractImagePath(const string targets) {

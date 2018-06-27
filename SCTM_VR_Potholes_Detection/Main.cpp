@@ -10,7 +10,6 @@
 
 using namespace cv;
 using namespace std;
-
 using namespace cv::ml;
 
 vector<Features> preClassification(const string &target) {
@@ -107,7 +106,8 @@ void createCandidates (const string targets) {
         }
     }
 
-    saveFeatures(features, "data", names, "features");
+//    saveFeaturesCSV(features, "data", names, "features");
+    saveFeaturesJSON(features, "data", names, "features");
 
 }
 
@@ -150,7 +150,8 @@ int main(int argc, char*argv[]) {
             Mat labels(0, 0, CV_32SC1);
             vector<Features> candidates;
 
-            loadFromCSV("../data/" + string(argv[2]), candidates, labels);
+//            loadFromCSV("../data/" + string(argv[2]), candidates, labels);
+            loadFromJSON("../data/" + string(argv[2]), candidates, labels);
 
             portable_mkdir("../svm/");
 

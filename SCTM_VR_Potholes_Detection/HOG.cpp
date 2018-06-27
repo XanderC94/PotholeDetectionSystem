@@ -9,7 +9,7 @@
 #include <opencv2/ml.hpp>
 #include <opencv2/objdetect.hpp>
 
-HoG calculateHoG(const Mat &src, const HOGConfig config) {
+HOG calculateHOG(const Mat &src, const HOGConfig config) {
 
     Mat grayscale;
     cv::HOGDescriptor hog(config.detenctionWindowSize,
@@ -25,7 +25,7 @@ HoG calculateHoG(const Mat &src, const HOGConfig config) {
     vector<Point> locations = vector<Point>();
     hog.compute(grayscale, descriptors, Size(0, 0), Size(0, 0), locations);
 
-    HoG result = {descriptors, locations};
+    HOG result = {descriptors, locations};
     return result;
 }
 
@@ -326,7 +326,7 @@ void cleanMemory(float ***gradientStrengths,
     delete[] cellUpdateCounter;
 }
 
-vector<OrientedGradientInCell> computeHoGCells(const Mat origImg,
+vector<OrientedGradientInCell> computeHOGCells(const Mat origImg,
                                                const vector<float> &descriptorValues,
                                                const Size cellSize) {
     Size winSize = origImg.size();
@@ -373,7 +373,7 @@ vector<OrientedGradientInCell> computeHoGCells(const Mat origImg,
     return greaterOrientedGradientCells;
 }
 
-vector<OrientedGradientInCell> computeGreaterHoGCells(const Mat origImg,
+vector<OrientedGradientInCell> computeGreaterHOGCells(const Mat origImg,
                                                       const vector<float> &descriptorValues,
                                                       const Size cellSize) {
     Size winSize = origImg.size();
@@ -441,9 +441,11 @@ Mat overlapOrientedGradientCellsOnImage(const Mat &origImg,
     return visual_image;
 }
 
-vector<OrientedGradientInCell> selectNeighbourhoodCellsAtContour(vector<Point> contourPoints,
+vector<OrientedGradientInCell> selectNeighbourhoodCellsAtContour(Mat contoursMask,
                                                                  vector<OrientedGradientInCell> orientedGradientsCells,
                                                                  int neighbourhood){
+    vector<cv::Point> contourPoints;
+    findNonZero(contoursMask,contourPoints);
     vector<OrientedGradientInCell> result;
     for(OrientedGradientInCell oGCell : orientedGradientsCells){
         bool alreadyAdded = false;

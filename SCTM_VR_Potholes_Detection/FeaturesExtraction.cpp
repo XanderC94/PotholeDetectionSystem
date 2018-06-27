@@ -75,21 +75,22 @@ cv::Optional<Features> candidateFeatureExtraction(const Mat &src,
     Mat candidateGrayScale;
     cvtColor(candidateSuperPixel.selection, candidateGrayScale, CV_BGR2GRAY);
 
-    //3. Calculate HoG
-    HoG hog;
-    hog = calculateHoG(sample, defaultConfig);
+    //3. Calculate HOG
+    HOG hog;
+    hog = calculateHOG(sample, defaultConfig);
     int scaleFactor = 5;
     double viz_factor = 5.0;
-    vector<OrientedGradientInCell> greaterOrientedGradientsVector = computeGreaterHoGCells(candidateGrayScale,
-                                                                                          hog.descriptors,
-                                                                                          defaultConfig.cellSize);
+    vector<OrientedGradientInCell> greaterOrientedGradientsVector = computeGreaterHOGCells(candidateGrayScale,
+                                                                                           hog.descriptors,
+                                                                                           defaultConfig.cellSize);
     Mat hogImage = overlapOrientedGradientCellsOnImage(candidateGrayScale,
                                                        greaterOrientedGradientsVector,
                                                        defaultConfig.cellSize,
                                                        scaleFactor,
                                                        viz_factor);
 
-    auto orientedGradientOfTheSuperPixel = selectNeighbourhoodCellsAtContour(candidateSuperPixel.contourPoints,
+
+    auto orientedGradientOfTheSuperPixel = selectNeighbourhoodCellsAtContour(candidateSuperPixel.contour,
                                                                              greaterOrientedGradientsVector);
 
     Mat superPixelHogImage = overlapOrientedGradientCellsOnImage(candidateGrayScale,
@@ -97,7 +98,7 @@ cv::Optional<Features> candidateFeatureExtraction(const Mat &src,
                                                                  defaultConfig.cellSize,
                                                                  scaleFactor,
                                                                  viz_factor);
-    //imshow(c_name + " Hog matrix", hogImage);
+//    imshow(c_name + " Hog matrix", hogImage);
 //    imshow(c_name + " super pixel Hog matrix", superPixelHogImage);
 //    imshow(c_name + " Sample", sample);
 //    imshow(c_name + " Superpixel contour", candidateSuperPixel.contour);

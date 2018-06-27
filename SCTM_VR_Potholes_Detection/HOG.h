@@ -30,7 +30,7 @@ const HOGConfig defaultConfig = {
         Size(4, 4)      //padding
 };
 
-typedef struct HoG {
+typedef struct HOG {
     vector<float> descriptors = vector<float>();
     vector<Point> locations = vector<Point>();;
 } Hog;
@@ -69,19 +69,19 @@ Mat overlapOrientedGradientCellsOnImage(const Mat &origImg,
                                         const double viz_factor);
 
 
-HoG calculateHoG(const Mat &src, const HOGConfig config = defaultConfig);
+HOG calculateHOG(const Mat &src, const HOGConfig config = defaultConfig);
 
-vector<OrientedGradientInCell> computeHoGCells(const Mat origImg,
+vector<OrientedGradientInCell> computeHOGCells(const Mat origImg,
                                                const vector<float> &descriptorValues,
                                                const Size cellSize);
 
-vector<OrientedGradientInCell> computeGreaterHoGCells(const Mat origImg,
+vector<OrientedGradientInCell> computeGreaterHOGCells(const Mat origImg,
                                                       const vector<float> &descriptorValues,
                                                       const Size cellSize);
 
-vector<float> getHoGDescriptorOnPotholeCorner(vector<float> &descriptorValues);
+vector<float> getHOGDescriptorOnPotholeCorner(vector<float> &descriptorValues);
 
-vector<OrientedGradientInCell> selectNeighbourhoodCellsAtContour(vector<Point> contourPoints,
+vector<OrientedGradientInCell> selectNeighbourhoodCellsAtContour(Mat contoursMask,
                                                                  vector<OrientedGradientInCell> orientedGradientsCells,
                                                                  int neighbourhood = 2);
 #endif //POTHOLEDETECTIONSYSTEM_HOG_H

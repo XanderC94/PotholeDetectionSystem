@@ -32,9 +32,7 @@ bool isRoad(const int H, const int W, const RoadOffsets offsets, const Point2d c
 
 vector<vector<cv::Point>> getContours(const Mat &mask){
     vector<vector<Point>> result;
-
     findContours(mask, result, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
-
     return result;
 }
 
@@ -46,29 +44,6 @@ Mat getContoursMask(const Mat &mask) {
     drawContours(maskContours, tmp, -1, Scalar(255));
 
     return maskContours;
-}
-
-vector<cv::Point> getContourPoints(const Mat &mask){
-    vector<cv::Point> result;
-
-    vector<vector<cv::Point>> contourMatrix = getContours(mask);
-
-    for(vector<cv::Point> row : contourMatrix){
-        for(cv::Point p : row) {
-            result.push_back(p);
-        }
-    }
-//
-//    Mat contourMask = getContoursMask(mask);
-//    for(int y = 0; y < contourMask.rows; y++){
-//        for(int x = 0 ; x < contourMask.cols; x++){
-//            if(contourMask.at<uchar>(y,x) != 0){
-//                result.push_back(Point(x,y));
-//            }
-//        }
-//    }
-
-    return result;
 }
 
 SuperPixel stub(const Mat &src, const int superPixelLabel, const Mat &mask) {
@@ -89,7 +64,6 @@ SuperPixel stub(const Mat &src, const int superPixelLabel, const Mat &mask) {
             .center = calculateSuperPixelCenter(superPixelPoints),
             .selection = superPixelSelection,
             .mask = mask,
-            .contourPoints = getContourPoints(mask),
             .contour = maskContours,
             .meanColourValue = meanColourValue,
             .neighbors= std::set<int>()

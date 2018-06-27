@@ -4,6 +4,7 @@
 #include "Segmentation.h"
 #include "FeaturesExtraction.h"
 #include "SVM.h"
+#include "Bayes.h"
 #include "Utils.h"
 #include "MLUtils.h"
 
@@ -138,20 +139,26 @@ int main(int argc, char*argv[]) {
 
                 if (method == "-svm") {
 
-                    Mat data = mlutils::ConvertFeatures(features);
-
-                    mysvm::Classifier(data, labels, 1000, "../svm/" + string(argv[4]));
-
-                    for (int i = 0; i < features.size(); ++i) {
-                        imwrite("../results/Candidate_" + to_string(i) +
-                                (labels.at<float>(0, i) == 1 ? "_Pos" : "_Neg") +
-                                ".bmp", features[i].candidate);
-                    }
+                    const Mat data = mlutils::ConvertFeatures(features);
+                    const auto model = "../svm/" + string(argv[4]);
+                    mySVM::Classifier(data, labels, 1000, model);
 
                 } else if (method == "-bayes") {
                     // TO DO ...
+                    const Mat data = mlutils::ConvertFeatures(features);
+                    const auto model = "../bayes/" + string(argv[4]);
+                    myBayes::Classifier(data, labels, model);
+
                 } else {
                     cerr << "Undefined method " << method << endl;
+
+                    exit(-1);
+                }
+
+                for (int i = 0; i < features.size(); ++i) {
+                    imwrite("../results/Candidate_" + to_string(i) +
+                            (labels.at<float>(0, i) == 1 ? "_Pos" : "_Neg") +
+                            ".bmp", features[i].candidate);
                 }
 
             } else return -1;
@@ -168,10 +175,15 @@ int main(int argc, char*argv[]) {
 
             if (method == "-svm") {
                 portable_mkdir("../svm/");
-                Mat data = mlutils::ConvertFeatures(candidates);
-                mysvm::Training(data, labels, 1000, "../svm/" + string(argv[4]));
+                const Mat data = mlutils::ConvertFeatures(candidates);
+                const auto model = "../svm/" + string(argv[4]);
+                mySVM::Training(data, labels, 1000, exp(-6), model);
             } else if (method == "-bayes") {
                 // TO DO ...
+                portable_mkdir("../bayes/");
+                const Mat data = mlutils::ConvertFeatures(candidates);
+                const auto model = "../bayes/" + string(argv[4]);
+                myBayes::Training(data, labels, model);
             }
         }
     }

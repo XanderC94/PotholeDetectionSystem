@@ -445,7 +445,7 @@ vector<OrientedGradientInCell> selectNeighbourhoodCellsAtContour(Mat contoursMas
                                                                  vector<OrientedGradientInCell> orientedGradientsCells,
                                                                  int neighbourhood){
     vector<cv::Point> contourPoints;
-    findNonZero(contoursMask,contourPoints);
+    findNonZero(contoursMask, contourPoints);
     vector<OrientedGradientInCell> result;
     for(OrientedGradientInCell oGCell : orientedGradientsCells){
         bool alreadyAdded = false;

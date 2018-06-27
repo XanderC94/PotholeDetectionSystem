@@ -100,14 +100,14 @@ cv::Optional<Features> candidateFeatureExtraction(const Mat &src,
 //                                                                 scaleFactor,
 //                                                                 viz_factor);
 
-    Mat1f svmParameters;
+    Mat1f hogParams;
 
     for (auto ogc : orientedGradientOfTheSuperPixel) {
-        svmParameters.push_back(
+        hogParams.push_back(
                 ogc.orientedGradientValue.strength * (ogc.orientedGradientValue.directionInRadians + 1));
     }
 
-    transpose(svmParameters, svmParameters);
+    transpose(hogParams, hogParams);
 
     // 4. The histogram will be calculated
 //    Mat histogram = ExtractHistograms(candidateGrayScale, c_name);
@@ -164,7 +164,7 @@ cv::Optional<Features> candidateFeatureExtraction(const Mat &src,
             .entropy = entropy,
             .skewness = skewness,
             .energy = energy,
-            .hogDescriptors = svmParameters
+            .hogDescriptors = hogParams
     };
 
     return cv::Optional<Features>(ft);

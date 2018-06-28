@@ -49,6 +49,41 @@ void calculateContrastEntropyEnergy(float &outContrast,
     outEnergy = sqrtf(outEnergy);
 }
 
+Mat1f extractHogParams(const Mat sample, const Mat candidateGrayScale, const SuperPixel candidateSuperPixel){
+    HOG hog;
+    hog = calculateHOG(sample, defaultConfig);
+    int scaleFactor = 5;
+    double viz_factor = 5.0;
+    vector<OrientedGradientInCell> greaterOrientedGradientsVector = computeGreaterHOGCells(candidateGrayScale,
+                                                                                           hog.descriptors,
+                                                                                           defaultConfig.cellSize);
+    Mat hogImage = overlapOrientedGradientCellsOnImage(candidateGrayScale,
+                                                       greaterOrientedGradientsVector,
+                                                       defaultConfig.cellSize,
+                                                       scaleFactor,
+                                                       viz_factor);
+
+
+    auto orientedGradientOfTheSuperPixel = selectNeighbourhoodCellsAtContour(candidateSuperPixel.contour,
+                                                                             greaterOrientedGradientsVector);
+
+//    Mat superPixelHogImage = overlapOrientedGradientCellsOnImage(candidateGrayScale,
+//                                                                 orientedGradientOfTheSuperPixel,
+//                                                                 defaultConfig.cellSize,
+//                                                                 scaleFactor,
+//                                                                 viz_factor);
+
+    Mat1f hogParams;
+
+    for (auto ogc : orientedGradientOfTheSuperPixel) {
+        hogParams.push_back(
+                ogc.orientedGradientValue.strength * (ogc.orientedGradientValue.directionInRadians + 1));
+    }
+
+    transpose(hogParams, hogParams);
+}
+
+
 /*
 *  Feature extraction from a candidate:
 *  1. Candidate will be converted to greyscale
@@ -105,37 +140,7 @@ cv::Optional<Features> candidateFeatureExtraction(const Mat &src,
 //    cvtColor(sample, sampleGS, CV_BGR2GRAY);
 
     //3. Calculate HOG
-    HOG hog;
-    hog = calculateHOG(sample, defaultConfig);
-    int scaleFactor = 5;
-    double viz_factor = 5.0;
-    vector<OrientedGradientInCell> greaterOrientedGradientsVector = computeGreaterHOGCells(candidateGrayScale,
-                                                                                           hog.descriptors,
-                                                                                           defaultConfig.cellSize);
-    Mat hogImage = overlapOrientedGradientCellsOnImage(candidateGrayScale,
-                                                       greaterOrientedGradientsVector,
-                                                       defaultConfig.cellSize,
-                                                       scaleFactor,
-                                                       viz_factor);
-
-
-    auto orientedGradientOfTheSuperPixel = selectNeighbourhoodCellsAtContour(candidateSuperPixel.contour,
-                                                                             greaterOrientedGradientsVector);
-
-//    Mat superPixelHogImage = overlapOrientedGradientCellsOnImage(candidateGrayScale,
-//                                                                 orientedGradientOfTheSuperPixel,
-//                                                                 defaultConfig.cellSize,
-//                                                                 scaleFactor,
-//                                                                 viz_factor);
-
-    Mat1f hogParams;
-
-    for (auto ogc : orientedGradientOfTheSuperPixel) {
-        hogParams.push_back(
-                ogc.orientedGradientValue.strength * (ogc.orientedGradientValue.directionInRadians + 1));
-    }
-
-    transpose(hogParams, hogParams);
+    Mat1f hogParams = extractHogParams();
 
     // 4. The histogram will be calculated
     Mat histogram = ExtractHistograms(candidateGrayScale, c_name, 256);

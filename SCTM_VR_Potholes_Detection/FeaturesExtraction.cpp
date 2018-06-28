@@ -81,6 +81,8 @@ Mat1f extractHogParams(const Mat sample, const Mat candidateGrayScale, const Sup
     }
 
     transpose(hogParams, hogParams);
+
+    return hogParams;
 }
 
 
@@ -140,7 +142,7 @@ cv::Optional<Features> candidateFeatureExtraction(const Mat &src,
 //    cvtColor(sample, sampleGS, CV_BGR2GRAY);
 
     //3. Calculate HOG
-    Mat1f hogParams = extractHogParams();
+    Mat1f hogParams = extractHogParams(sample, candidateGrayScale, candidateSuperPixel);
 
     // 4. The histogram will be calculated
     Mat histogram = ExtractHistograms(candidateGrayScale, c_name, 256);

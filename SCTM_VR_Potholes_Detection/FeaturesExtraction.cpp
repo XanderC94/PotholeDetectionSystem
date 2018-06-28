@@ -22,6 +22,33 @@ typedef struct FeaturesVectors {
     vector<float> energies = vector<float>();
 } FeaturesVectors;
 
+// In order to reduce computation complexity
+// calculate the contrast, entropy and energy with in the same loops
+void calculateContrastEntropyEnergy(float &outContrast,
+                                    float &outEntropy,
+                                    float &outEnergy,
+                                    const SuperPixel candidateSuperPixel,
+                                    const Mat candidateGrayScale){
+
+//    for (int i = 0; i < candidateGrayScale.rows; i++) {
+//        for (int j = 0; j < candidateGrayScale.cols; j++) {
+//            outContrast = outContrast + powf((i - j), 2) * candidateGrayScale.at<uchar>(i, j);
+//            outEntropy = outEntropy + (candidateGrayScale.at<uchar>(i, j) * log10f(candidateGrayScale.at<uchar>(i, j)));
+//            outEnergy = outEnergy + powf(candidateGrayScale.at<uchar>(i, j), 2);
+//        }
+//    }
+
+    for (Point coordinates : candidateSuperPixel.points) {
+        outContrast += (coordinates.y - coordinates.x) * (coordinates.y - coordinates.x) *
+                    candidateGrayScale.at<uchar>(coordinates);
+        outEntropy += (candidateGrayScale.at<uchar>(coordinates) * log10f(candidateGrayScale.at<uchar>(coordinates)));
+        outEnergy += candidateGrayScale.at<uchar>(coordinates) * candidateGrayScale.at<uchar>(coordinates);
+    }
+
+    outEntropy = -outEntropy;
+    outEnergy = sqrtf(outEnergy);
+}
+
 /*
 *  Feature extraction from a candidate:
 *  1. Candidate will be converted to greyscale
@@ -119,29 +146,11 @@ cv::Optional<Features> candidateFeatureExtraction(const Mat &src,
     // 6. Calculate the contrast
     // 7. Calculate Entropy
     // 8. Calculate Energy
-    // In order to reduce computation complexity
-    // calculate the contrast, entropy and energy with in the same loops
+
     float contrast = 0.0;
     float entropy = 0.0;
     float energy = 0.0;
-
-//    for (int i = 0; i < candidateGrayScale.rows; i++) {
-//        for (int j = 0; j < candidateGrayScale.cols; j++) {
-//            contrast = contrast + powf((i - j), 2) * candidateGrayScale.at<uchar>(i, j);
-//            entropy = entropy + (candidateGrayScale.at<uchar>(i, j) * log10f(candidateGrayScale.at<uchar>(i, j)));
-//            energy = energy + powf(candidateGrayScale.at<uchar>(i, j), 2);
-//        }
-//    }
-
-    for (Point coordinates : candidateSuperPixel.points) {
-        contrast += (coordinates.y - coordinates.x) * (coordinates.y - coordinates.x) *
-                    candidateGrayScale.at<uchar>(coordinates);
-        entropy += (candidateGrayScale.at<uchar>(coordinates) * log10f(candidateGrayScale.at<uchar>(coordinates)));
-        energy += candidateGrayScale.at<uchar>(coordinates) * candidateGrayScale.at<uchar>(coordinates);
-    }
-
-    entropy = -entropy;
-    energy = sqrtf(energy);
+    calculateContrastEntropyEnergy(contrast, entropy, energy, candidateSuperPixel, candidateGrayScale);
 
     //9. Calculate Skewness
 //    float skewness = calculateSkewnessGrayImage(candidateGrayScale, averageGreyValue);

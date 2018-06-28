@@ -12,7 +12,7 @@ using namespace cv;
 using namespace std;
 using namespace cv::ml;
 
-vector<Features> preClassification(const string &target) {
+vector<Features> getFeatures(const string &target) {
 
     auto candidateSuperPixels = vector<SuperPixel>();
 
@@ -124,7 +124,7 @@ Mat go(const string method, const string model_name, const string image) {
 
     cout << endl << "---------------" << image << endl;
 
-    auto features = preClassification(image);
+    auto features = getFeatures(image);
 
     auto labels = Classification(method, model_name, features);
 
@@ -157,7 +157,7 @@ void createCandidates (const string targets) {
 
         cout << endl << "---------------" << image << endl;
 
-        auto ft = preClassification(image);
+        auto ft = getFeatures(image);
 
         for (auto f : ft) {
             names.push_back(image);

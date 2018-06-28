@@ -1,18 +1,17 @@
 #include "HistogramElaboration.h"
 
 #include <opencv2/imgproc.hpp>
-#include <opencv2/highgui.hpp>
 
 using namespace std;
 
 
-Mat ExtractHistograms(Mat src, String candidateName) {
+Mat ExtractHistograms(const Mat src, const String candidateName, const int hist_size) {
     /// Separate the image in 3 places ( B, G and R )
     vector<Mat> bgr_planes;
     //split( src, bgr_planes );
 
     /// Establish the number of bins
-    int histSize = 256;
+//    int histSize = 256;
 
     /// Set the ranges ( for B,G,R) )
     float range[] = {0, 256};
@@ -24,7 +23,7 @@ Mat ExtractHistograms(Mat src, String candidateName) {
     Mat gs_hist;
 
     /// Compute the histograms:
-    calcHist(&src, 1, 0, Mat(), gs_hist, 1, &histSize, &histRange, uniform, accumulate);
+    calcHist(&src, 1, 0, Mat(), gs_hist, 1, &hist_size, &histRange, uniform, accumulate);
 
     transpose(gs_hist, gs_hist);
     // Draw the histograms for B, G and R

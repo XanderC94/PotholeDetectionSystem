@@ -5,6 +5,6 @@
 
 using namespace cv;
 
-Mat ExtractHistograms(Mat src, String candidateName);
+Mat ExtractHistograms(const Mat src, const String candidateName, const int hist_size);
 
 #endif //POTHOLEDETECTIONSYSTEM_HISTOGRAMELABORATION_H

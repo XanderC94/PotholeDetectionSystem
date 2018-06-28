@@ -6,6 +6,7 @@
 #include "Segmentation.h"
 #include "MathUtils.h"
 #include "HOG.h"
+#include "HistogramElaboration.h"
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 
@@ -110,7 +111,7 @@ cv::Optional<Features> candidateFeatureExtraction(const Mat &src,
     transpose(hogParams, hogParams);
 
     // 4. The histogram will be calculated
-//    Mat histogram = ExtractHistograms(candidateGrayScale, c_name);
+    Mat histogram = ExtractHistograms(candidateGrayScale, c_name, 256);
 
     // 5. Calculate the average gray value
     float averageGreyValue = (float) mean(candidateGrayScale)[0];
@@ -158,7 +159,7 @@ cv::Optional<Features> candidateFeatureExtraction(const Mat &src,
     auto ft = Features{
             .label = nativeSuperPixel.label,
             .candidate = tmp,
-            .histogram = Mat(),
+            .histogram = histogram,
             .averageGreyValue= averageGreyValue,
             .contrast = contrast,
             .entropy = entropy,

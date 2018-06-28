@@ -13,8 +13,9 @@ namespace mySVM {
         Ptr<SVM> svm = ml::SVM::load(model_path);
 
         if (svm->isTrained()) {
+            cout << "Classification... ";
             svm->predict(data, labels);
-
+            cout << "Finished." << endl;
             transpose(labels, labels);
             cout << labels << endl;
         } else {

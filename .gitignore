@@ -56,7 +56,7 @@ FindOpenCV.make
 /cmake-build-*
 /data*
 /data/*
-/results
+/results*
 /results/*
 
 /svm*

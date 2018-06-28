@@ -53,8 +53,8 @@ vector<Features> preClassification(const string &target) {
 
     int superPixelEdge = 32;
 
-    printThresholds(thresholds);
-    printOffsets(offsets);
+//    printThresholds(thresholds);
+//    printOffsets(offsets);
 
     /*--------------------------------- Pre-Processing Phase ------------------------------*/
 
@@ -86,6 +86,65 @@ vector<Features> preClassification(const string &target) {
     /*--------------------------------- End Feature Extraction Phase ------------------------------*/
 
     return features;
+}
+
+Mat Classification(const string method, const string model_name, const vector<Features> &features) {
+
+    Mat std_labels((int) features.size(), 1, CV_32SC1);
+
+    if (!features.empty()) {
+
+        if (method == "-svm") {
+
+            /***************************** SVM CLASSIFIER ********************************/
+
+            const Mat data = mlutils::ConvertFeatures(features);
+            const auto svm_model = "../svm/" + model_name;
+            mySVM::Classifier(data, std_labels, 1000, svm_model);
+
+        } else if (method == "-bayes") {
+
+            /***************************** Bayes CLASSIFIER ********************************/
+
+            const auto std_model = "../bayes/" + model_name;
+            const Mat data = mlutils::ConvertFeatures(features);
+            myBayes::Classifier(data, std_labels, std_model);
+
+        } else {
+            cerr << "Undefined method " << method << endl;
+            exit(-1);
+        }
+
+    } else return Mat();
+
+    return std_labels;
+}
+
+Mat go(const string method, const string model_name, const string image) {
+
+    cout << endl << "---------------" << image << endl;
+
+    auto features = preClassification(image);
+
+    auto labels = Classification(method, model_name, features);
+
+    cout << labels << endl;
+
+    for (int i = 0; i < features.size(); ++i) {
+
+        string folder = "../results/neg/";
+
+        if (labels.at<int>(0, i) == 1) {
+            folder = "../results/pos/";
+        }
+
+        imwrite(
+                folder + extractFileName(image, "/") + "_L" + to_string(features[i].label) + ".bmp",
+                features[i].candidate
+        );
+    }
+
+    return labels;
 }
 
 void createCandidates (const string targets) {
@@ -122,46 +181,29 @@ int main(int argc, char*argv[]) {
 
         if (mode == "-d" && argc > 2) {
             createCandidates(string(argv[2]));
-        } else if (mode == "-c" && argc > 4) {
+        } else if (mode == "-c" && argc > 5) {
 
             auto method = string(argv[2]);
+            auto target_type = string(argv[3]);
+            auto target = string(argv[4]);
+            auto model_name = string(argv[5]);
 
             cout << method << endl;
 
             portable_mkdir("../results");
-
-            auto features = preClassification(string(argv[3]));
-            Mat labels((int) features.size(), 1, CV_32SC1);
-
-            if (!features.empty()) {
-
+            portable_mkdir("../results/neg");
+            portable_mkdir("../results/pos");
             /*--------------------------------- Classification Phase ------------------------------*/
 
-                if (method == "-svm") {
+            if (target_type == "-d") { /// Whole folder
 
-                    const Mat data = mlutils::ConvertFeatures(features);
-                    const auto model = "../svm/" + string(argv[4]);
-                    mySVM::Classifier(data, labels, 1000, model);
+                vector<String> fn = extractImagePath(target);
 
-                } else if (method == "-bayes") {
-                    // TO DO ...
-                    const Mat data = mlutils::ConvertFeatures(features);
-                    const auto model = "../bayes/" + string(argv[4]);
-                    myBayes::Classifier(data, labels, model);
+                for (auto image : fn) go(method, model_name, image);
 
-                } else {
-                    cerr << "Undefined method " << method << endl;
-
-                    exit(-1);
-                }
-
-                for (int i = 0; i < features.size(); ++i) {
-                    imwrite("../results/Candidate_" + to_string(i) +
-                            (labels.at<float>(0, i) == 1 ? "_Pos" : "_Neg") +
-                            ".bmp", features[i].candidate);
-                }
-
-            } else return -1;
+            } else if (target_type == "-i") { /// Single Image
+                go(method, model_name, target);
+            }
 
         } else if (mode == "-t" && argc > 4) {
 
@@ -174,16 +216,27 @@ int main(int argc, char*argv[]) {
             loadFromJSON("../data/" + string(argv[3]), candidates, labels);
 
             if (method == "-svm") {
+
+                /***************************** SVM CLASSIFIER ********************************/
+
                 portable_mkdir("../svm/");
                 const Mat data = mlutils::ConvertFeatures(candidates);
                 const auto model = "../svm/" + string(argv[4]);
                 mySVM::Training(data, labels, 1000, exp(-6), model);
+
             } else if (method == "-bayes") {
-                // TO DO ...
+
+                /***************************** Bayes CLASSIFIER ********************************/
+
                 portable_mkdir("../bayes/");
+                const auto std_model = "../bayes/" + string(argv[4]);
                 const Mat data = mlutils::ConvertFeatures(candidates);
-                const auto model = "../bayes/" + string(argv[4]);
-                myBayes::Training(data, labels, model);
+                myBayes::Training(data, labels, std_model);
+
+//                portable_mkdir("../bayes/hog/");
+//                const auto hog_model = "../bayes/hog/" + string(argv[4]);
+//                const Mat hog_data = mlutils::ConvertHOGFeatures(candidates, -1);
+//                myBayes::Training(hog_data, labels, hog_model);
             }
         }
     }

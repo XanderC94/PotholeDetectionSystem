@@ -53,13 +53,15 @@ namespace mySVM {
 
         auto train_data = TrainData::create(dataFeatures, ROW_SAMPLE, labels);
 
-        svm->trainAuto(train_data, 3, SVM::getDefaultGrid(SVM::C),
-                SVM::getDefaultGrid(SVM::GAMMA),
-                SVM::getDefaultGrid(SVM::P),
-                SVM::getDefaultGrid(SVM::NU),
-                SVM::getDefaultGrid(SVM::COEF),
-                SVM::getDefaultGrid(SVM::DEGREE),
-                true);
+        svm->trainAuto(train_data,
+                       3,
+                       SVM::getDefaultGrid(SVM::C),
+                       SVM::getDefaultGrid(SVM::GAMMA),
+                       SVM::getDefaultGrid(SVM::P),
+                       SVM::getDefaultGrid(SVM::NU),
+                       SVM::getDefaultGrid(SVM::COEF),
+                       SVM::getDefaultGrid(SVM::DEGREE),
+                       true);
 
         printf("Finished.\n");
 

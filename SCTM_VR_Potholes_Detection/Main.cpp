@@ -143,6 +143,37 @@ Mat go(const string method, const string model_name, const string image) {
     return labels;
 }
 
+/*
+ * This function show the candidate extraxted and ask if is pothole (Y) or not (N)
+ * */
+int askUserSupervision(Features candidateFeatures){
+    int scaleFactor = 5;
+    Mat visual_image;
+    resize(candidateFeatures.candidate,
+           visual_image,
+           Size(candidateFeatures.candidate.cols * scaleFactor, candidateFeatures.candidate.rows * scaleFactor));
+
+    imshow("Is pothole?", visual_image);
+    waitKey(1);
+    cout << "This candidate is a pothole? Y (for response yes) N (for no)" << endl;
+    int result = -1;
+    char response;
+    bool isResponseCorrect = false;
+    while(!isResponseCorrect) {
+        cin >> response;
+        if (response == 'Y' || response == 'y') {
+            isResponseCorrect = true;
+            result = 1;
+        } else if (response == 'N' || response == 'n') {
+            result = -1;
+            isResponseCorrect = true;
+        } else {
+            cout << "Wrong response. Type (Y) for yes or (N) for no" << endl;
+        }
+    }
+    return result;
+}
+
 void createCandidates (const string targets) {
 
     vector<String> fn = extractImagePath(targets);
@@ -157,12 +188,69 @@ void createCandidates (const string targets) {
 
         for (auto f : ft) {
             names.push_back(image);
+            f.label = askUserSupervision(f);
+            cout << "Messo a " << f.label << endl;
             features.push_back(f);
         }
     }
 
     saveFeaturesJSON(features, "data", names, "features");
 
+}
+
+void classificationPhase(char*argv[]){
+    auto method = string(argv[2]);
+    auto target_type = string(argv[3]);
+    auto target = string(argv[4]);
+    auto model_name = string(argv[5]);
+
+    cout << method << endl;
+
+    portable_mkdir("../results");
+    portable_mkdir("../results/neg");
+    portable_mkdir("../results/pos");
+    /*--------------------------------- Classification Phase ------------------------------*/
+
+    if (target_type == "-d") { /// Whole folder
+
+        vector<String> fn = extractImagePath(target);
+
+        for (auto image : fn) go(method, model_name, image);
+
+    } else if (target_type == "-i") { /// Single Image
+        go(method, model_name, target);
+    }
+}
+
+void trainingPhase(char*argv[]){
+    auto method = string(argv[2]);
+
+    Mat labels(0, 0, CV_32SC1);
+    vector<Features> candidates;
+
+    loadFromJSON("../data/" + string(argv[3]), candidates, labels);
+
+    if (method == "-svm") {
+
+        /***************************** SVM CLASSIFIER ********************************/
+
+        portable_mkdir("../svm/");
+        const auto model = "../svm/" + string(argv[4]);
+        mySVM::Training(candidates, labels, 1000, exp(-6), model);
+
+    } else if (method == "-bayes") {
+
+        /***************************** Bayes CLASSIFIER ********************************/
+
+        portable_mkdir("../bayes/");
+        const auto std_model = "../bayes/" + string(argv[4]);
+        myBayes::Training(candidates, labels, std_model);
+
+//                portable_mkdir("../bayes/hog/");
+//                const auto hog_model = "../bayes/hog/" + string(argv[4]);
+//                const Mat hog_data = mlutils::ConvertHOGFeatures(candidates, -1);
+//                myBayes::Training(hog_data, labels, hog_model);
+    }
 }
 
 int main(int argc, char*argv[]) {
@@ -179,60 +267,10 @@ int main(int argc, char*argv[]) {
         if (mode == "-d" && argc > 2) {
             createCandidates(string(argv[2]));
         } else if (mode == "-c" && argc > 5) {
-
-            auto method = string(argv[2]);
-            auto target_type = string(argv[3]);
-            auto target = string(argv[4]);
-            auto model_name = string(argv[5]);
-
-            cout << method << endl;
-
-            portable_mkdir("../results");
-            portable_mkdir("../results/neg");
-            portable_mkdir("../results/pos");
-            /*--------------------------------- Classification Phase ------------------------------*/
-
-            if (target_type == "-d") { /// Whole folder
-
-                vector<String> fn = extractImagePath(target);
-
-                for (auto image : fn) go(method, model_name, image);
-
-            } else if (target_type == "-i") { /// Single Image
-                go(method, model_name, target);
-            }
-
+            classificationPhase(argv);
         } else if (mode == "-t" && argc >= 4) {
-
             /*--------------------------------- Training Phase ------------------------------*/
-            auto method = string(argv[2]);
-
-            Mat labels(0, 0, CV_32SC1);
-            vector<Features> candidates;
-
-            loadFromJSON("../data/" + string(argv[3]), candidates, labels);
-
-            if (method == "-svm") {
-
-                /***************************** SVM CLASSIFIER ********************************/
-
-                portable_mkdir("../svm/");
-                const auto model = "../svm/" + string(argv[4]);
-                mySVM::Training(candidates, labels, 1000, exp(-6), model);
-
-            } else if (method == "-bayes") {
-
-                /***************************** Bayes CLASSIFIER ********************************/
-
-                portable_mkdir("../bayes/");
-                const auto std_model = "../bayes/" + string(argv[4]);
-                myBayes::Training(candidates, labels, std_model);
-
-//                portable_mkdir("../bayes/hog/");
-//                const auto hog_model = "../bayes/hog/" + string(argv[4]);
-//                const Mat hog_data = mlutils::ConvertHOGFeatures(candidates, -1);
-//                myBayes::Training(hog_data, labels, hog_model);
-            }
+            trainingPhase(argv);
         }
     }
 

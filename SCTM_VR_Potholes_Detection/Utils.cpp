@@ -222,7 +222,7 @@ void saveFeaturesJSON(const vector<Features> &features, const string saveDirecto
 
         sw.StartObject();
         sw.Key("label");
-        sw.Int(-1);
+        sw.Int(ft.label);
         sw.Key("sample");
         sw.String(c_name.data());
         sw.Key("contrast");

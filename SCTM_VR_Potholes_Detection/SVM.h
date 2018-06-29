@@ -7,15 +7,16 @@
 
 #include <opencv2/core.hpp>
 #include <opencv2/ml.hpp>
+#include "DataStructures.h"
 
 using namespace cv;
 using namespace std;
 
 namespace mySVM {
-    void Classifier(const Mat &features, Mat &labels, const int max_iter, const string model_path);
+    void Classifier(const vector<Features> &features, Mat &labels, const int max_iter, const string model_path);
 
     void
-    Training(const Mat &features, const Mat &labels, const int max_iter, const double epsilon, const string model_path);
+    Training(const vector<Features> &features, const Mat &labels, const int max_iter, const double epsilon, const string model_path);
 }
 
 #endif //POTHOLEDETECTIONSYSTEM_SVMCLASSIFIER_H

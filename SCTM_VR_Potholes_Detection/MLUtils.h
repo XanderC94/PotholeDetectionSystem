@@ -13,6 +13,9 @@ namespace mlutils {
 
     Mat ConvertHOGFeatures(const vector<Features> &features, const int var_count);
 
+    Mat ConvertFeaturesForBayes(const vector<Features> &features);
+
+    Mat ConvertFeaturesForSVM(const vector<Features> &features, const int var_count);
 }
 
 #endif //POTHOLEDETECTIONSYSTEM_MLUTILS_H

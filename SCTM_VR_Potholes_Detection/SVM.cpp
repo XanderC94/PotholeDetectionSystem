@@ -3,14 +3,19 @@
 //
 
 #include "SVM.h"
+#include "MLUtils.h"
 
 using namespace cv::ml;
 
 namespace mySVM {
 
-    void Classifier(const Mat &data, Mat &labels, const int max_iter, const string model_path) {
+    void Classifier(const vector<Features> &features, Mat &labels, const int max_iter, const string model_path) {
+
 
         Ptr<SVM> svm = ml::SVM::load(model_path);
+        //Ptr<SVM> svm = StatModel::load<SVM>(model_path);
+
+        const Mat data = mlutils::ConvertFeaturesForSVM(features, svm->getVarCount());
 
         if (svm->isTrained()) {
             cout << "Classification... ";
@@ -25,9 +30,10 @@ namespace mySVM {
     }
 
     void
-    Training(const Mat &data, const Mat &labels, const int max_iter, const double epsilon, const string model_path) {
+    Training(const vector<Features> &features, const Mat &labels, const int max_iter, const double epsilon, const string model_path) {
 
-        cout << "FT size " << data.rows << "*" << data.cols << endl;
+        const Mat dataFeatures = mlutils::ConvertFeaturesForSVM(features, 0);
+        cout << "FT size " << dataFeatures.rows << "*" << dataFeatures.cols << endl;
 
         printf("SVM Initialization\n");
 
@@ -45,12 +51,20 @@ namespace mySVM {
 
         printf("Ready...\n");
 
-        auto train_data = TrainData::create(data, ROW_SAMPLE, labels);
+        auto train_data = TrainData::create(dataFeatures, ROW_SAMPLE, labels);
 
-        svm->trainAuto(train_data, 3);
+        svm->trainAuto(train_data, 3, SVM::getDefaultGrid(SVM::C),
+                SVM::getDefaultGrid(SVM::GAMMA),
+                SVM::getDefaultGrid(SVM::P),
+                SVM::getDefaultGrid(SVM::NU),
+                SVM::getDefaultGrid(SVM::COEF),
+                SVM::getDefaultGrid(SVM::DEGREE),
+                true);
 
         printf("Finished.\n");
 
         svm->save(model_path);
+
+        printf("Saved model.\n");
     }
 }

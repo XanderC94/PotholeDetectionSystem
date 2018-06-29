@@ -3,15 +3,18 @@
 //
 
 #include "Bayes.h"
+#include "MLUtils.h"
 
 namespace myBayes {
 
-    void Classifier(const Mat &features, Mat &labels, const string model_path) {
+    void Classifier(const vector<Features> &features, Mat &labels, const string model_path) {
         auto bayes = cv::ml::NormalBayesClassifier::load(model_path);
+
+        const Mat dataFeatures = mlutils::ConvertFeaturesForBayes(features);
 
         if (bayes->isTrained()) {
             cout << "Classification... ";
-            bayes->predict(features, labels);
+            bayes->predict(dataFeatures, labels);
             cout << "Finished." << endl;
             transpose(labels, labels);
         } else {
@@ -27,9 +30,10 @@ namespace myBayes {
         return 0;   //Return value is not used
     }
 
-    void Training(const Mat &features, const Mat &labels, const string model_path) {
+    void Training(const vector<Features> &features, const Mat &labels, const string model_path) {
 
         cv::redirectError(handleError);
+        const Mat dataFeatures = mlutils::ConvertFeaturesForBayes(features);
 
         auto bayes = ml::NormalBayesClassifier::create();
 
@@ -42,7 +46,7 @@ namespace myBayes {
 
         cv::redirectError(nullptr);
 
-        auto train_data = ml::TrainData::create(features, ml::ROW_SAMPLE, labels);
+        auto train_data = ml::TrainData::create(dataFeatures, ml::ROW_SAMPLE, labels);
 
         cout << "Training... ";
 
@@ -50,7 +54,7 @@ namespace myBayes {
 
         cout << "Finished." << endl;
 
-        Mat outputs(features.rows, 1, CV_32S);
+        Mat outputs(dataFeatures.rows, 1, CV_32S);
 
         auto error = bayes->calcError(train_data, false, outputs);
 

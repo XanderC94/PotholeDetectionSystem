@@ -57,15 +57,16 @@ Mat1f extractHogParams(const Mat sample, const Mat candidateGrayScale, const Sup
     vector<OrientedGradientInCell> greaterOrientedGradientsVector = computeGreaterHOGCells(candidateGrayScale,
                                                                                            hog.descriptors,
                                                                                            defaultConfig.cellSize);
-    Mat hogImage = overlapOrientedGradientCellsOnImage(candidateGrayScale,
-                                                       greaterOrientedGradientsVector,
-                                                       defaultConfig.cellSize,
-                                                       scaleFactor,
-                                                       viz_factor);
+//    Mat hogImage = overlapOrientedGradientCellsOnImage(candidateGrayScale,
+//                                                       greaterOrientedGradientsVector,
+//                                                       defaultConfig.cellSize,
+//                                                       scaleFactor,
+//                                                       viz_factor);
 
 
     auto orientedGradientOfTheSuperPixel = selectNeighbourhoodCellsAtContour(candidateSuperPixel.contour,
                                                                              greaterOrientedGradientsVector);
+//    auto orientedGradientOfTheSuperPixel = greaterOrientedGradientsVector;
 
 //    Mat superPixelHogImage = overlapOrientedGradientCellsOnImage(candidateGrayScale,
 //                                                                 orientedGradientOfTheSuperPixel,
@@ -85,6 +86,21 @@ Mat1f extractHogParams(const Mat sample, const Mat candidateGrayScale, const Sup
     return hogParams;
 }
 
+
+Mat1b createSampleRoadMask(const Mat &src, const Mat &sample, const Point2d &tlc, const RoadOffsets &offsets){
+    Mat1b sampleRoadMask = Mat::zeros(sample.rows, sample.cols, CV_8UC1);
+
+    for (int i = 0; i < sample.rows; ++i) {
+        for (int j = 0; j < sample.cols; ++j) {
+
+            if (isRoad(src.rows, src.cols, offsets, tlc + Point2d(j, i))) {
+                sampleRoadMask.at<uchar>(i, j) = 255;
+            }
+        }
+    }
+
+    return sampleRoadMask;
+}
 
 /*
 *  Feature extraction from a candidate:
@@ -110,16 +126,7 @@ cv::Optional<Features> candidateFeatureExtraction(const Mat &src,
     Point2d brc = calculateBottomRightCorner(centroid, src, candidateSize);
 
     const Mat sample = src(Rect(tlc, brc));
-    Mat1b sampleRoadMask = Mat::zeros(sample.rows, sample.cols, CV_8UC1);
-
-    for (int i = 0; i < sample.rows; ++i) {
-        for (int j = 0; j < sample.cols; ++j) {
-
-            if (isRoad(src.rows, src.cols, offsets, tlc + Point2d(j, i))) {
-                sampleRoadMask.at<uchar>(i, j) = 255;
-            }
-        }
-    }
+    Mat1b sampleRoadMask = createSampleRoadMask(src, sample, tlc, offsets);
 
     auto c_name = "Candidate @ (" + to_string(centroid.x) + ", " + to_string(centroid.y) + ")";
 

@@ -47,4 +47,25 @@ namespace mlutils {
 
         return hog;
     }
+
+
+    Mat ConvertFeaturesForBayes(const vector<Features> &features) {
+        return ConvertFeatures(features);
+    }
+
+    Mat ConvertFeaturesForSVM(const vector<Features> &features, const int var_count) {
+
+        Mat hogFeatures = ConvertHOGFeatures(features,(var_count - 1));
+
+        Mat data((int) features.size(), 1 + hogFeatures.cols, CV_32FC1);
+
+        for (int i = 0; i < features.size(); i++) {
+            data.at<float>(i, 0) = features[i].averageGreyValue;
+            for (int j = 1; j < hogFeatures.cols; ++j) {
+                data.at<float>(i, j) = hogFeatures.at<float>(i, j);
+            }
+        }
+        return data;
+    }
+
 }

@@ -97,18 +97,14 @@ Mat Classification(const string method, const string model_name, const vector<Fe
         if (method == "-svm") {
 
             /***************************** SVM CLASSIFIER ********************************/
-
-            const Mat data = mlutils::ConvertFeatures(features);
             const auto svm_model = "../svm/" + model_name;
-            mySVM::Classifier(data, std_labels, 1000, svm_model);
+            mySVM::Classifier(features, std_labels, 1000, svm_model);
 
         } else if (method == "-bayes") {
 
             /***************************** Bayes CLASSIFIER ********************************/
-
             const auto std_model = "../bayes/" + model_name;
-            const Mat data = mlutils::ConvertFeatures(features);
-            myBayes::Classifier(data, std_labels, std_model);
+            myBayes::Classifier(features, std_labels, std_model);
 
         } else {
             cerr << "Undefined method " << method << endl;
@@ -134,7 +130,7 @@ Mat go(const string method, const string model_name, const string image) {
 
         string folder = "../results/neg/";
 
-        if (labels.at<int>(0, i) == 1) {
+        if (labels.at<int>(0, i) == 1 || labels.at<float>(0, i) == 1.0) {
             folder = "../results/pos/";
         }
 
@@ -174,6 +170,7 @@ int main(int argc, char*argv[]) {
     // Save cpu tick count at the program start
     double timeElapsed = (double) getTickCount();
 
+
     if (argc < 2) {
         return 0;
     } else {
@@ -205,7 +202,7 @@ int main(int argc, char*argv[]) {
                 go(method, model_name, target);
             }
 
-        } else if (mode == "-t" && argc > 4) {
+        } else if (mode == "-t" && argc >= 4) {
 
             /*--------------------------------- Training Phase ------------------------------*/
             auto method = string(argv[2]);
@@ -220,9 +217,8 @@ int main(int argc, char*argv[]) {
                 /***************************** SVM CLASSIFIER ********************************/
 
                 portable_mkdir("../svm/");
-                const Mat data = mlutils::ConvertFeatures(candidates);
                 const auto model = "../svm/" + string(argv[4]);
-                mySVM::Training(data, labels, 1000, exp(-6), model);
+                mySVM::Training(candidates, labels, 1000, exp(-6), model);
 
             } else if (method == "-bayes") {
 
@@ -230,8 +226,7 @@ int main(int argc, char*argv[]) {
 
                 portable_mkdir("../bayes/");
                 const auto std_model = "../bayes/" + string(argv[4]);
-                const Mat data = mlutils::ConvertFeatures(candidates);
-                myBayes::Training(data, labels, std_model);
+                myBayes::Training(candidates, labels, std_model);
 
 //                portable_mkdir("../bayes/hog/");
 //                const auto hog_model = "../bayes/hog/" + string(argv[4]);

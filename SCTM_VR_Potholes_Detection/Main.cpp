@@ -6,7 +6,6 @@
 #include "SVM.h"
 #include "Bayes.h"
 #include "Utils.h"
-#include "MLUtils.h"
 
 using namespace cv;
 using namespace std;
@@ -22,7 +21,6 @@ vector<Features> getFeatures(const string &target) {
 
     Mat src = imread(target, IMREAD_COLOR), tmp;
 
-//    cvtColor(src, src, CV_RGB2BGR);
     /*
     *	The src image will be:
     *	1. Resized
@@ -46,9 +44,10 @@ vector<Features> getFeatures(const string &target) {
             .Density_Threshold = 0.55, // OK, do not change
             .Variance_Threshold = 0.3,
             .Gauss_RoadThreshold = 0.60,
-            .colourRatioThresholdMin= 1.15, // 1.25 is better if we aim to properly detect nearest holes to the vehicle,
+            .grayRatioThresholdMin = 1.15, // 1.25 is better if we aim to properly detect nearest holes to the vehicle,
             // but will probably exclude far away holes and those holes near cars (see image of test n_89)
-            .colourRatioThresholdMax = 2.5
+            .grayRatioThresholdMax = 2.5,
+            .greenRatioThresholdMin = 1.15
     };
 
     int superPixelEdge = 32;
@@ -88,7 +87,7 @@ vector<Features> getFeatures(const string &target) {
     return features;
 }
 
-Mat Classification(const string method, const string model_name, const vector<Features> &features) {
+Mat Classification(const string &method, const string &model_name, const vector<Features> &features) {
 
     Mat std_labels((int) features.size(), 1, CV_32SC1);
 
@@ -116,7 +115,7 @@ Mat Classification(const string method, const string model_name, const vector<Fe
     return std_labels;
 }
 
-Mat go(const string method, const string model_name, const string image) {
+Mat go(const string &method, const string &model_name, const string &image) {
 
     cout << endl << "---------------" << image << endl;
 
@@ -146,8 +145,8 @@ Mat go(const string method, const string model_name, const string image) {
 /*
  * This function show the candidate extraxted and ask if is pothole (Y) or not (N)
  * */
-int askUserSupervision(Features candidateFeatures){
-    int scaleFactor = 5;
+int askUserSupervision(const Features &candidateFeatures, const int scaleFactor = 2) {
+
     Mat visual_image;
     resize(candidateFeatures.candidate,
            visual_image,
@@ -174,7 +173,7 @@ int askUserSupervision(Features candidateFeatures){
     return result;
 }
 
-void createCandidates (const string targets) {
+void createCandidates(const string &targets, const bool feedback) {
 
     vector<String> fn = extractImagePath(targets);
     vector<string> names;
@@ -188,8 +187,13 @@ void createCandidates (const string targets) {
 
         for (auto f : ft) {
             names.push_back(image);
-            f.label = askUserSupervision(f);
-            cout << "Messo a " << f.label << endl;
+            if (feedback) {
+                f._class = askUserSupervision(f);
+                cout << " Image " << image << " L" << f.label
+                     << " labeled as " << (f._class == 1 ? "pothole." : "not pothole.")
+                     << endl;
+            }
+
             features.push_back(f);
         }
     }
@@ -215,7 +219,7 @@ void classificationPhase(char*argv[]){
 
         vector<String> fn = extractImagePath(target);
 
-        for (auto image : fn) go(method, model_name, image);
+        for (const auto &image : fn) go(method, model_name, image);
 
     } else if (target_type == "-i") { /// Single Image
         go(method, model_name, target);
@@ -258,14 +262,32 @@ int main(int argc, char*argv[]) {
     // Save cpu tick count at the program start
     double timeElapsed = (double) getTickCount();
 
-
     if (argc < 2) {
+
+        cout << " Pothole Detection System Helper" << endl << endl;
+
+        cout << "\t -d == generate candidates inside the given folder" << endl;
+        cout << "\t\t Example: -d /x/y/z {-f}" << endl << endl;
+        cout << "\t\t NOTE: The optional -f parameter will enable user-driven feedback for each candidate found."
+             << endl << endl;
+
+        cout << "\t -t == train an SVM or Bayes Classifier using the generated data" << endl;
+        cout << "\t\t Example: -t -{svm, bayes} /x/y/z/ model_name" << endl << endl;
+        cout << "\t\t NOTE: no path or extension for the model name is required, " << endl
+             << "\t\t it will be stored into ../svm/ or ../bayes/ inside the program folder." << endl << endl;
+
+        cout << "\t -c == classify the given image or set of images (folder path)" << endl;
+        cout << "\t\t Example: -c -{svm, bayes} -{i, d} {/x/y/z, /x/y/z/image.something} model_name" << endl << endl;
+        cout << "\t\t NOTE: no path or extension for the model name is required, " << endl
+             << "\t\t it must be located inside the directories ../svm/ or ../bayes/ inside the program folder."
+             << endl;
+
         return 0;
     } else {
         auto mode = string(argv[1]);
 
         if (mode == "-d" && argc > 2) {
-            createCandidates(string(argv[2]));
+            createCandidates(argv[2], argc > 3 && string(argv[3]) == "-f");
         } else if (mode == "-c" && argc > 5) {
             classificationPhase(argv);
         } else if (mode == "-t" && argc >= 4) {

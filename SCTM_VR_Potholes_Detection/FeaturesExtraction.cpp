@@ -5,102 +5,13 @@
 #include "FeaturesExtraction.h"
 #include "Segmentation.h"
 #include "MathUtils.h"
-#include "HOG.h"
 #include "HistogramElaboration.h"
+#include "FeaturesExtractionUtils.h"
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 
 using namespace std;
 using namespace cv::ximgproc;
-
-typedef struct FeaturesVectors {
-    vector<float> averageGreyLevels = vector<float>();
-    vector<Mat> histograms = vector<Mat>();
-    vector<float> contrasts = vector<float>();
-    vector<float> entropies = vector<float>();
-    vector<float> skewnesses = vector<float>();
-    vector<float> energies = vector<float>();
-} FeaturesVectors;
-
-// In order to reduce computation complexity
-// calculate the contrast, entropy and energy with in the same loops
-void calculateContrastEntropyEnergy(float &outContrast,
-                                    float &outEntropy,
-                                    float &outEnergy,
-                                    const SuperPixel candidateSuperPixel,
-                                    const Mat candidateGrayScale){
-
-//    for (int i = 0; i < candidateGrayScale.rows; i++) {
-//        for (int j = 0; j < candidateGrayScale.cols; j++) {
-//            outContrast = outContrast + powf((i - j), 2) * candidateGrayScale.at<uchar>(i, j);
-//            outEntropy = outEntropy + (candidateGrayScale.at<uchar>(i, j) * log10f(candidateGrayScale.at<uchar>(i, j)));
-//            outEnergy = outEnergy + powf(candidateGrayScale.at<uchar>(i, j), 2);
-//        }
-//    }
-
-    for (Point coordinates : candidateSuperPixel.points) {
-        outContrast += (coordinates.y - coordinates.x) * (coordinates.y - coordinates.x) *
-                    candidateGrayScale.at<uchar>(coordinates);
-        outEntropy += (candidateGrayScale.at<uchar>(coordinates) * log10f(candidateGrayScale.at<uchar>(coordinates)));
-        outEnergy += candidateGrayScale.at<uchar>(coordinates) * candidateGrayScale.at<uchar>(coordinates);
-    }
-
-    outEntropy = -outEntropy;
-    outEnergy = sqrtf(outEnergy);
-}
-
-Mat1f extractHogParams(const Mat sample, const Mat candidateGrayScale, const SuperPixel candidateSuperPixel){
-    HOG hog;
-    hog = calculateHOG(sample, defaultConfig);
-    int scaleFactor = 5;
-    double viz_factor = 5.0;
-    vector<OrientedGradientInCell> greaterOrientedGradientsVector = computeGreaterHOGCells(candidateGrayScale,
-                                                                                           hog.descriptors,
-                                                                                           defaultConfig.cellSize);
-//    Mat hogImage = overlapOrientedGradientCellsOnImage(candidateGrayScale,
-//                                                       greaterOrientedGradientsVector,
-//                                                       defaultConfig.cellSize,
-//                                                       scaleFactor,
-//                                                       viz_factor);
-
-
-    auto orientedGradientOfTheSuperPixel = selectNeighbourhoodCellsAtContour(candidateSuperPixel.contour,
-                                                                             greaterOrientedGradientsVector);
-//    auto orientedGradientOfTheSuperPixel = greaterOrientedGradientsVector;
-
-//    Mat superPixelHogImage = overlapOrientedGradientCellsOnImage(candidateGrayScale,
-//                                                                 orientedGradientOfTheSuperPixel,
-//                                                                 defaultConfig.cellSize,
-//                                                                 scaleFactor,
-//                                                                 viz_factor);
-
-    Mat1f hogParams;
-
-    for (auto ogc : orientedGradientOfTheSuperPixel) {
-        hogParams.push_back(
-                ogc.orientedGradientValue.strength * (ogc.orientedGradientValue.directionInRadians + 1));
-    }
-
-    transpose(hogParams, hogParams);
-
-    return hogParams;
-}
-
-
-Mat1b createSampleRoadMask(const Mat &src, const Mat &sample, const Point2d &tlc, const RoadOffsets &offsets){
-    Mat1b sampleRoadMask = Mat::zeros(sample.rows, sample.cols, CV_8UC1);
-
-    for (int i = 0; i < sample.rows; ++i) {
-        for (int j = 0; j < sample.cols; ++j) {
-
-            if (isRoad(src.rows, src.cols, offsets, tlc + Point2d(j, i))) {
-                sampleRoadMask.at<uchar>(i, j) = 255;
-            }
-        }
-    }
-
-    return sampleRoadMask;
-}
 
 /*
 *  Feature extraction from a candidate:
@@ -113,92 +24,86 @@ Mat1b createSampleRoadMask(const Mat &src, const Mat &sample, const Point2d &tlc
 *  7. Calculate Energy
 *  8. Calculate 3-order moments (is Skewness according to http://aishack.in/tutorials/image-moments/)
 * */
-cv::Optional<Features> candidateFeatureExtraction(const Mat &src,
-                                                  const SuperPixel &nativeSuperPixel,
-                                                  const Size &candidateSize,
-                                                  const RoadOffsets &offsets,
-                                                  const ExtractionThresholds &thresholds) {
+std::vector<Features> candidateFeatureExtraction(const Mat &src,
+                                                 const SuperPixel &nativeSuperPixel,
+                                                 const Size &candidateSize,
+                                                 const RoadOffsets &offsets,
+                                                 const ExtractionThresholds &thresholds) {
 
     auto centroid = nativeSuperPixel.center;
-
+    vector<Features> candidatesFeatures;
     // tlc = top left corner brc = bottom right corner
     Point2d tlc = calculateTopLeftCorner(centroid, candidateSize);
     Point2d brc = calculateBottomRightCorner(centroid, src, candidateSize);
 
     const Mat sample = src(Rect(tlc, brc));
-    Mat1b sampleRoadMask = createSampleRoadMask(src, sample, tlc, offsets);
+    Mat1b exclusionMask = createExclusionMask(src, sample, tlc, offsets, thresholds);
 
     auto c_name = "Candidate @ (" + to_string(centroid.x) + ", " + to_string(centroid.y) + ")";
 
     // 1. Extract only the pothole region
-    auto opt = extractPotholeRegionFromCandidate(sample, sampleRoadMask, thresholds);
+    auto soi = extractPotholeRegionFromCandidate(sample, exclusionMask, thresholds);
 
-    if (!opt.hasValue()) return cv::Optional<Features>();
+    for (int i = 0; i < soi.size(); ++i) {
+        const auto &candidateSuperPixel = soi[i];
+        // 2. Switch color-space from RGB to GreyScale
+        Mat candidateGrayScale, sampleGS;
+        cvtColor(candidateSuperPixel.selection, candidateGrayScale, CV_BGR2GRAY);
 
-    auto candidateSuperPixel = opt.getValue();
+        //3. Calculate HOG
+        Mat1f hogParams = extractHogParams(sample, candidateGrayScale, candidateSuperPixel);
 
-//    imshow("Sample", sample);
-//    Mat cnt; sample.copyTo(cnt);
-//    cnt.setTo(Scalar(0,0,255), candidateSuperPixel.contour);
-//    imshow("Candidate", cnt);
-//    waitKey();
+        // 4. The histogram will be calculated
+        Mat histogram = ExtractHistograms(candidateGrayScale, candidateSuperPixel.mask, 256);
 
-    // 2. Switch color-space from RGB to GreyScale
-    Mat candidateGrayScale, sampleGS;
-    cvtColor(candidateSuperPixel.selection, candidateGrayScale, CV_BGR2GRAY);
-//    cvtColor(sample, sampleGS, CV_BGR2GRAY);
+        // 5. Calculate the average gray value
+        float averageGreyValue = (float) mean(candidateGrayScale)[0];
 
-    //3. Calculate HOG
-    Mat1f hogParams = extractHogParams(sample, candidateGrayScale, candidateSuperPixel);
+        // 6. Calculate the contrast
+        // 7. Calculate Entropy
+        // 8. Calculate Energy
 
-    // 4. The histogram will be calculated
-    Mat histogram = ExtractHistograms(candidateGrayScale, c_name, 256);
+        float contrast = 0.0;
+        float entropy = 0.0;
+        float energy = 0.0;
+        calculateContrastEntropyEnergy(contrast, entropy, energy, candidateSuperPixel, candidateGrayScale);
 
-    // 5. Calculate the average gray value
-    float averageGreyValue = (float) mean(candidateGrayScale)[0];
-
-    // 6. Calculate the contrast
-    // 7. Calculate Entropy
-    // 8. Calculate Energy
-
-    float contrast = 0.0;
-    float entropy = 0.0;
-    float energy = 0.0;
-    calculateContrastEntropyEnergy(contrast, entropy, energy, candidateSuperPixel, candidateGrayScale);
-
-    //9. Calculate Skewness
+        //9. Calculate Skewness
 //    float skewness = calculateSkewnessGrayImage(candidateGrayScale, averageGreyValue);
-    float skewness = calculateSkewnessGrayImageRegion(candidateSuperPixel.selection, candidateSuperPixel.points,
-                                                      averageGreyValue);
+        float skewness = calculateSkewnessGrayImageRegion(candidateSuperPixel.selection, candidateSuperPixel.points,
+                                                          averageGreyValue);
 
-    // Highlights the selected pothole region
+        // Highlights the selected pothole region
 //    imshow("Sample " + to_string(nativeSuperPixel.label), sample);
 //    waitKey();
 
-    Mat tmp;
-    sample.copyTo(tmp);
-    tmp.setTo(Scalar(0, 0, 255), candidateSuperPixel.contour);
+        Mat tmp;
+        sample.copyTo(tmp);
+        tmp.setTo(Scalar(0, 0, 255), candidateSuperPixel.contour);
 
-    auto ft = Features{
-            .label = nativeSuperPixel.label,
-            .candidate = tmp,
-            .histogram = histogram,
-            .averageGreyValue= averageGreyValue,
-            .contrast = contrast,
-            .entropy = entropy,
-            .skewness = skewness,
-            .energy = energy,
-            .hogDescriptors = hogParams
-    };
+        candidatesFeatures.push_back(Features{
+                ._class = -1,
+                .label = nativeSuperPixel.label,
+                .uid = i,
+                .candidate = tmp,
+                .histogram = histogram,
+                .averageGreyValue= averageGreyValue,
+                .contrast = contrast,
+                .entropy = entropy,
+                .skewness = skewness,
+                .energy = energy,
+                .hogDescriptors = hogParams
+        });
+    }
 
-    return cv::Optional<Features>(ft);
+    return candidatesFeatures;
 }
 
 FeaturesVectors
 normalizeFeatures(const double minValue, const double maxValue, const FeaturesVectors &notNormalizedFeatures) {
     FeaturesVectors normalizedFeatures;
 
-    for (auto notNormHistogram : notNormalizedFeatures.histograms) {
+    for (const auto &notNormHistogram : notNormalizedFeatures.histograms) {
         Mat normHistogram;
         normalize(notNormHistogram, normHistogram, minValue, maxValue, NORM_MINMAX, -1, Mat());
         normalizedFeatures.histograms.push_back(normHistogram);
@@ -229,23 +134,16 @@ vector<Features> extractFeatures(const Mat &src, const vector<SuperPixel> &candi
 
     FeaturesVectors candidatesFeaturesVectors;
 
-    //Mat imageGrayScale;
-    //cvtColor(src, imageGrayScale, CV_BGR2GRAY);
-    //Gradient grad = calculateGradient(imageGrayScale);
-    //imwrite("../data/gradiente/" + c_name + " gradientey.bmp", resulty);
-    //imshow("Gradient module", grad.module);
-    //imshow("Gradient x", grad.x);
-    //imshow("Gradient y", grad.y);
-
     /*------------------------Candidate Extraction---------------------------*/
-    for (auto candidate : candidateSuperPixels) {
+    for (const auto &candidate : candidateSuperPixels) {
 
-        cv::Optional<Features> optional = candidateFeatureExtraction(src, candidate, candidate_size, offsets,
+        auto spFeatures = candidateFeatureExtraction(src, candidate, candidate_size, offsets,
                                                                      thresholds);
 
-        if (optional.hasValue()) {
-            auto candidateFeatures = optional.getValue();
-            notNormalizedfeatures.push_back(candidateFeatures);
+        if (!spFeatures.empty()) {
+            for (const auto &candidateFeatures : spFeatures) {
+
+                notNormalizedfeatures.push_back(candidateFeatures);
 
 //        cout << "SP" << candidate.label <<
 //             "| AvgGrayVal: " << candidateFeatures.averageGreyValue <<
@@ -254,12 +152,13 @@ vector<Features> extractFeatures(const Mat &src, const vector<SuperPixel> &candi
 //             "| Energy: " << candidateFeatures.energy <<
 //             "| Entropy: " << candidateFeatures.entropy << endl;
 
-            candidatesFeaturesVectors.histograms.push_back(candidateFeatures.histogram);
-            candidatesFeaturesVectors.contrasts.push_back(candidateFeatures.contrast);
-            candidatesFeaturesVectors.energies.push_back(candidateFeatures.energy);
-            candidatesFeaturesVectors.entropies.push_back(candidateFeatures.entropy);
-            candidatesFeaturesVectors.averageGreyLevels.push_back(candidateFeatures.averageGreyValue);
-            candidatesFeaturesVectors.skewnesses.push_back(candidateFeatures.skewness);
+                candidatesFeaturesVectors.histograms.push_back(candidateFeatures.histogram);
+                candidatesFeaturesVectors.contrasts.push_back(candidateFeatures.contrast);
+                candidatesFeaturesVectors.energies.push_back(candidateFeatures.energy);
+                candidatesFeaturesVectors.entropies.push_back(candidateFeatures.entropy);
+                candidatesFeaturesVectors.averageGreyLevels.push_back(candidateFeatures.averageGreyValue);
+                candidatesFeaturesVectors.skewnesses.push_back(candidateFeatures.skewness);
+            }
         }
     }
 
@@ -277,7 +176,9 @@ vector<Features> extractFeatures(const Mat &src, const vector<SuperPixel> &candi
              " Entropy: " << normalizedFeaturesVectors.entropies.at(i) << endl;*/
 
         normalizedFeatures.push_back(Features{
+                notNormalizedfeatures[i]._class,
                 notNormalizedfeatures[i].label,
+                notNormalizedfeatures[i].uid,
                 notNormalizedfeatures[i].candidate,
                 normalizedFeaturesVectors.histograms[i],
                 normalizedFeaturesVectors.averageGreyLevels[i],

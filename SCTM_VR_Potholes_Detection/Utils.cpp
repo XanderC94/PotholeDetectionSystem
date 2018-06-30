@@ -83,6 +83,7 @@ void loadFromJSON(const string target, vector<Features> &features, Mat &labels) 
 
         for (const auto &ft : document["features"].GetArray()) {
 
+            assert(ft.HasMember("class"));
             assert(ft.HasMember("label"));
             assert(ft.HasMember("contrast"));
             assert(ft.HasMember("avgGreyValue"));
@@ -91,6 +92,7 @@ void loadFromJSON(const string target, vector<Features> &features, Mat &labels) 
             assert(ft.HasMember("entropy"));
             assert(ft.HasMember("hog"));
 
+            assert(ft["class"].IsInt());
             assert(ft["label"].IsInt());
             assert(ft["contrast"].IsFloat());
             assert(ft["avgGreyValue"].IsFloat());
@@ -108,7 +110,9 @@ void loadFromJSON(const string target, vector<Features> &features, Mat &labels) 
             transpose(hog, hog);
 
             Features f = {
+                    ft["class"].GetInt(),
                     ft["label"].GetInt(),
+                    0,
                     Mat(),
                     Mat(),
                     ft["avgGreyValue"].GetFloat(),
@@ -131,75 +135,6 @@ void loadFromJSON(const string target, vector<Features> &features, Mat &labels) 
 
 }
 
-bool checkExistence(const string &target) {
-
-    ifstream csv(target);
-
-    if (csv.is_open()) {
-        string line;
-        std::getline(csv, line);
-
-        // Normalize the string.
-        auto end_pos = remove(line.begin(), line.end(), ' ');
-        line.erase(end_pos, line.end());
-        std::transform(line.begin(), line.end(), line.begin(), ::tolower);
-
-        cout << line << endl;
-        if (line == "class,candidate,contrast,skewness,avggreyval,energy,entropy,hog") {
-            return true;
-        }
-
-        csv.close();
-    } else {
-        cerr << "Unable to open file " << target << ". It may not exist!" << endl;
-    }
-
-    return false;
-}
-
-void saveFeaturesCSV(const vector<Features> &features, const string saveDirectory, const vector<string> names,
-                     const string saveFile) {
-
-    bool doesNotExist = !checkExistence("../" + saveDirectory + "/" + saveFile + ".csv");
-
-    portable_mkdir(("../" + saveDirectory).data());
-
-    ofstream csv("../" + saveDirectory + "/" + saveFile + ".csv", fstream::in | fstream::out | fstream::app);
-
-    if (csv.is_open()) {
-
-        if (doesNotExist) {
-            csv << "Class,Candidate,Contrast,Skewness,AvgGreyVal,Energy,Entropy,HOG" << endl;
-        }
-
-        for (int i = 0; i < features.size(); ++i) {
-
-            auto f = features[i];
-            auto candidate = extractFileName(names[i]);
-
-            string c_name = set_format(candidate, "", false) + "_L" + to_string(f.label);
-
-            cout << "Saving candidate " << c_name << endl;
-
-            csv << -1 << ",";
-            csv << c_name << ",";
-            csv << f.contrast << ",";
-            csv << f.skewness << ",";
-            csv << f.averageGreyValue << ",";
-            csv << f.energy << ",";
-            csv << f.entropy << ",";
-            csv << "\"" << f.hogDescriptors << "\"" << endl;
-
-            imwrite("../" + saveDirectory + "/" + c_name + ".bmp", f.candidate);
-
-        }
-
-        csv.close();
-    } else {
-        cerr << "Ops, we got a problem opening the feature file!" << endl;
-    }
-}
-
 void saveFeaturesJSON(const vector<Features> &features, const string saveDirectory, const vector<string> names,
                       const string saveFile) {
 
@@ -218,13 +153,15 @@ void saveFeaturesJSON(const vector<Features> &features, const string saveDirecto
 
         const auto ft = features[i];
 
-        const auto c_name = set_format(extractFileName(names[i]), "", false) + "_L" + to_string(ft.label);
+        const auto c_name = set_format(extractFileName(names[i]), "", false);
 
         sw.StartObject();
-        sw.Key("label");
-        sw.Int(ft.label);
+        sw.Key("class");
+        sw.Int(ft._class);
         sw.Key("sample");
         sw.String(c_name.data());
+        sw.Key("label");
+        sw.Int(ft.label);
         sw.Key("contrast");
         sw.Double(ft.contrast);
         sw.Key("avgGreyValue");
@@ -245,7 +182,8 @@ void saveFeaturesJSON(const vector<Features> &features, const string saveDirecto
 
         sw.Flush();
 
-        imwrite("../" + saveDirectory + "/" + c_name + ".bmp", ft.candidate);
+        imwrite("../" + saveDirectory + "/" + c_name + "_L" + to_string(ft.label) + "_" + to_string(ft.uid) + ".bmp",
+                ft.candidate);
     }
 
     sw.EndArray();

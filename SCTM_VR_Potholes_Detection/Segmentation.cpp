@@ -46,8 +46,8 @@ bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel 
     ratioDark[1] = neighborsMeanColourValue.val[1] / superPixel.meanColourValue.val[1];
     ratioDark[2] = neighborsMeanColourValue.val[2] / superPixel.meanColourValue.val[2];
 
-//    if ((ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.colourRatioThresholdMin &&
-//        (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.colourRatioThresholdMax) {
+//    if ((ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.grayRatioThresholdMin &&
+//        (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.grayRatioThresholdMax) {
 //
 //        Mat tmp; src.copyTo(tmp, selectionMask);
 //        tmp.setTo(Scalar(0, 0, 255), (labels == superPixel.label));
@@ -61,8 +61,8 @@ bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel 
 //             << endl;
 //    }
 
-    return (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.colourRatioThresholdMin &&
-           (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.colourRatioThresholdMax;
+    return (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.grayRatioThresholdMin &&
+           (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.grayRatioThresholdMax;
 }
 
 set<int> findNeighbors(const Point &candidate, const Mat &labels, const int edge) {
@@ -223,11 +223,11 @@ SuperPixel selectPothole(const Mat &src, const int nSuperPixels, const Mat &labe
  * In order to isolate the pothole super pixel from car's bumper
  * 3. Select the super pixel that is darker than the average pixel value and lighter than a specified threshold
  * */
-cv::Optional<SuperPixel> extractPotholeRegionFromCandidate(const Mat &candidate, const Mat1b &roadMask,
-                                                           const ExtractionThresholds &thresholds) {
+std::vector<SuperPixel> extractPotholeRegionFromCandidate(const Mat &candidate, const Mat1b &exclusionMask,
+                                                          const ExtractionThresholds &thresholds) {
     Mat res, labels;
     vector<SuperPixel> soi;
-    SuperPixel product;
+    vector<SuperPixel> products;
 
     Ptr<SuperpixelLSC> superPixeler = initSuperPixelingLSC(candidate, 48); // or 32 are OK
 
@@ -236,7 +236,7 @@ cv::Optional<SuperPixel> extractPotholeRegionFromCandidate(const Mat &candidate,
 
     for (int superPixelLabel = 0; superPixelLabel < superPixeler->getNumberOfSuperpixels(); ++superPixelLabel) {
 
-        SuperPixel superPixel = getSuperPixel(candidate, roadMask, superPixelLabel, labels);
+        SuperPixel superPixel = getSuperPixel(candidate, exclusionMask, superPixelLabel, labels);
 
         superPixel.neighbors = findNeighbors(superPixel.center, labels, candidate.rows / 8);
 
@@ -248,37 +248,49 @@ cv::Optional<SuperPixel> extractPotholeRegionFromCandidate(const Mat &candidate,
 
     auto el = getStructuringElement(MORPH_ELLIPSE, Point(5, 5));
 
+    std::set<int> visited;
     // Join the detected regions
     if (!soi.empty()) {
-        product = soi[0];
-        if (soi.size() > 1) {
-            for (int i = 1; i < soi.size(); ++i) {
-                product.mask += soi[i].mask;
+        // Cicle each superpixel of interest
+        for (auto sp : soi) {
+            // If not already visited (ndr. found as a neighbor of a previous sp)
+            if (visited.count(sp.label) == 0) {
+                SuperPixel product = sp;
+                // Check all the others soi
+                for (auto n : soi) {
+                    // All those that are neighbors the selected sp are merged with it
+                    if (sp.neighbors.count(n.label) > 0) {
+                        product.mask += n.mask;
+                        visited.insert(n.label);
+                    }
+                }
+
+                dilate(product.mask, product.mask, el);
+                candidate.copyTo(product.selection, product.mask);
+                product.contour = getContoursMask(product.mask);
+                findNonZero(product.mask, product.points);
+                product.center = calculateSuperPixelCenter(product.points);
+                product.meanColourValue = mean(product.selection, product.mask);
+
+                if (product.points.size() > 16 * 16
+                    || static_cast<float>(product.points.size()) / (candidate.rows * candidate.cols) < 0.7f
+                    ||
+                    product.meanColourValue.val[0] + product.meanColourValue.val[1] + product.meanColourValue.val[2] >
+                    35 * 3
+                    ||
+                    product.meanColourValue.val[0] + product.meanColourValue.val[1] + product.meanColourValue.val[2] <
+                    225 * 3) {
+                    products.push_back(product);
+                }
+
+//                candidate.copyTo(res);
+//                res.setTo(Scalar(0,0,255), product.contour);
+//                imshow("S", res);
+//                waitKey();
+
             }
         }
-
-        dilate(product.mask, product.mask, el);
-        candidate.copyTo(product.selection, product.mask);
-        product.contour = getContoursMask(product.mask);
-        findNonZero(product.mask, product.points);
-        product.center = calculateSuperPixelCenter(product.points);
-        product.meanColourValue = mean(product.selection, product.mask);
-
-//        candidate.copyTo(res);
-//        res.setTo(Scalar(0,0,255), product.contour);
-//        imshow("S", res);
-//        waitKey();
-
-        if (product.points.size() < 16 * 16 ||
-            static_cast<float>(product.points.size()) / (candidate.rows * candidate.cols) > 0.7f
-            || product.meanColourValue.val[0] + product.meanColourValue.val[1] + product.meanColourValue.val[2] < 35 * 3
-            || product.meanColourValue.val[0] + product.meanColourValue.val[1] + product.meanColourValue.val[2] >
-               225 * 3) {
-            return cv::Optional<SuperPixel>();
-        } else {
-            return cv::Optional<SuperPixel>(product);
-        }
-    } else {
-        return cv::Optional<SuperPixel>();
     }
+
+    return products;
 }

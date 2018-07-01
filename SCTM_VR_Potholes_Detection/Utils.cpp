@@ -132,7 +132,7 @@ void loadFromJSON(const string target, vector<Features> &features, Mat &labels) 
             };
 
             features.push_back(f);
-            labels.push_back(ft["label"].GetInt());
+            labels.push_back(ft["class"].GetInt());
         }
 
     } else {

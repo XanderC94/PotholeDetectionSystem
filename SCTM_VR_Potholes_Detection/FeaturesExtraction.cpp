@@ -57,7 +57,7 @@ std::vector<Features> candidateFeatureExtraction(const Mat &src,
         Mat histogram = ExtractHistograms(candidateGrayScale, candidateSuperPixel.mask, 256);
 
         // 5. Calculate the average gray value
-        float averageGreyValue = (float) mean(candidateGrayScale, candidateSuperPixel.mask)[0];
+        float averageGreyValue = static_cast<float>(mean(candidateGrayScale, candidateSuperPixel.mask)[0]);
         Scalar averageRGBValues = mean(candidateSuperPixel.selection, candidateSuperPixel.mask);
 
         // 6. Calculate the contrast

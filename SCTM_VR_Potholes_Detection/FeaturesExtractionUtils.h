@@ -13,6 +13,9 @@ using namespace cv::ximgproc;
 
 typedef struct FeaturesVectors {
     vector<float> averageGreyLevels = vector<float>();
+    vector<float> averageRedLevels = vector<float>();
+    vector<float> averageGreenLevels = vector<float>();
+    vector<float> averageBlueLevels = vector<float>();
     vector<Mat> histograms = vector<Mat>();
     vector<float> contrasts = vector<float>();
     vector<float> entropies = vector<float>();

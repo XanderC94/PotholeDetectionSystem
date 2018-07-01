@@ -46,8 +46,7 @@ vector<Features> getFeatures(const string &target) {
             .Gauss_RoadThreshold = 0.60,
             .grayRatioThresholdMin = 1.15, // 1.25 is better if we aim to properly detect nearest holes to the vehicle,
             // but will probably exclude far away holes and those holes near cars (see image of test n_89)
-            .grayRatioThresholdMax = 2.5,
-            .greenRatioThresholdMin = 1.15
+            .grayRatioThresholdMax = 2.5
     };
 
     int superPixelEdge = 32;

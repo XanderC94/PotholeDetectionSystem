@@ -80,13 +80,8 @@ Mat1b createExclusionMask(const Mat &src, const Mat &sample, const Point2d &tlc,
             float R = src.at<Vec3b>(tlc + Point2d(j, i)).val[0];
             float G = src.at<Vec3b>(tlc + Point2d(j, i)).val[1];
             float B = src.at<Vec3b>(tlc + Point2d(j, i)).val[2];
-            if (isRoad(src.rows, src.cols, offsets, tlc + Point2d(j, i))
-//                || (G / R < thresholds.greenRatioThresholdMin
-//                    && G / B < thresholds.greenRatioThresholdMin)
-                    ) {
-
+            if (isRoad(src.rows, src.cols, offsets, tlc + Point2d(j, i))) {
                 exclusionMask.at<uchar>(i, j) = 255;
-
             }
         }
     }

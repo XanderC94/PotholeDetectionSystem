@@ -27,9 +27,10 @@ typedef struct ExtractionThresholds {
     double Gauss_RoadThreshold;
     double grayRatioThresholdMin;
     double grayRatioThresholdMax;
+    double greenRatioThreshold;
 } ExtractionThresholds;
 
-const ExtractionThresholds defaultThresholds = {0.80, 0.35, 0.60, 1.25, 4.0};
+const ExtractionThresholds defaultThresholds = {0.80, 0.35, 0.60, 1.25, 4.0, 1.15};
 
 typedef struct Features {
     int _class;
@@ -53,7 +54,7 @@ typedef struct SuperPixel {
     Mat selection;
     Mat1b mask;
     Mat contour;
-    Scalar meanColourValue;
+    Scalar meanColour;
     std::set<int> neighbors;
 } SuperPixel;
 

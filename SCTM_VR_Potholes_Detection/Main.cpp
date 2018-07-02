@@ -11,6 +11,26 @@ using namespace cv;
 using namespace std;
 using namespace cv::ml;
 
+const RoadOffsets offsets = {
+        .Horizon_Offset = 0.65,
+        .SLine_X_Right_Offset = 0.0,
+        .SLine_X_Left_Offset = 0.25,
+        .SLine_Y_Right_Offset = 0.9,
+        .SLine_Y_Left_Offset = 0.9,
+        .SLine_Right_Escape_Offset = 0.4,
+        .SLine_Left_Escape_Offset = 0.4
+};
+
+const ExtractionThresholds thresholds = {
+        .Density_Threshold = 0.55, // OK, do not change
+        .Variance_Threshold = 0.3,
+        .Gauss_RoadThreshold = 0.60,
+        .grayRatioThresholdMin = 1.15, // 1.25 is better if we aim to properly detect nearest holes to the vehicle,
+        // but will probably exclude far away holes and those holes near cars (see image of test n_89)
+        .grayRatioThresholdMax = 2.5,
+        .greenRatioThreshold = 1.25
+};
+
 vector<Features> getFeatures(const string &target) {
 
     auto candidateSuperPixels = vector<SuperPixel>();
@@ -30,29 +50,7 @@ vector<Features> getFeatures(const string &target) {
     *	(in Candidates will be placed the set on candidateSuperPixels that survived segmentation)
     */
 
-    RoadOffsets offsets = {
-            .Horizon_Offset = 0.65,
-            .SLine_X_Right_Offset = 0.0,
-            .SLine_X_Left_Offset = 0.25,
-            .SLine_Y_Right_Offset = 0.9,
-            .SLine_Y_Left_Offset = 0.9,
-            .SLine_Right_Escape_Offset = 0.4,
-            .SLine_Left_Escape_Offset = 0.4
-    };
-
-    ExtractionThresholds thresholds = {
-            .Density_Threshold = 0.55, // OK, do not change
-            .Variance_Threshold = 0.3,
-            .Gauss_RoadThreshold = 0.60,
-            .grayRatioThresholdMin = 1.15, // 1.25 is better if we aim to properly detect nearest holes to the vehicle,
-            // but will probably exclude far away holes and those holes near cars (see image of test n_89)
-            .grayRatioThresholdMax = 2.5
-    };
-
     int superPixelEdge = 32;
-
-//    printThresholds(thresholds);
-//    printOffsets(offsets);
 
     /*--------------------------------- Pre-Processing Phase ------------------------------*/
 
@@ -233,6 +231,8 @@ void trainingPhase(char*argv[]){
 
     loadFromJSON("../data/" + string(argv[3]), candidates, labels);
 
+    /*--------------------------------- Training Phase ------------------------------*/
+
     if (method == "-svm") {
 
         /***************************** SVM CLASSIFIER ********************************/
@@ -283,14 +283,17 @@ int main(int argc, char*argv[]) {
 
         return 0;
     } else {
+
         auto mode = string(argv[1]);
+
+        printThresholds(thresholds);
+        printOffsets(offsets);
 
         if (mode == "-d" && argc > 2) {
             createCandidates(argv[2], argc > 3 && string(argv[3]) == "-f");
         } else if (mode == "-c" && argc > 5) {
             classificationPhase(argv);
         } else if (mode == "-t" && argc >= 4) {
-            /*--------------------------------- Training Phase ------------------------------*/
             trainingPhase(argv);
         }
     }

@@ -18,7 +18,7 @@ int extractRegionsOfInterest(const Ptr<SuperpixelLSC> &algorithm,
                              const ExtractionThresholds thresholds = defaultThresholds,
                              const RoadOffsets offsets = defaultOffsets);
 
-cv::Optional<SuperPixel> extractPotholeRegionFromCandidate(const Mat &candidate, const Mat1b &roadMask,
-                                                           const ExtractionThresholds &thresholds);
+std::vector<SuperPixel> extractPotholeRegionFromCandidate(const Mat &candidate, const Mat1b &exclusionMask,
+                                                          const ExtractionThresholds &thresholds);
 
 #endif //POTHOLEDETECTIONSYSTEM_SEGMENTATION_H

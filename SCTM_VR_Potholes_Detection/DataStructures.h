@@ -25,14 +25,17 @@ typedef struct ExtractionThresholds {
     double Density_Threshold;
     double Variance_Threshold;
     double Gauss_RoadThreshold;
-    double colourRatioThresholdMin;
-    double colourRatioThresholdMax;
+    double grayRatioThresholdMin;
+    double grayRatioThresholdMax;
+    double greenRatioThresholdMin;
 } ExtractionThresholds;
 
-const ExtractionThresholds defaultThresholds = {0.80, 0.35, 0.60, 1.25, 4.0};
+const ExtractionThresholds defaultThresholds = {0.80, 0.35, 0.60, 1.25, 4.0, 1.10};
 
 typedef struct Features {
+    int _class;
     int label;
+    int uid;
     Mat candidate;
     Mat histogram;
     float averageGreyValue;

@@ -20,6 +20,6 @@ void printThresholds(ExtractionThresholds thresholds) {
          << "Density_Threshold: " << thresholds.Density_Threshold << endl
          << "Variance_Threshold: " << thresholds.Variance_Threshold << endl
          << "Gauss_RoadThreshold: " << thresholds.Gauss_RoadThreshold << endl
-         << "colourRatioThresholdMin: " << thresholds.colourRatioThresholdMin << endl
-         << "colourRatioThresholdMax: " << thresholds.colourRatioThresholdMax << endl;
+         << "grayRatioThresholdMin: " << thresholds.grayRatioThresholdMin << endl
+         << "grayRatioThresholdMax: " << thresholds.grayRatioThresholdMax << endl;
 }

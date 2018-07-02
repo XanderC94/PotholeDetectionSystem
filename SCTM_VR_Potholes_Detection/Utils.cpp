@@ -11,7 +11,18 @@
 #include <rapidjson/istreamwrapper.h>
 #include <rapidjson/prettywriter.h>
 
+
+#include <unistd.h>
+#define getCurrentDir getcwd
+
 using namespace rapidjson;
+
+std::string getCurrentWorkingDir(void) {
+    char buff[FILENAME_MAX];
+    getCurrentDir( buff, FILENAME_MAX );
+    std::string current_working_dir(buff);
+    return current_working_dir;
+}
 
 int resize_all_in(const string parent, const string folder, const int width, const int height) {
 
@@ -124,7 +135,7 @@ void loadFromJSON(const string target, vector<Features> &features, Mat &labels) 
         }
 
     } else {
-        cerr << "Unable to open file " << target << endl;
+        cerr << "Unable to open file or the json file is malformed" << target << endl;
     }
 
     cout << labels.rows << " " << features.size() << endl;

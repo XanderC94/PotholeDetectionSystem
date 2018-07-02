@@ -145,7 +145,7 @@ Mat go(const string &method, const string &model_name, const string &image) {
 /*
  * This function show the candidate extraxted and ask if is pothole (Y) or not (N)
  * */
-int askUserSupervision(const Features &candidateFeatures, const int scaleFactor = 2) {
+int askUserSupervision(const Features &candidateFeatures, const int scaleFactor = 5) {
 
     Mat visual_image;
     resize(candidateFeatures.candidate,

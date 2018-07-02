@@ -65,7 +65,7 @@ SuperPixel stub(const Mat &src, const int superPixelLabel, const Mat &mask) {
             .selection = superPixelSelection,
             .mask = mask,
             .contour = maskContours,
-            .meanColourValue = meanColourValue,
+            .meanColour = meanColourValue,
             .neighbors= std::set<int>()
     };
 

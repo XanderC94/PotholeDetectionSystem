@@ -96,8 +96,10 @@ void loadFromJSON(const string target, vector<Features> &features, Mat &labels) 
 
             assert(ft.HasMember("class"));
             assert(ft.HasMember("label"));
+            assert(ft.HasMember("id"));
             assert(ft.HasMember("contrast"));
             assert(ft.HasMember("avgGreyValue"));
+            assert(ft.HasMember("avgRGBValues"));
             assert(ft.HasMember("skewness"));
             assert(ft.HasMember("energy"));
             assert(ft.HasMember("entropy"));
@@ -107,6 +109,7 @@ void loadFromJSON(const string target, vector<Features> &features, Mat &labels) 
             assert(ft["label"].IsInt());
             assert(ft["contrast"].IsFloat());
             assert(ft["avgGreyValue"].IsFloat());
+            assert(ft["avgRGBValues"].IsArray());
             assert(ft["skewness"].IsFloat());
             assert(ft["energy"].IsFloat());
             assert(ft["entropy"].IsFloat());
@@ -123,10 +126,15 @@ void loadFromJSON(const string target, vector<Features> &features, Mat &labels) 
             Features f = {
                     ft["class"].GetInt(),
                     ft["label"].GetInt(),
-                    0,
+                    ft["id"].GetInt(),
                     Mat(),
                     Mat(),
                     ft["avgGreyValue"].GetFloat(),
+                    Scalar(
+                            ft["avgRGBValues"].GetArray()[0].GetDouble(),
+                            ft["avgRGBValues"].GetArray()[1].GetDouble(),
+                            ft["avgRGBValues"].GetArray()[2].GetDouble()
+                    ),
                     ft["contrast"].GetFloat(),
                     ft["energy"].GetFloat(),
                     ft["skewness"].GetFloat(),
@@ -173,10 +181,16 @@ void saveFeaturesJSON(const vector<Features> &features, const string saveDirecto
         sw.String(c_name.data());
         sw.Key("label");
         sw.Int(ft.label);
+        sw.Key("id");
+        sw.Int(ft.id);
         sw.Key("contrast");
         sw.Double(ft.contrast);
         sw.Key("avgGreyValue");
         sw.Double(ft.averageGreyValue);
+        sw.Key("avgRGBValues");
+        sw.StartArray();
+        for (const double channel : ft.averageRGBValues.val) sw.Double(channel);
+        sw.EndArray();
         sw.Key("skewness");
         sw.Double(ft.skewness);
         sw.Key("energy");
@@ -193,7 +207,7 @@ void saveFeaturesJSON(const vector<Features> &features, const string saveDirecto
 
         sw.Flush();
 
-        imwrite("../" + saveDirectory + "/" + c_name + "_L" + to_string(ft.label) + "_" + to_string(ft.uid) + ".bmp",
+        imwrite("../" + saveDirectory + "/" + c_name + "_L" + to_string(ft.label) + "_" + to_string(ft.id) + ".bmp",
                 ft.candidate);
     }
 

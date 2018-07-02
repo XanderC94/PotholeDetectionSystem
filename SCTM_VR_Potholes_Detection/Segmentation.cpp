@@ -1,4 +1,5 @@
 #include <opencv2/photo.hpp>
+#include <iostream>
 #include "Segmentation.h"
 
 using namespace std;
@@ -42,9 +43,9 @@ bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel 
 
     double ratioDark[3] = {0.0, 0.0, 0.0};
 
-    ratioDark[0] = neighborsMeanColourValue.val[0] / superPixel.meanColourValue.val[0];
-    ratioDark[1] = neighborsMeanColourValue.val[1] / superPixel.meanColourValue.val[1];
-    ratioDark[2] = neighborsMeanColourValue.val[2] / superPixel.meanColourValue.val[2];
+    ratioDark[0] = neighborsMeanColourValue.val[0] / superPixel.meanColour.val[0];
+    ratioDark[1] = neighborsMeanColourValue.val[1] / superPixel.meanColour.val[1];
+    ratioDark[2] = neighborsMeanColourValue.val[2] / superPixel.meanColour.val[2];
 
 //    if ((ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.grayRatioThresholdMin &&
 //        (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.grayRatioThresholdMax) {
@@ -55,7 +56,7 @@ bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel 
 //        waitKey();
 //
 //        cout << "SP n° " << superPixel.label
-//             << "\t| Mean color: " << superPixel.meanColourValue
+//             << "\t| Mean color: " << superPixel.meanColour
 //             << " \t| Density: " << calculateSuperPixelDensity(superPixel.points)
 //             << " \t| Ratio: [" << ratioDark[0] << ", " << ratioDark[1] << ", " << ratioDark[2] << "]"
 //             << endl;
@@ -148,7 +149,7 @@ int extractRegionsOfInterest(const Ptr<SuperpixelLSC> &superPixeler,
             }
         }
 
-//        meanColourMask.setTo(superPixel.meanColourValue, superPixel.mask);
+//        meanColourMask.setTo(superPixel.meanColour, superPixel.mask);
 //        mask.setTo(color_mask_value, superPixel.mask);
 
     }
@@ -181,9 +182,9 @@ int extractRegionsOfInterest(const Ptr<SuperpixelLSC> &superPixeler,
 bool isPothole(SuperPixel superPixel, SuperPixel previousSelected, Scalar meanCandidateColourValue) {
     double meanDivider = 1.5;
     double minPixelNumber = 256;
-    return superPixel.meanColourValue[0] < meanCandidateColourValue[0]
-           && superPixel.meanColourValue[0] > (meanCandidateColourValue[0] / meanDivider)
-           && superPixel.meanColourValue[0] < (previousSelected.meanColourValue[0])
+    return superPixel.meanColour[0] < meanCandidateColourValue[0]
+           && superPixel.meanColour[0] > (meanCandidateColourValue[0] / meanDivider)
+           && superPixel.meanColour[0] < (previousSelected.meanColour[0])
            && superPixel.points.size() > minPixelNumber;
 }
 
@@ -208,7 +209,7 @@ SuperPixel selectPothole(const Mat &src, const int nSuperPixels, const Mat &labe
     /*if(possiblePotholes.size() > 0) {
         sort(possiblePotholes.begin(),
              possiblePotholes.end(),
-             [](SuperPixel a, SuperPixel b) -> bool { return (a.meanColourValue[0] < b.meanColourValue[0]); }
+             [](SuperPixel a, SuperPixel b) -> bool { return (a.meanColour[0] < b.meanColour[0]); }
         );
 
         selected = possiblePotholes[possiblePotholes.size() - 1];
@@ -251,15 +252,17 @@ std::vector<SuperPixel> extractPotholeRegionFromCandidate(const Mat &candidate, 
     std::set<int> visited;
     // Join the detected regions
     if (!soi.empty()) {
-        // Cicle each superpixel of interest
+        // Cycle each superpixel of interest
         for (auto sp : soi) {
             // If not already visited (ndr. found as a neighbor of a previous sp)
             if (visited.count(sp.label) == 0) {
-                SuperPixel product = sp;
+                SuperPixel product;
+                product.mask = sp.mask;
+
                 // Check all the others soi
                 for (auto n : soi) {
                     // All those that are neighbors the selected sp are merged with it
-                    if (sp.neighbors.count(n.label) > 0) {
+                    if (sp.neighbors.count(n.label) == 1) {
                         product.mask += n.mask;
                         visited.insert(n.label);
                     }
@@ -270,24 +273,22 @@ std::vector<SuperPixel> extractPotholeRegionFromCandidate(const Mat &candidate, 
                 product.contour = getContoursMask(product.mask);
                 findNonZero(product.mask, product.points);
                 product.center = calculateSuperPixelCenter(product.points);
-                product.meanColourValue = mean(product.selection, product.mask);
+                product.meanColour = mean(product.selection, product.mask);
 
-                if (product.points.size() > 16 * 16
-                    || static_cast<float>(product.points.size()) / (candidate.rows * candidate.cols) < 0.7f
-                    ||
-                    product.meanColourValue.val[0] + product.meanColourValue.val[1] + product.meanColourValue.val[2] >
-                    35 * 3
-                    ||
-                    product.meanColourValue.val[0] + product.meanColourValue.val[1] + product.meanColourValue.val[2] <
-                    225 * 3) {
+                auto mean_sum =
+                        product.meanColour.val[0] +
+                        product.meanColour.val[1] +
+                        product.meanColour.val[2];
+
+                std::cout << "SoI size:" << product.points.size() << endl;
+
+                if (product.points.size() > 256
+                    && static_cast<float>(product.points.size()) / (candidate.rows * candidate.cols) < 0.7f
+                    && (mean_sum > 35 * 3 && mean_sum < 225 * 3)) {
                     products.push_back(product);
                 }
 
-//                candidate.copyTo(res);
-//                res.setTo(Scalar(0,0,255), product.contour);
-//                imshow("S", res);
-//                waitKey();
-
+                visited.insert(sp.label);
             }
         }
     }

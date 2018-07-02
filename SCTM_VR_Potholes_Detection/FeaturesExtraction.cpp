@@ -39,14 +39,14 @@ std::vector<Features> candidateFeatureExtraction(const Mat &src,
     const Mat sample = src(Rect(tlc, brc));
     Mat1b exclusionMask = createExclusionMask(src, sample, tlc, offsets, thresholds);
 
-    auto c_name = "Candidate @ (" + to_string(centroid.x) + ", " + to_string(centroid.y) + ")";
+//    auto c_name = "Candidate @ (" + to_string(centroid.x) + ", " + to_string(centroid.y) + ")";
 
     // 1. Extract only the pothole region
     auto soi = extractPotholeRegionFromCandidate(sample, exclusionMask, thresholds);
 
     for (int i = 0; i < soi.size(); ++i) {
         const auto &candidateSuperPixel = soi[i];
-        // 2. Switch color-space from RGB to GreyScale
+        // 2. Switch color-space from BGR to GreyScale
         Mat candidateGrayScale, sampleGS;
         cvtColor(candidateSuperPixel.selection, candidateGrayScale, CV_BGR2GRAY);
 
@@ -57,7 +57,8 @@ std::vector<Features> candidateFeatureExtraction(const Mat &src,
         Mat histogram = ExtractHistograms(candidateGrayScale, candidateSuperPixel.mask, 256);
 
         // 5. Calculate the average gray value
-        float averageGreyValue = (float) mean(candidateGrayScale)[0];
+        float averageGreyValue = static_cast<float>(mean(candidateGrayScale, candidateSuperPixel.mask)[0]);
+        Scalar averageRGBValues = mean(candidateSuperPixel.selection, candidateSuperPixel.mask);
 
         // 6. Calculate the contrast
         // 7. Calculate Entropy
@@ -84,10 +85,11 @@ std::vector<Features> candidateFeatureExtraction(const Mat &src,
         candidatesFeatures.push_back(Features{
                 ._class = -1,
                 .label = nativeSuperPixel.label,
-                .uid = i,
+                .id = i,
                 .candidate = tmp,
                 .histogram = histogram,
-                .averageGreyValue= averageGreyValue,
+                .averageGreyValue = averageGreyValue,
+                .averageRGBValues = averageRGBValues,
                 .contrast = contrast,
                 .entropy = entropy,
                 .skewness = skewness,
@@ -110,6 +112,12 @@ normalizeFeatures(const double minValue, const double maxValue, const FeaturesVe
     }
 
     normalize(notNormalizedFeatures.averageGreyLevels, normalizedFeatures.averageGreyLevels, minValue, maxValue,
+              NORM_MINMAX, -1, Mat());
+    normalize(notNormalizedFeatures.averageRedLevels, normalizedFeatures.averageRedLevels, minValue, maxValue,
+              NORM_MINMAX, -1, Mat());
+    normalize(notNormalizedFeatures.averageGreenLevels, normalizedFeatures.averageGreenLevels, minValue, maxValue,
+              NORM_MINMAX, -1, Mat());
+    normalize(notNormalizedFeatures.averageBlueLevels, normalizedFeatures.averageBlueLevels, minValue, maxValue,
               NORM_MINMAX, -1, Mat());
     normalize(notNormalizedFeatures.contrasts, normalizedFeatures.contrasts, minValue, maxValue, NORM_MINMAX, -1,
               Mat());
@@ -157,6 +165,12 @@ vector<Features> extractFeatures(const Mat &src, const vector<SuperPixel> &candi
                 candidatesFeaturesVectors.energies.push_back(candidateFeatures.energy);
                 candidatesFeaturesVectors.entropies.push_back(candidateFeatures.entropy);
                 candidatesFeaturesVectors.averageGreyLevels.push_back(candidateFeatures.averageGreyValue);
+                candidatesFeaturesVectors.averageRedLevels.push_back(
+                        static_cast<float>(candidateFeatures.averageRGBValues.val[2]));
+                candidatesFeaturesVectors.averageGreenLevels.push_back(
+                        static_cast<float>(candidateFeatures.averageRGBValues.val[1]));
+                candidatesFeaturesVectors.averageBlueLevels.push_back(
+                        static_cast<float>(candidateFeatures.averageRGBValues.val[0]));
                 candidatesFeaturesVectors.skewnesses.push_back(candidateFeatures.skewness);
             }
         }
@@ -178,10 +192,15 @@ vector<Features> extractFeatures(const Mat &src, const vector<SuperPixel> &candi
         normalizedFeatures.push_back(Features{
                 notNormalizedfeatures[i]._class,
                 notNormalizedfeatures[i].label,
-                notNormalizedfeatures[i].uid,
+                notNormalizedfeatures[i].id,
                 notNormalizedfeatures[i].candidate,
                 normalizedFeaturesVectors.histograms[i],
                 normalizedFeaturesVectors.averageGreyLevels[i],
+                Scalar(
+                        normalizedFeaturesVectors.averageRedLevels[i],
+                        normalizedFeaturesVectors.averageGreenLevels[i],
+                        normalizedFeaturesVectors.averageBlueLevels[i]
+                ),
                 normalizedFeaturesVectors.contrasts[i],
                 normalizedFeaturesVectors.entropies[i],
                 normalizedFeaturesVectors.skewnesses[i],

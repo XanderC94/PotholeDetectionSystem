@@ -54,7 +54,7 @@ namespace mySVM {
         auto train_data = TrainData::create(dataFeatures, ROW_SAMPLE, labels);
 
         svm->trainAuto(train_data,
-                       3,
+                       10,
                        SVM::getDefaultGrid(SVM::C),
                        SVM::getDefaultGrid(SVM::GAMMA),
                        SVM::getDefaultGrid(SVM::P),

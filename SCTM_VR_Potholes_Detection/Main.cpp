@@ -142,7 +142,7 @@ Mat go(const string &method, const string &model_name, const string &image) {
 /*
  * This function show the candidate extracted and ask if is pothole (Y) or not (N)
  * */
-int askUserSupervision(const Features &candidateFeatures, const int scaleFactor = 5) {
+int askUserSupervisionBinaryClasses(const Features &candidateFeatures, const int scaleFactor = 5) {
 
     Mat visual_image;
     resize(candidateFeatures.candidate,
@@ -157,7 +157,7 @@ int askUserSupervision(const Features &candidateFeatures, const int scaleFactor 
     bool isResponseCorrect = false;
     while(!isResponseCorrect) {
         cin >> response;
-        if (response == 'Y' || response == 'y') {
+        if (response == 'P' || response == 'y') {
             isResponseCorrect = true;
             result = 1;
         } else if (response == 'N' || response == 'n') {
@@ -165,6 +165,41 @@ int askUserSupervision(const Features &candidateFeatures, const int scaleFactor 
             isResponseCorrect = true;
         } else {
             cout << "Wrong response. Type (Y) for yes or (N) for no" << endl;
+        }
+    }
+    return result;
+}
+int askUserSupervisionMultiClasses(const Features &candidateFeatures, const int scaleFactor = 5) {
+
+    Mat visual_image;
+    resize(candidateFeatures.candidate,
+           visual_image,
+           Size(candidateFeatures.candidate.cols * scaleFactor, candidateFeatures.candidate.rows * scaleFactor));
+
+    imshow("Is pothole?", visual_image);
+    waitKey(1);
+    cout << "This candidate wich type of pothole is? "
+            "P (for response Pothole), C (for street crack), O (for out of road), S (for street/car/sidewalk)"
+            << endl;
+    int result = -1;
+    char response;
+    bool isResponseCorrect = false;
+    while(!isResponseCorrect) {
+        cin >> response;
+        if (response == 'P' || response == 'p') {
+            isResponseCorrect = true;
+            result = 1;
+        } else if (response == 'C' || response == 'c') {
+            result = 2;
+            isResponseCorrect = true;
+        } else if (response == 'O' || response == 'o') {
+            result = -2;
+            isResponseCorrect = true;
+        } else if (response == 'S' || response == 's') {
+            result = -1;
+            isResponseCorrect = true;
+        }else {
+            cout << "Wrong response. Type P (for response Pothole), C (for street crack), O (for out of road), S (for street/car/sidewalk)" << endl;
         }
     }
     return result;
@@ -185,7 +220,8 @@ void createCandidates(const string &targets, const bool feedback) {
         for (auto f : ft) {
             names.push_back(image);
             if (feedback) {
-                f._class = askUserSupervision(f);
+                //f._class = askUserSupervisionBinaryClasses(f);
+                f._class = askUserSupervisionMultiClasses(f);
                 cout << " Image " << image << " L" << f.label
                      << " labeled as " << (f._class == 1 ? "pothole." : "not pothole.")
                      << endl;

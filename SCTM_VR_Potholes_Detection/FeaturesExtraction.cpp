@@ -101,14 +101,21 @@ std::vector<Features> candidateFeatureExtraction(const Mat &src,
     return candidatesFeatures;
 }
 
-FeaturesVectors
-normalizeFeatures(const double minValue, const double maxValue, const FeaturesVectors &notNormalizedFeatures) {
+FeaturesVectors normalizeFeatures(const double minValue,
+                                  const double maxValue,
+                                  const FeaturesVectors &notNormalizedFeatures) {
     FeaturesVectors normalizedFeatures;
 
     for (const auto &notNormHistogram : notNormalizedFeatures.histograms) {
         Mat normHistogram;
         normalize(notNormHistogram, normHistogram, minValue, maxValue, NORM_MINMAX, -1, Mat());
         normalizedFeatures.histograms.push_back(normHistogram);
+    }
+
+    for (const auto &notNormHOG : notNormalizedFeatures.hogDescriptors) {
+        Mat normHOG;
+        normalize(notNormHOG, normHOG, minValue, maxValue, NORM_MINMAX, -1, Mat());
+        normalizedFeatures.hogDescriptors.push_back(normHOG);
     }
 
     normalize(notNormalizedFeatures.averageGreyLevels, normalizedFeatures.averageGreyLevels, minValue, maxValue,
@@ -131,7 +138,8 @@ normalizeFeatures(const double minValue, const double maxValue, const FeaturesVe
 }
 
 
-vector<Features> extractFeatures(const Mat &src, const vector<SuperPixel> &candidateSuperPixels,
+vector<Features> extractFeatures(const Mat &src,
+                                 const vector<SuperPixel> &candidateSuperPixels,
                                  const Size &candidate_size,
                                  const RoadOffsets &offsets,
                                  const ExtractionThresholds &thresholds) {
@@ -172,6 +180,7 @@ vector<Features> extractFeatures(const Mat &src, const vector<SuperPixel> &candi
                 candidatesFeaturesVectors.averageBlueLevels.push_back(
                         static_cast<float>(candidateFeatures.averageRGBValues.val[0]));
                 candidatesFeaturesVectors.skewnesses.push_back(candidateFeatures.skewness);
+                candidatesFeaturesVectors.hogDescriptors.push_back(candidateFeatures.hogDescriptors);
             }
         }
     }
@@ -205,7 +214,7 @@ vector<Features> extractFeatures(const Mat &src, const vector<SuperPixel> &candi
                 normalizedFeaturesVectors.entropies[i],
                 normalizedFeaturesVectors.skewnesses[i],
                 normalizedFeaturesVectors.energies[i],
-                notNormalizedfeatures[i].hogDescriptors
+                normalizedFeaturesVectors.hogDescriptors[i]
 
         });
     }

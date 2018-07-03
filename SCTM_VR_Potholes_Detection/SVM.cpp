@@ -9,7 +9,10 @@ using namespace cv::ml;
 
 namespace mySVM {
 
-    void Classifier(const vector<Features> &features, Mat &labels, const int max_iter, const string model_path) {
+    void Classifier(const vector<Features> &features,
+                    Mat &labels,
+                    const int max_iter,
+                    const string model_path) {
 
 
         Ptr<SVM> svm = ml::SVM::load(model_path);
@@ -29,8 +32,11 @@ namespace mySVM {
         }
     }
 
-    void
-    Training(const vector<Features> &features, const Mat &labels, const int max_iter, const double epsilon, const string model_path) {
+    void Training(const vector<Features> &features,
+                  const Mat &labels,
+                  const int max_iter,
+                  const double epsilon,
+                  const string model_path) {
 
         const Mat dataFeatures = mlutils::ConvertFeaturesForSVM(features, 0);
         cout << "FT size " << dataFeatures.rows << "*" << dataFeatures.cols << endl;
@@ -54,7 +60,7 @@ namespace mySVM {
         auto train_data = TrainData::create(dataFeatures, ROW_SAMPLE, labels);
 
         svm->trainAuto(train_data,
-                       3,
+                       10,
                        SVM::getDefaultGrid(SVM::C),
                        SVM::getDefaultGrid(SVM::GAMMA),
                        SVM::getDefaultGrid(SVM::P),

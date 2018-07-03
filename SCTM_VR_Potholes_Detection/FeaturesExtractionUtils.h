@@ -21,6 +21,7 @@ typedef struct FeaturesVectors {
     vector<float> entropies = vector<float>();
     vector<float> skewnesses = vector<float>();
     vector<float> energies = vector<float>();
+    vector<Mat1f> hogDescriptors = vector<Mat1f>();
 } FeaturesVectors;
 
 void calculateContrastEntropyEnergy(float &outContrast,

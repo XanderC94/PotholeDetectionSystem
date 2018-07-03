@@ -8,7 +8,7 @@
 namespace mlutils {
     Mat ConvertFeatures(const vector<Features> &features) {
 
-        Mat data((int) features.size(), 5, CV_32FC1);
+        Mat data((int) features.size(), 8, CV_32FC1);
 
         for (int i = 0; i < features.size(); i++) {
             data.at<float>(i, 0) = features[i].averageGreyValue;
@@ -16,9 +16,9 @@ namespace mlutils {
             data.at<float>(i, 2) = features[i].skewness;
             data.at<float>(i, 3) = features[i].energy;
             data.at<float>(i, 4) = features[i].entropy;
-//            data.at<float>(i, 5) = static_cast<float>(features[i].averageRGBValues.val[0]);
-//            data.at<float>(i, 6) = static_cast<float>(features[i].averageRGBValues.val[1]);
-//            data.at<float>(i, 7) = static_cast<float>(features[i].averageRGBValues.val[2]);
+            data.at<float>(i, 5) = static_cast<float>(features[i].averageRGBValues.val[0]);
+            data.at<float>(i, 6) = static_cast<float>(features[i].averageRGBValues.val[1]);
+            data.at<float>(i, 7) = static_cast<float>(features[i].averageRGBValues.val[2]);
 //        cout << data.row(i) << endl;
         }
 

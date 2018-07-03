@@ -94,7 +94,7 @@ Mat Classification(const string &method, const string &model_name, const vector<
 
             /***************************** SVM CLASSIFIER ********************************/
             const auto svm_model = "../svm/" + model_name;
-            mySVM::Classifier(features, std_labels, 1000, svm_model);
+            mySVM::Classifier(features, std_labels, svm_model);
 
         } else if (method == "-bayes") {
 
@@ -126,7 +126,7 @@ Mat go(const string &method, const string &model_name, const string &image) {
 
         string folder = "../results/neg/";
 
-        if (labels.at<int>(0, i) == 1 || labels.at<float>(0, i) == 1.0) {
+        if (labels.at<int>(0, i) > 0 || labels.at<float>(0, i) > 0.0f) {
             folder = "../results/pos/";
         }
 
@@ -140,7 +140,7 @@ Mat go(const string &method, const string &model_name, const string &image) {
 }
 
 /*
- * This function show the candidate extraxted and ask if is pothole (Y) or not (N)
+ * This function show the candidate extracted and ask if is pothole (Y) or not (N)
  * */
 int askUserSupervision(const Features &candidateFeatures, const int scaleFactor = 5) {
 
@@ -256,31 +256,34 @@ void trainingPhase(char*argv[]){
     }
 }
 
-int main(int argc, char*argv[]) {
+void showHelper() {
+
+    cout << " Pothole Detection System Helper" << endl << endl;
+
+    cout << "\t -d == generate candidates inside the given folder" << endl;
+    cout << "\t\t Example: -d /x/y/z {-f}" << endl << endl;
+    cout << "\t\t NOTE: The optional -f parameter will enable user-driven feedback for each candidate found."
+         << endl << endl;
+
+    cout << "\t -t == train an SVM or Bayes Classifier using the generated data" << endl;
+    cout << "\t\t Example: -t -{svm, bayes} /x/y/z/ model_name" << endl << endl;
+    cout << "\t\t NOTE: no path or extension for the model name is required, " << endl
+         << "\t\t it will be stored into ../svm/ or ../bayes/ inside the program folder." << endl << endl;
+
+    cout << "\t -c == classify the given image or set of images (folder path)" << endl;
+    cout << "\t\t Example: -c -{svm, bayes} -{i, d} {/x/y/z, /x/y/z/image.something} model_name" << endl << endl;
+    cout << "\t\t NOTE: no path or extension for the model name is required, " << endl
+         << "\t\t it must be located inside the directories ../svm/ or ../bayes/ inside the program folder."
+         << endl;
+}
+
+int main(int argc, char *argv[]) {
 
     // Save cpu tick count at the program start
     double timeElapsed = (double) getTickCount();
 
     if (argc < 2) {
-
-        cout << " Pothole Detection System Helper" << endl << endl;
-
-        cout << "\t -d == generate candidates inside the given folder" << endl;
-        cout << "\t\t Example: -d /x/y/z {-f}" << endl << endl;
-        cout << "\t\t NOTE: The optional -f parameter will enable user-driven feedback for each candidate found."
-             << endl << endl;
-
-        cout << "\t -t == train an SVM or Bayes Classifier using the generated data" << endl;
-        cout << "\t\t Example: -t -{svm, bayes} /x/y/z/ model_name" << endl << endl;
-        cout << "\t\t NOTE: no path or extension for the model name is required, " << endl
-             << "\t\t it will be stored into ../svm/ or ../bayes/ inside the program folder." << endl << endl;
-
-        cout << "\t -c == classify the given image or set of images (folder path)" << endl;
-        cout << "\t\t Example: -c -{svm, bayes} -{i, d} {/x/y/z, /x/y/z/image.something} model_name" << endl << endl;
-        cout << "\t\t NOTE: no path or extension for the model name is required, " << endl
-             << "\t\t it must be located inside the directories ../svm/ or ../bayes/ inside the program folder."
-             << endl;
-
+        showHelper();
         return 0;
     } else {
 
@@ -295,6 +298,8 @@ int main(int argc, char*argv[]) {
             classificationPhase(argv);
         } else if (mode == "-t" && argc >= 4) {
             trainingPhase(argv);
+        } else {
+            showHelper();
         }
     }
 
@@ -303,7 +308,6 @@ int main(int argc, char*argv[]) {
     timeElapsed = ((double) getTickCount() - timeElapsed) / getTickFrequency();
     cout << "Times passed in seconds: " << timeElapsed << endl;
 
-    //waitKey();
     return 1;
 }
 

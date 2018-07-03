@@ -15,7 +15,7 @@ namespace mySVM {
         Ptr<SVM> svm = ml::SVM::load(model_path);
         //Ptr<SVM> svm = StatModel::load<SVM>(model_path);
 
-        const Mat data = mlutils::ConvertFeaturesForSVM(features, 0);
+        const Mat data = mlutils::ConvertFeaturesForSVM(features, svm->getVarCount());
 
         if (svm->isTrained()) {
             cout << "Classification... ";

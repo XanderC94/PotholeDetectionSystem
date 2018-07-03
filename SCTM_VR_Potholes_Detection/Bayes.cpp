@@ -10,7 +10,7 @@ namespace myBayes {
     void Classifier(const vector<Features> &features, Mat &labels, const string model_path) {
         auto bayes = cv::ml::NormalBayesClassifier::load(model_path);
 
-        const Mat dataFeatures = mlutils::ConvertFeaturesForBayes(features);
+        const Mat dataFeatures = mlutils::ConvertFeaturesForSVM(features, bayes->getVarCount());
 
         if (bayes->isTrained()) {
             cout << "Classification... ";
@@ -33,7 +33,7 @@ namespace myBayes {
     void Training(const vector<Features> &features, const Mat &labels, const string model_path) {
 
         cv::redirectError(handleError);
-        const Mat dataFeatures = mlutils::ConvertFeaturesForBayes(features);
+        const Mat dataFeatures = mlutils::ConvertFeaturesForSVM(features, 0);
 
         auto bayes = ml::NormalBayesClassifier::create();
 

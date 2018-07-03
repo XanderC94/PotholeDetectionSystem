@@ -57,7 +57,7 @@ namespace mlutils {
 
     Mat ConvertFeaturesForSVM(const vector<Features> &features, const int var_count) {
 
-        Mat hogFeatures = ConvertHOGFeatures(features,(var_count - 1));
+        Mat hogFeatures = ConvertHOGFeatures(features, (var_count - 1));
 
         Mat data((int) features.size(), 1 + hogFeatures.cols, CV_32FC1);
 

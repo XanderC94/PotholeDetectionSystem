@@ -6,10 +6,14 @@
 #include "SVM.h"
 #include "Bayes.h"
 #include "Utils.h"
+#include "MLUtils.h"
 
 using namespace cv;
 using namespace std;
 using namespace cv::ml;
+using namespace mlutils;
+
+int numberFirstSPCandidatesFound = 0;
 
 const RoadOffsets offsets = {
         .Horizon_Offset = 0.65,
@@ -71,6 +75,7 @@ vector<Features> getFeatures(const string &target) {
 
     cout << "Found " << candidateSuperPixels.size() << " candidates." << endl;
 
+    numberFirstSPCandidatesFound += candidateSuperPixels.size();
     /*--------------------------------- End First Segmentation Phase ------------------------------*/
 
     /*--------------------------------- Feature Extraction Phase ------------------------------*/
@@ -86,7 +91,7 @@ vector<Features> getFeatures(const string &target) {
 
 Mat Classification(const string &method, const string &model_name, const vector<Features> &features) {
 
-    Mat std_labels((int) features.size(), 1, CV_32SC1);
+    Mat std_labels(static_cast<int>( features.size()), 1, CV_32SC1);
 
     if (!features.empty()) {
 
@@ -102,11 +107,21 @@ Mat Classification(const string &method, const string &model_name, const vector<
             const auto std_model = "../bayes/" + model_name;
             myBayes::Classifier(features, std_labels, std_model);
 
+        } else if (method == "-both") {
+            /***************************** MULTI CLASSIFIER ********************************/
+            Mat svm_labels(static_cast<int>( features.size()), 1, CV_32SC1);
+            const auto svm_model = "../svm/" + model_name;
+            mySVM::Classifier(features, svm_labels, 1000, svm_model);
+
+            Mat bayes_labels(static_cast<int>( features.size()), 1, CV_32SC1);
+            const auto std_model = "../bayes/" + model_name;
+            myBayes::Classifier(features, bayes_labels, std_model);
+
+            std_labels = mergeMultiClassifierResults(svm_labels, bayes_labels);
         } else {
             cerr << "Undefined method " << method << endl;
             exit(-1);
         }
-
     } else return Mat();
 
     return std_labels;
@@ -120,21 +135,22 @@ Mat go(const string &method, const string &model_name, const string &image) {
 
     auto labels = Classification(method, model_name, features);
 
-    cout << labels << endl;
+    cout << "LABELS: " << labels << endl;
 
     for (int i = 0; i < features.size(); ++i) {
 
         string folder = "../results/neg/";
 
-        if (labels.at<int>(0, i) == 1 ||
-            labels.at<float>(0, i) == 1.0 ||
-            labels.at<int>(0, i) == 2 ||
-            labels.at<float>(0, i) == 2.0) {
+        if (labels.at<int>(0, i) > 0 || labels.at<float>(0, i) > 0) {
             folder = "../results/pos/";
         }
 
         imwrite(
-                folder + extractFileName(image, "/") + "_L" + to_string(features[i].label) + ".bmp",
+                folder +
+                extractFileName(set_format(image,"", false), "/") +
+                "_L" + to_string(features[i].label) +
+                "_" + to_string(features[i].id) +
+                ".bmp",
                 features[i].candidate
         );
     }
@@ -191,15 +207,15 @@ int askUserSupervisionMultiClasses(const Features &candidateFeatures, const int 
         cin >> response;
         if (response == 'P' || response == 'p') {
             isResponseCorrect = true;
-            result = 1;
+            result = ClassificationClasses::pothole;
         } else if (response == 'C' || response == 'c') {
-            result = 2;
+            result = ClassificationClasses::asphaltCrack;
             isResponseCorrect = true;
         } else if (response == 'O' || response == 'o') {
-            result = -2;
+            result = ClassificationClasses::outOfRoad;
             isResponseCorrect = true;
         } else if (response == 'S' || response == 's') {
-            result = -1;
+            result = ClassificationClasses::streetSideWalkOrCar;
             isResponseCorrect = true;
         }else {
             cout << "Wrong response. Type P (for response Pothole), C (for street crack), O (for out of road), S (for street/car/sidewalk)" << endl;
@@ -244,22 +260,27 @@ void classificationPhase(char*argv[]){
     auto target = string(argv[4]);
     auto model_name = string(argv[5]);
 
-    cout << method << endl;
+    cout << "Classification Method: " << method << endl;
 
     portable_mkdir("../results");
     portable_mkdir("../results/neg");
     portable_mkdir("../results/pos");
     /*--------------------------------- Classification Phase ------------------------------*/
-
+    int numberOfCandidatesFound = 0;
     if (target_type == "-d") { /// Whole folder
 
         vector<String> fn = extractImagePath(target);
 
-        for (const auto &image : fn) go(method, model_name, image);
-
+        cout << "Number of image found in the directory: " << fn.size() << endl;
+        for (const auto &image : fn) {
+            numberOfCandidatesFound += go(method, model_name, image).cols;
+        }
     } else if (target_type == "-i") { /// Single Image
-        go(method, model_name, target);
+        numberOfCandidatesFound +=  go(method, model_name, target).cols;
     }
+
+    cout << "Candidates at first segmentation found: " << numberFirstSPCandidatesFound << endl;
+    cout << "Candidates found: " << numberOfCandidatesFound << endl;
 }
 
 void trainingPhase(char*argv[]){
@@ -271,8 +292,9 @@ void trainingPhase(char*argv[]){
     loadFromJSON("../data/" + string(argv[3]), candidates, labels);
 
     /*--------------------------------- Training Phase ------------------------------*/
+    bool trainBoth = (method == "-both");
 
-    if (method == "-svm") {
+    if (trainBoth || method == "-svm") {
 
         /***************************** SVM CLASSIFIER ********************************/
 
@@ -280,7 +302,8 @@ void trainingPhase(char*argv[]){
         const auto model = "../svm/" + string(argv[4]);
         mySVM::Training(candidates, labels, 1000, exp(-6), model);
 
-    } else if (method == "-bayes") {
+    }
+    if (trainBoth || method == "-bayes") {
 
         /***************************** Bayes CLASSIFIER ********************************/
 
@@ -298,7 +321,7 @@ void trainingPhase(char*argv[]){
 int main(int argc, char*argv[]) {
 
     // Save cpu tick count at the program start
-    double timeElapsed = (double) getTickCount();
+    double timeElapsed = static_cast<double>( getTickCount());
 
     if (argc < 2) {
 
@@ -309,13 +332,13 @@ int main(int argc, char*argv[]) {
         cout << "\t\t NOTE: The optional -f parameter will enable user-driven feedback for each candidate found."
              << endl << endl;
 
-        cout << "\t -t == train an SVM or Bayes Classifier using the generated data" << endl;
-        cout << "\t\t Example: -t -{svm, bayes} /x/y/z/ model_name" << endl << endl;
+        cout << "\t -t == train an SVM or Bayes Classifier (or both) using the generated data" << endl;
+        cout << "\t\t Example: -t -{svm, bayes, both} /x/y/z/ model_name" << endl << endl;
         cout << "\t\t NOTE: no path or extension for the model name is required, " << endl
              << "\t\t it will be stored into ../svm/ or ../bayes/ inside the program folder." << endl << endl;
 
         cout << "\t -c == classify the given image or set of images (folder path)" << endl;
-        cout << "\t\t Example: -c -{svm, bayes} -{i, d} {/x/y/z, /x/y/z/image.something} model_name" << endl << endl;
+        cout << "\t\t Example: -c -{svm, bayes, both} -{i, d} {/x/y/z, /x/y/z/image.something} model_name" << endl << endl;
         cout << "\t\t NOTE: no path or extension for the model name is required, " << endl
              << "\t\t it must be located inside the directories ../svm/ or ../bayes/ inside the program folder."
              << endl;
@@ -339,7 +362,7 @@ int main(int argc, char*argv[]) {
 
     // Calculate and Print the execution time
 
-    timeElapsed = ((double) getTickCount() - timeElapsed) / getTickFrequency();
+    timeElapsed = (static_cast<double>( getTickCount()) - timeElapsed) / getTickFrequency();
     cout << "Times passed in seconds: " << timeElapsed << endl;
 
     //waitKey();

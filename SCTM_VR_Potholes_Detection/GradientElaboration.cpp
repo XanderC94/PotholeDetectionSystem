@@ -13,7 +13,7 @@ using namespace std;
 void printDirection(Gradient gradient) {
     for (int x = 0; x < gradient.direction.cols; x++) {
         for (int y = 0; y < gradient.direction.rows; y++) {
-            cout << (int) gradient.direction.at<uchar>(y, x) << " ";
+            cout << static_cast<int>( gradient.direction.at<uchar>(y, x)) << " ";
         }
         cout << endl;
     }

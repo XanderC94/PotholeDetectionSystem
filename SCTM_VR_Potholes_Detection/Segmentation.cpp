@@ -194,7 +194,7 @@ bool isPothole(SuperPixel superPixel, SuperPixel previousSelected, Scalar meanCa
 SuperPixel selectPothole(const Mat &src, const int nSuperPixels, const Mat &labels) {
 
     SuperPixel selected = getSuperPixel(src, 0, labels);
-    double averagePixelValue = (double) mean(src)[0];
+    double averagePixelValue = static_cast<double>( mean(src)[0]);
     // vector<SuperPixel> possiblePotholes = vector<SuperPixel>();
     //Select all possible potholes
     for (int l = 0; l < nSuperPixels; ++l) {

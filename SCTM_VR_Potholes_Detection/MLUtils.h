@@ -16,6 +16,8 @@ namespace mlutils {
     Mat ConvertFeaturesForBayes(const vector<Features> &features);
 
     Mat ConvertFeaturesForSVM(const vector<Features> &features, const int var_count);
+
+    Mat mergeMultiClassifierResults(Mat svmResult, Mat bayesResult);
 }
 
 #endif //POTHOLEDETECTIONSYSTEM_MLUTILS_H

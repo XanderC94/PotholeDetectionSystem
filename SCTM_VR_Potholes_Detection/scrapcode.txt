@@ -481,3 +481,50 @@ void saveFeaturesCSV(const vector<Features> &features, const string saveDirector
         cerr << "Ops, we got a problem opening the feature file!" << endl;
     }
 }
+
+
+/*
+ * Check if:
+ *  1) The super pixel is a pothole checking its mean colour value is:
+ *      - less than the mean colour value of the candidate and  greater than mean colour value of the candidate / 1.5;
+ *      - less than the previous selected super pixel mean value;
+ *  2) The number of point of the super pixel is greater than 16*16
+ * */
+bool isPothole(SuperPixel superPixel, SuperPixel previousSelected, Scalar meanCandidateColourValue) {
+    double meanDivider = 1.5;
+    double minPixelNumber = 256;
+    return superPixel.meanColour[0] < meanCandidateColourValue[0]
+           && superPixel.meanColour[0] > (meanCandidateColourValue[0] / meanDivider)
+           && superPixel.meanColour[0] < (previousSelected.meanColour[0])
+           && superPixel.points.size() > minPixelNumber;
+}
+
+/*
+ * If there isn't a super pixel that is recognized as a pothole the function will return the first superpixel
+ * */
+SuperPixel selectPothole(const Mat &src, const int nSuperPixels, const Mat &labels) {
+
+    SuperPixel selected = getSuperPixel(src, 0, labels);
+    double averagePixelValue = (double) mean(src)[0];
+    // vector<SuperPixel> possiblePotholes = vector<SuperPixel>();
+    //Select all possible potholes
+    for (int l = 0; l < nSuperPixels; ++l) {
+        SuperPixel currSp = getSuperPixel(src, l, labels);
+        //Point2d center = calculateSuperPixelCenter(currSp.points);
+        if (isPothole(currSp, selected, averagePixelValue)) {
+            selected = currSp;
+            //possiblePotholes.push_back(currSp);
+        }
+    }
+
+    /*if(possiblePotholes.size() > 0) {
+        sort(possiblePotholes.begin(),
+             possiblePotholes.end(),
+             [](SuperPixel a, SuperPixel b) -> bool { return (a.meanColour[0] < b.meanColour[0]); }
+        );
+
+        selected = possiblePotholes[possiblePotholes.size() - 1];
+    } */
+
+    return selected;
+}

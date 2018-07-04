@@ -169,6 +169,7 @@ int askUserSupervisionBinaryClasses(const Features &candidateFeatures, const int
     }
     return result;
 }
+
 int askUserSupervisionMultiClasses(const Features &candidateFeatures, const int scaleFactor = 5) {
 
     Mat visual_image;
@@ -180,11 +181,11 @@ int askUserSupervisionMultiClasses(const Features &candidateFeatures, const int 
     waitKey(1);
     cout << "This candidate wich type of pothole is? "
             "P (for response Pothole), C (for street crack), O (for out of road), S (for street/car/sidewalk)"
-            << endl;
+         << endl;
     int result = -1;
     char response;
     bool isResponseCorrect = false;
-    while(!isResponseCorrect) {
+    while (!isResponseCorrect) {
         cin >> response;
         if (response == 'P' || response == 'p') {
             isResponseCorrect = true;
@@ -198,8 +199,10 @@ int askUserSupervisionMultiClasses(const Features &candidateFeatures, const int 
         } else if (response == 'S' || response == 's') {
             result = -1;
             isResponseCorrect = true;
-        }else {
-            cout << "Wrong response. Type P (for response Pothole), C (for street crack), O (for out of road), S (for street/car/sidewalk)" << endl;
+        } else {
+            cout
+                    << "Wrong response. Type P (for response Pothole), C (for street crack), O (for out of road), S (for street/car/sidewalk)"
+                    << endl;
         }
     }
     return result;

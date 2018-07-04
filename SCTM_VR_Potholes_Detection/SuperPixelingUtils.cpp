@@ -139,7 +139,7 @@ Ptr<SuperpixelSLIC> initSuperPixelingSLIC(const Mat &src, const int superPixelEd
 Point2d calculateSuperPixelCenter(vector<cv::Point> pixelOfTheSuperPixel) {
     cv::Point2d center(0.0, 0.0);
     for (Point2d p : pixelOfTheSuperPixel) center += p;
-    center /= (double) pixelOfTheSuperPixel.size();
+    center /= static_cast<double>( pixelOfTheSuperPixel.size());
     return center;
 }
 
@@ -152,7 +152,7 @@ Point2d calculateSuperPixelVariance(vector<cv::Point> superPixel, Point2d center
         variance = Point2d(variance.x * variance.x, variance.y * variance.y);
     }
 
-    variance /= (double) superPixel.size();
+    variance /= static_cast<double>(superPixel.size());
 
     return variance;
 }
@@ -168,5 +168,5 @@ double calculateSuperPixelDensity(vector<cv::Point> superPixel) {
              (vertex[3].x * vertex[0].y - vertex[0].x * vertex[3].y)) * 0.5;
 
 
-    return (double) superPixel.size() / area;
+    return  static_cast<double>(superPixel.size()) / area;
 }

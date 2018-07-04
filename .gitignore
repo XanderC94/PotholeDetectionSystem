@@ -63,3 +63,5 @@ FindOpenCV.make
 /svm/*
 /bayes/*
 /bayes*
+/Training/*
+/Training*

@@ -58,6 +58,13 @@ typedef struct SuperPixel {
     std::set<int> neighbors;
 } SuperPixel;
 
+enum ClassificationClasses{
+    streetSideWalkOrCar = -1,
+    outOfRoad = -2,
+    asphaltCrack = 2,
+    pothole = 1
+};
+
 void printThresholds(ExtractionThresholds thresholds);
 
 

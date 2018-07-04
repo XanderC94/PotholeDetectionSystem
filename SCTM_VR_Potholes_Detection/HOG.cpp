@@ -282,7 +282,7 @@ void computeAverageGradientStrengths(int cellsColumns,
     for (int cellRowIndex = 0; cellRowIndex < cellsRows; cellRowIndex++) {
         for (int cellColIndex = 0; cellColIndex < cellsColumns; cellColIndex++) {
 
-            float NrUpdatesForThisCell = (float) cellUpdateCounter[cellRowIndex][cellColIndex];
+            float NrUpdatesForThisCell = static_cast<float>(cellUpdateCounter[cellRowIndex][cellColIndex]);
 
             // compute average gradient strenghts for each gradient bin direction
             for (int bin = 0; bin < gradientBinSize; bin++) {
@@ -333,7 +333,7 @@ vector<OrientedGradientInCell> computeHOGCells(const Mat origImg,
     // prepare data structure: 9 orientation / gradient strenghts for each cellSize
     int binNumber = 9;
     // dividing 180° into 9 bins, how large (in rad) is one bin?
-    float radRangeForOneBin = 3.14 / (float) binNumber;
+    float radRangeForOneBin = 3.14 / static_cast<float>(binNumber);
 
     int cellsColumns = winSize.width / cellSize.width;
     int cellsRows = winSize.height / cellSize.height;
@@ -380,7 +380,7 @@ vector<OrientedGradientInCell> computeGreaterHOGCells(const Mat origImg,
     // prepare data structure: 9 orientation / gradient strenghts for each cellSize
     int binNumber = 9;
     // dividing 180° into 9 bins, how large (in rad) is one bin?
-    float radRangeForOneBin = 3.14 / (float) binNumber;
+    float radRangeForOneBin = 3.14 / static_cast<float>(binNumber);
 
     int cellsColumns = winSize.width / cellSize.width;
     int cellsRows = winSize.height / cellSize.height;

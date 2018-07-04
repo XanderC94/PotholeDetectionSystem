@@ -34,7 +34,7 @@ Mat getHistogramImage(const Mat hist_values, const int hist_size,
                       const int hist_w, const int hist_h) {
     // Draw the histograms for B, G and R
 
-    int bin_w = cvRound((double) hist_w / hist_size);
+    int bin_w = cvRound(static_cast<double>( hist_w) / hist_size);
     Mat tmp;
     Mat histImage(hist_h, hist_w, CV_8UC3, Scalar(0, 0, 0));
 

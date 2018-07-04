@@ -22,11 +22,13 @@ namespace mySVM {
             svm->predict(data, labels);
             cout << "Finished." << endl;
             transpose(labels, labels);
-//            cout << labels << endl;
+            cout << "SVM Labels: " << labels << endl;
         } else {
             cerr << "SVM Classifier is not trained";
             exit(-1);
         }
+
+        svm->clear();
     }
 
     void Training(const vector<Features> &features, const Mat &labels,
@@ -55,7 +57,7 @@ namespace mySVM {
 
         svm->trainAuto(train_data,
                        10,
-                       SVM::getDefaultGrid(SVM::C_SVC),
+                       SVM::getDefaultGrid(SVM::C),
                        SVM::getDefaultGrid(SVM::GAMMA),
                        SVM::getDefaultGrid(SVM::P),
                        SVM::getDefaultGrid(SVM::NU),

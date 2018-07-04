@@ -17,10 +17,13 @@ namespace myBayes {
             bayes->predict(dataFeatures, labels);
             cout << "Finished." << endl;
             transpose(labels, labels);
+            cout << "BAYES Labels: " << labels << endl;
         } else {
             cerr << "Bayes Classifier is not trained";
             exit(-1);
         }
+
+        bayes->clear();
     }
 
     int handleError(int status, const char *func_name,
@@ -38,7 +41,6 @@ namespace myBayes {
         auto bayes = ml::NormalBayesClassifier::create();
 
         try {
-
             bayes = bayes->load(model_path);
         } catch (const exception ex) {
             cerr << "No saved model has been found... Training will start from scratch." << endl;

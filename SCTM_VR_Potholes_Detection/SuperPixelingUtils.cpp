@@ -168,5 +168,5 @@ double calculateSuperPixelDensity(vector<cv::Point> superPixel) {
              (vertex[3].x * vertex[0].y - vertex[0].x * vertex[3].y)) * 0.5;
 
 
-    return  static_cast<double>(superPixel.size()) / area;
+    return static_cast<double>(superPixel.size()) / area;
 }

@@ -71,27 +71,29 @@ namespace mlutils {
     }
 
     bool svmFindSomething(const Mat svmResult, int i) {
-        return (svmResult.at<float>(0,i) == ClassificationClasses::pothole || svmResult.at<float>(0,i) == ClassificationClasses::asphaltCrack);
+        return (svmResult.at<float>(0, i) == ClassificationClasses::pothole ||
+                svmResult.at<float>(0, i) == ClassificationClasses::asphaltCrack);
     }
-    
+
     bool bayesFindSomething(const Mat bayesResult, int i) {
-        return (bayesResult.at<int>(0,i) == ClassificationClasses::pothole || bayesResult.at<int>(0,i) == ClassificationClasses::asphaltCrack);
+        return (bayesResult.at<int>(0, i) == ClassificationClasses::pothole ||
+                bayesResult.at<int>(0, i) == ClassificationClasses::asphaltCrack);
     }
-    
-    
-    Mat mergeMultiClassifierResults(const Mat svmResult,const Mat bayesResult){
-        if(svmResult.size() != bayesResult.size()){
+
+
+    Mat mergeMultiClassifierResults(const Mat svmResult, const Mat bayesResult) {
+        if (svmResult.size() != bayesResult.size()) {
             cout << "Exception! The svmResult.size() must be equal to the bayesResult.size()" << endl;
             exit(-1);
         }
 
         Mat result(svmResult.size(), CV_32SC1);
 
-        for(int i = 0; i < svmResult.cols; i++){
+        for (int i = 0; i < svmResult.cols; i++) {
             if (svmFindSomething(svmResult, i) && bayesFindSomething(bayesResult, i)) {
-                result.at<int>(0,i) =  static_cast<int>(svmResult.at<float>(0,i));
+                result.at<int>(0, i) = static_cast<int>(svmResult.at<float>(0, i));
             } else {
-                result.at<int>(0,i) =  ClassificationClasses::streetSideWalkOrCar;
+                result.at<int>(0, i) = ClassificationClasses::streetSideWalkOrCar;
             }
         }
 

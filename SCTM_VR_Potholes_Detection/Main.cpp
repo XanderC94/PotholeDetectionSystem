@@ -148,7 +148,7 @@ Mat go(const string &method, const string &model_name, const string &image) {
 
         imwrite(
                 folder +
-                extractFileName(set_format(image,"", false), "/") +
+                extractFileName(set_format(image, "", false), "/") +
                 "_L" + to_string(features[i].label) +
                 "_" + to_string(features[i].id) +
                 ".bmp",
@@ -280,7 +280,7 @@ void classificationPhase(char*argv[]){
             numberOfCandidatesFound += go(method, model_name, image).cols;
         }
     } else if (target_type == "-i") { /// Single Image
-        numberOfCandidatesFound +=  go(method, model_name, target).cols;
+        numberOfCandidatesFound += go(method, model_name, target).cols;
     }
 
     cout << "Candidates at first segmentation found: " << numberFirstSPCandidatesFound << endl;

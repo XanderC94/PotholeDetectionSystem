@@ -111,7 +111,7 @@ Mat Classification(const string &method, const string &model_name, const vector<
             /***************************** MULTI CLASSIFIER ********************************/
             Mat svm_labels(static_cast<int>( features.size()), 1, CV_32SC1);
             const auto svm_model = "../svm/" + model_name;
-            mySVM::Classifier(features, svm_labels, 1000, svm_model);
+            mySVM::Classifier(features, svm_labels, svm_model);
 
             Mat bayes_labels(static_cast<int>( features.size()), 1, CV_32SC1);
             const auto std_model = "../bayes/" + model_name;

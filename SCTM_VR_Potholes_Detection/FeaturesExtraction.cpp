@@ -36,13 +36,13 @@ std::vector<Features> candidateFeatureExtraction(const Mat &src,
     Point2d tlc = calculateTopLeftCorner(centroid, candidateSize);
     Point2d brc = calculateBottomRightCorner(centroid, src, candidateSize);
 
-    const Mat sample = src(Rect(tlc, brc));
-    Mat1b exclusionMask = createExclusionMask(src, sample, tlc, offsets, thresholds);
+    const Mat nativeSuperPixelContainmentWindow = src(Rect(tlc, brc));
+    Mat1b exclusionMask = createExclusionMask(src, nativeSuperPixelContainmentWindow, tlc, offsets, thresholds);
 
 //    auto c_name = "Candidate @ (" + to_string(centroid.x) + ", " + to_string(centroid.y) + ")";
 
     // 1. Extract only the pothole region
-    auto soi = extractPotholeRegionFromCandidate(sample, exclusionMask, thresholds);
+    auto soi = extractPotholeRegionFromCandidate(nativeSuperPixelContainmentWindow, exclusionMask, thresholds);
 
     for (int i = 0; i < soi.size(); ++i) {
         const auto &candidateSuperPixel = soi[i];
@@ -51,7 +51,7 @@ std::vector<Features> candidateFeatureExtraction(const Mat &src,
         cvtColor(candidateSuperPixel.selection, candidateGrayScale, CV_BGR2GRAY);
 
         //3. Calculate HOG
-        Mat1f hogParams = extractHogParams(sample, candidateGrayScale, candidateSuperPixel);
+        Mat1f hogParams = extractHogParams(nativeSuperPixelContainmentWindow, candidateGrayScale, candidateSuperPixel);
 
         // 4. The histogram will be calculated
         Mat histogram = ExtractHistograms(candidateGrayScale, candidateSuperPixel.mask, 256);
@@ -75,11 +75,11 @@ std::vector<Features> candidateFeatureExtraction(const Mat &src,
                                                           averageGreyValue);
 
         // Highlights the selected pothole region
-//    imshow("Sample " + to_string(nativeSuperPixel.label), sample);
+//    imshow("Sample " + to_string(nativeSuperPixel.label), nativeSuperPixelContainmentWindow);
 //    waitKey();
 
         Mat tmp;
-        sample.copyTo(tmp);
+        nativeSuperPixelContainmentWindow.copyTo(tmp);
         tmp.setTo(Scalar(0, 0, 255), candidateSuperPixel.contour);
 
         candidatesFeatures.push_back(Features{

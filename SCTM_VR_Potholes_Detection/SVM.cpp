@@ -63,7 +63,7 @@ namespace mySVM {
 
         svm->trainAuto(train_data,
                        10,
-                       SVM::getDefaultGrid(SVM::C_SVC),
+                       SVM::getDefaultGrid(SVM::C),
                        SVM::getDefaultGrid(SVM::GAMMA),
                        SVM::getDefaultGrid(SVM::P),
                        SVM::getDefaultGrid(SVM::NU),

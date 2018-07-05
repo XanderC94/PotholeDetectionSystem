@@ -29,8 +29,8 @@ void preprocessing(Mat &src, Mat &processedImage, const double Horizon_Offset) {
 
 /*
  * Check if the super pixel is a pothole:
- *      - checking if its density il less than the specified density threshold
- *      - checking if the variance on x axis or y axis is greater than the variance threshold
+ *      - comparing if the ratio between the mean neigbour superpixels color and the current superpixel colour
+ *      is between a specified range.
  * */
 bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel &superPixel,
                             ExtractionThresholds thresholds) {

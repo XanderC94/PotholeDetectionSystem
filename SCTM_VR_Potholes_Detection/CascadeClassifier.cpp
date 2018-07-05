@@ -26,21 +26,6 @@ int MyCascadeClassifier(const String img_path, const String cls) {
 
     resize(img1, img0, scale);
 
-    /*
-
-    Point left_roadside[1][3] = {
-        { Point(0, 0), Point(img0.cols*VP_offset_X, img0.rows*VP_offset_Y), Point(0, img0.rows*V_offset) }
-    };
-
-    Point right_roadside[1][3] = {
-        { Point(img0.cols*VP_offset_X, img0.rows*VP_offset_Y), Point(img0.cols - 1, img0.rows*V_offset), Point(img0.cols - 1, 0) }
-    };
-
-    fillConvexPoly(img0, left_roadside[0], 3, Scalar(0, 0, 0));
-
-    fillConvexPoly(img0, right_roadside[0], 3, Scalar(0, 0, 0));
-
-    */
     img0 = img0(Rect(Point(0, img0.rows*Cutline_offset), Point(img0.cols - 1, img0.rows - 1)));
 
     CascadeClassifier cascade;

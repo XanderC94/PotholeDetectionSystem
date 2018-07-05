@@ -58,7 +58,7 @@ typedef struct SuperPixel {
     std::set<int> neighbors;
 } SuperPixel;
 
-enum ClassificationClasses{
+enum ClassificationClasses {
     streetSideWalkOrCar = -1,
     outOfRoad = -2,
     asphaltCrack = 2,

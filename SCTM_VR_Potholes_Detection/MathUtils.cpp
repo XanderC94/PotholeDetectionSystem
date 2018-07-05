@@ -3,8 +3,10 @@
 
 double AnalyticRect2D(cv::Point from, cv::Point to, cv::Point evaluationPoint) {
 
-    return (static_cast<double>( evaluationPoint.x) - static_cast<double>( from.x)) / (static_cast<double>( to.x) - static_cast<double>( from.x)) -
-           (static_cast<double>( evaluationPoint.y) - static_cast<double>( from.y)) / (static_cast<double>( to.y) - static_cast<double>( from.y));
+    return (static_cast<double>( evaluationPoint.x) - static_cast<double>( from.x)) /
+           (static_cast<double>( to.x) - static_cast<double>( from.x)) -
+           (static_cast<double>( evaluationPoint.y) - static_cast<double>( from.y)) /
+           (static_cast<double>( to.y) - static_cast<double>( from.y));
 
 }
 

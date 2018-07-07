@@ -47,8 +47,8 @@ bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel 
     ratioDark[1] = neighborsMeanColourValue.val[1] / superPixel.meanColour.val[1];
     ratioDark[2] = neighborsMeanColourValue.val[2] / superPixel.meanColour.val[2];
 
-//    if ((ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.grayRatioThresholdMin &&
-//        (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.grayRatioThresholdMax) {
+//    if ((ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.minGreyRatio &&
+//        (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.maxGreyRatio) {
 //
 //        Mat tmp; src.copyTo(tmp, selectionMask);
 //        tmp.setTo(Scalar(0, 0, 255), (labels == superPixel.label));
@@ -62,8 +62,8 @@ bool isSuperpixelOfInterest(const Mat &src, const Mat &labels, const SuperPixel 
 //             << endl;
 //    }
 
-    return (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.grayRatioThresholdMin &&
-           (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.grayRatioThresholdMax;
+    return (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 > thresholds.minGreyRatio &&
+           (ratioDark[0] + ratioDark[1] + ratioDark[2]) / 3 < thresholds.maxGreyRatio;
 }
 
 set<int> findNeighbors(const Point &candidate, const Mat &labels, const int edge) {
@@ -137,7 +137,7 @@ int extractRegionsOfInterest(const Ptr<SuperpixelLSC> &superPixeler,
 //        Scalar color_mask_value = Scalar(0, 0, 0);
 
         if (isRoad(src.rows, src.cols, offsets, superPixel.center)
-            && calculateSuperPixelDensity(superPixel.points) < thresholds.Density_Threshold
+            && calculateSuperPixelDensity(superPixel.points) < thresholds.density
             && superPixel.points.size() > 256) {
 
             superPixel.neighbors = findNeighbors(superPixel.center, labels, superPixelEdge / 4);

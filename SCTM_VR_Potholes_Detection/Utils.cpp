@@ -7,10 +7,8 @@
 
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
-#include <rapidjson/ostreamwrapper.h>
 #include <rapidjson/istreamwrapper.h>
 #include <rapidjson/prettywriter.h>
-
 
 #define getCurrentDir getcwd
 
@@ -57,6 +55,30 @@ void portable_mkdir(const char *args) {
 #else
     mkdir(args, S_IWUSR);
 #endif
+}
+
+vector<String> extractImagePath(const string targets) {
+
+    vector<String> res;
+    vector<String> fnJpg;
+    vector<String> fnPng;
+    vector<String> fnBmp;
+
+    glob(targets + "/*.jpg", fnJpg);
+    glob(targets + "/*.png", fnPng);
+    glob(targets + "/*.bmp", fnBmp);
+
+    for (auto jpgImage : fnJpg) {
+        res.push_back(jpgImage);
+    }
+    for (auto pngImage : fnPng) {
+        res.push_back(pngImage);
+    }
+    for (auto bmpImage : fnBmp) {
+        res.push_back(bmpImage);
+    }
+
+    return res;
 }
 
 string extractFileName(string file_path, const string sep = "/") {
@@ -158,87 +180,68 @@ void saveFeaturesJSON(const vector<Features> &features, const string saveDirecto
 
     portable_mkdir(("../" + saveDirectory).data());
 
-    ofstream json("../" + saveDirectory + "/" + saveFile + ".json", fstream::out | fstream::app);
+    ifstream iJson("../" + saveDirectory + "/" + saveFile + ".json", fstream::in);
 
-    OStreamWrapper wrapper(json);
-    PrettyWriter<OStreamWrapper> sw(wrapper);
+    std::string rawJson((std::istreambuf_iterator<char>(iJson)), std::istreambuf_iterator<char>());
 
-    sw.StartObject();
-    sw.Key("features");
-    sw.StartArray();
+    iJson.close();
+
+    Document doc;
+
+    doc.Parse(rawJson.data());
+
+    if (!doc.IsObject()) {
+        doc.SetObject(); // It's necessary else the doc will start as "null"
+        doc.AddMember("features", kArrayType, doc.GetAllocator());
+    }
+
+    assert(doc.HasMember("features"));
+    assert(doc["features"].IsArray());
 
     for (int i = 0; i < features.size(); ++i) {
 
-        const auto ft = features[i];
+        const Features ft = features[i];
 
-        const auto c_name = set_format(extractFileName(names[i]), "", false);
+        const string c_name = set_format(extractFileName(names[i]), "", false);
 
-        sw.StartObject();
-        sw.Key("class");
-        sw.Int(ft._class);
-        sw.Key("sample");
-        sw.String(c_name.data());
-        sw.Key("label");
-        sw.Int(ft.label);
-        sw.Key("id");
-        sw.Int(ft.id);
-        sw.Key("contrast");
-        sw.Double(ft.contrast);
-        sw.Key("avgGreyValue");
-        sw.Double(ft.averageGreyValue);
-        sw.Key("avgRGBValues");
-        sw.StartArray();
-        for (const double channel : ft.averageRGBValues.val) sw.Double(channel);
-        sw.EndArray();
-        sw.Key("skewness");
-        sw.Double(ft.skewness);
-        sw.Key("energy");
-        sw.Double(ft.energy);
-        sw.Key("entropy");
-        sw.Double(ft.entropy);
-        sw.Key("hog");
-        sw.StartArray();
+        Value obj(kObjectType);
 
-        for (unsigned i = 0; i < ft.hogDescriptors.cols; i++) sw.Double(ft.hogDescriptors.at<float>(0, i));
+        obj.AddMember("class", Value(ft._class), doc.GetAllocator());
 
-        sw.EndArray();
-        sw.EndObject();
+        Value sample;
+        // Do not move, do not change or I'll cut your hand
+        sample.SetString(StringRef(c_name.data()), static_cast<unsigned>(c_name.length()), doc.GetAllocator());
 
-        sw.Flush();
+        obj.AddMember("sample", sample, doc.GetAllocator());
+        obj.AddMember("label", Value(ft.label), doc.GetAllocator());
+        obj.AddMember("id", Value(ft.id), doc.GetAllocator());
+        obj.AddMember("contrast", Value(ft.contrast), doc.GetAllocator());
+        obj.AddMember("avgGreyValue", Value(ft.averageGreyValue), doc.GetAllocator());
+        Value rgb(kArrayType);
+        for (const double chVal : ft.averageRGBValues.val) rgb.PushBack(chVal, doc.GetAllocator());
+        obj.AddMember("avgRGBValues", rgb, doc.GetAllocator());
+        obj.AddMember("skewness", Value(ft.skewness), doc.GetAllocator());
+        obj.AddMember("energy", Value(ft.energy), doc.GetAllocator());
+        obj.AddMember("entropy", Value(ft.entropy), doc.GetAllocator());
+        Value hog(kArrayType);
+        for (const float descriptor : ft.hogDescriptors.row(0)) hog.PushBack(descriptor, doc.GetAllocator());
+        obj.AddMember("hog", hog, doc.GetAllocator());
+
+        doc["features"].PushBack(obj, doc.GetAllocator());
 
         imwrite("../" + saveDirectory + "/" + c_name + "_L" + to_string(ft.label) + "_" + to_string(ft.id) + ".bmp",
                 ft.candidate);
     }
 
-    sw.EndArray();
-    sw.EndObject();
+    StringBuffer buffer;
+    PrettyWriter<StringBuffer> writer(buffer);
+    doc.Accept(writer);
 
-    json.close();
+    ofstream oJson("../" + saveDirectory + "/" + saveFile + ".json", fstream::out);
 
-}
+    oJson << buffer.GetString();
 
-vector<String> extractImagePath(const string targets) {
-
-    vector<String> res;
-    vector<String> fnJpg;
-    vector<String> fnPng;
-    vector<String> fnBmp;
-
-    glob(targets + "/*.jpg", fnJpg);
-    glob(targets + "/*.png", fnPng);
-    glob(targets + "/*.bmp", fnBmp);
-
-    for (auto jpgImage : fnJpg) {
-        res.push_back(jpgImage);
-    }
-    for (auto pngImage : fnPng) {
-        res.push_back(pngImage);
-    }
-    for (auto bmpImage : fnBmp) {
-        res.push_back(bmpImage);
-    }
-
-    return res;
+    oJson.close();
 }
 
 Configuration loadProgramConfiguration(const string target) {

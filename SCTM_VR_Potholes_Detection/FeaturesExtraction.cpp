@@ -7,6 +7,7 @@
 #include "MathUtils.h"
 #include "HistogramElaboration.h"
 #include "FeaturesExtractionUtils.h"
+#include "Utils.h"
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 
@@ -39,12 +40,15 @@ std::vector<Features> candidateFeatureExtraction(const Mat &src,
     const Mat nativeSuperPixelContainmentWindow = src(Rect(tlc, brc));
     Mat1b exclusionMask = createExclusionMask(src, nativeSuperPixelContainmentWindow, tlc, offsets, thresholds);
 
-//    auto c_name = "Candidate @ (" + to_string(centroid.x) + ", " + to_string(centroid.y) + ")";
+    auto c_name = "Candidate @ (" + to_string(centroid.x) + ", " + to_string(centroid.y) + ")";
+//    showElaborationStatusToTheUser("Feature Extraction from", nativeSuperPixel.selection);
+//    showElaborationStatusToTheUser("ContainmentWindow", nativeSuperPixelContainmentWindow);
 
     // 1. Extract only the pothole region
     auto soi = extractPotholeRegionFromCandidate(nativeSuperPixelContainmentWindow, exclusionMask, thresholds);
 
     for (int i = 0; i < soi.size(); ++i) {
+
         const auto &candidateSuperPixel = soi[i];
         // 2. Switch color-space from BGR to GreyScale
         Mat candidateGrayScale, sampleGS;

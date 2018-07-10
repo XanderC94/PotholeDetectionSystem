@@ -24,4 +24,10 @@ string extractFileName(const string file_path, const string sep);
 
 vector<String> extractImagePath(const string targets);
 
+void showElaborationStatusToTheUser(string showingWindowTitle, Mat processedImage);
+
+void showElaborationStatusToTheUser(const vector<Features> candidatesFeatures);
+
+void showElaborationStatusToTheUser(const vector<SuperPixel> superPixels);
+
 #endif //POTHOLEDETECTIONSYSTEM_UTILIS_H

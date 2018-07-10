@@ -26,7 +26,7 @@ const RoadOffsets offsets = {
 };
 
 const ExtractionThresholds thresholds = {
-        .Density_Threshold = 0.55, // OK, do not change
+        .Density_Threshold = 0.65, // OK, do not change
         .Variance_Threshold = 0.3,
         .Gauss_RoadThreshold = 0.60,
         .grayRatioThresholdMin = 1.15, // 1.25 is better if we aim to properly detect nearest holes to the vehicle,
@@ -63,6 +63,7 @@ vector<Features> getFeatures(const string &target) {
     cout << "Finished." << endl;
 
     /*--------------------------------- End Pre-Processing Phase ------------------------------*/
+//    showElaborationStatusToTheUser("Preprocessing Result", src);
 
     /*--------------------------------- First Segmentation Phase ------------------------------*/
 
@@ -72,9 +73,7 @@ vector<Features> getFeatures(const string &target) {
     extractRegionsOfInterest(superPixeler, src, candidateSuperPixels,
                              superPixelEdge, thresholds, offsets);
     cout << "Finished." << endl;
-
     cout << "Found " << candidateSuperPixels.size() << " candidates." << endl;
-
     numberFirstSPCandidatesFound += candidateSuperPixels.size();
     /*--------------------------------- End First Segmentation Phase ------------------------------*/
 
@@ -85,6 +84,8 @@ vector<Features> getFeatures(const string &target) {
     cout << "Feature Extraction -- Finished." << endl;
 
     /*--------------------------------- End Feature Extraction Phase ------------------------------*/
+//
+//    showElaborationStatusToTheUser(features);
 
     return features;
 }
@@ -167,7 +168,8 @@ int askUserSupervisionBinaryClasses(const Features &candidateFeatures, const int
     Mat visual_image;
     resize(candidateFeatures.candidate,
            visual_image,
-           Size(candidateFeatures.candidate.cols * scaleFactor, candidateFeatures.candidate.rows * scaleFactor));
+           Size(candidateFeatures.candidate.cols * scaleFactor,
+                candidateFeatures.candidate.rows * scaleFactor));
 
     imshow("Is pothole?", visual_image);
     waitKey(1);
@@ -355,7 +357,10 @@ int main(int argc, char *argv[]) {
 
         auto mode = string(argv[1]);
 
+        cout << "First Segmentation Thresholds: " << endl;
         printThresholds(thresholds);
+//        cout << "Feature Extraction Segmentation Thresholds: "<< endl;
+//        printThresholds(thresholds);
         printOffsets(offsets);
 
         if (mode == "-d" && argc > 2) {

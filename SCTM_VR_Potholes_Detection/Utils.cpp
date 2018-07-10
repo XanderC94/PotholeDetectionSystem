@@ -1,5 +1,6 @@
 #include "Utils.h"
 #include <sys/stat.h>
+#include <opencv2/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 #include <iostream>
@@ -16,6 +17,7 @@
 #define getCurrentDir getcwd
 
 using namespace rapidjson;
+using namespace cv;
 
 std::string getCurrentWorkingDir(void) {
     char buff[FILENAME_MAX];
@@ -240,4 +242,38 @@ vector<String> extractImagePath(const string targets) {
     }
 
     return res;
+}
+
+void showElaborationStatusToTheUser(string showingWindowTitle, Mat processedImage){
+    imshow(showingWindowTitle, processedImage);
+    waitKey(1);
+    char response = 'n';
+    while(response != 'c' && response != 'C') {
+        cout << "Type 'c' to continue" << endl;
+        cin >> response;
+    }
+}
+
+void showElaborationStatusToTheUser(const vector<Features> candidatesFeatures){
+    for(auto features : candidatesFeatures){
+        imshow("candidate: " + std::to_string(features.label), features.candidate);
+        waitKey(1);
+    }
+    char response = 'n';
+    while(response != 'c' && response != 'C') {
+        cout << "Type 'c' to continue" << endl;
+        cin >> response;
+    }
+}
+
+void showElaborationStatusToTheUser(const vector<SuperPixel> superPixels){
+    for(auto sp : superPixels){
+        imshow("candidate: " + std::to_string(sp.label), sp.selection);
+        waitKey(1);
+    }
+    char response = 'n';
+    while(response != 'c' && response != 'C') {
+        cout << "Type 'c' to continue" << endl;
+        cin >> response;
+    }
 }

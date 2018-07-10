@@ -1,6 +1,7 @@
 #include <opencv2/photo.hpp>
 #include <iostream>
 #include "Segmentation.h"
+#include "Utils.h"
 
 using namespace std;
 
@@ -114,58 +115,100 @@ set<int> findNeighbors(const Point &candidate, const Mat &labels, const int edge
     return neighborhood;
 }
 
+void showSPFounded(const Mat src, const Mat contour){
+    Mat spContourOnSrc;
+    src.copyTo(spContourOnSrc);
+    spContourOnSrc.setTo(Scalar(0,0,255), contour);
+    showElaborationStatusToTheUser("SuperPixel founded", spContourOnSrc);
+}
+
+void showSPSegmentation(const Mat meanColourMask, const Mat contour){
+    Mat tmpMeanColourMask;
+    meanColourMask.copyTo(tmpMeanColourMask);
+    tmpMeanColourMask.setTo(Scalar(0, 0, 255), contour);
+    showElaborationStatusToTheUser("Superpixeling Segmentation", tmpMeanColourMask);
+}
+
+void showSPResult(const Mat src, const Mat mask, const Mat contour){
+    Mat res;
+    src.copyTo(res, mask);
+    res.setTo(Scalar(0,0,255), contour);
+    showElaborationStatusToTheUser("Superpixeling Result", res);
+}
+
+void showSuperpixelingElaboration(const Ptr<SuperpixelLSC> &superPixeler,
+                                  const Mat src,
+                                  const Mat mask,
+                                  const Mat meanColourMask){
+    Mat contour;
+    superPixeler->getLabelContourMask(contour);
+
+    showElaborationStatusToTheUser("Segmentation source", src);
+
+    showSPFounded(src, contour);
+
+    showSPSegmentation(meanColourMask, contour);
+
+    showSPResult(src, mask, contour);
+}
+
+void showSuperpixelingElaboration(const Ptr<SuperpixelLSC> &superPixeler,
+                                  const Mat src,
+                                  const Mat mask){
+    Mat contour;
+    superPixeler->getLabelContourMask(contour);
+
+//    showElaborationStatusToTheUser("Segmentation source", src);
+
+    showSPFounded(src, contour);
+
+//    showSPResult(src, mask, contour);
+}
+
 int extractRegionsOfInterest(const Ptr<SuperpixelLSC> &superPixeler,
                              const Mat &src, vector<SuperPixel> &candidateSuperpixels,
                              const int superPixelEdge,
                              const ExtractionThresholds thresholds,
                              const RoadOffsets offsets) {
 
-    Mat contour, mask, labels, meanColourMask;
+//    Mat contour;
+    Mat mask;
+    Mat labels;
+    Mat meanColourMask;
 
     superPixeler->iterate(10);
-//    superPixeler->getLabelContourMask(contour);
     superPixeler->getLabels(labels);
 
-//    src.copyTo(mask);
-//    mask.setTo(Scalar(255, 255, 255));
-//    src.copyTo(meanColourMask);
+    src.copyTo(mask);
+    mask.setTo(Scalar(255, 255, 255));
+    src.copyTo(meanColourMask);
 
     for (int superPixelLabel = 0; superPixelLabel < superPixeler->getNumberOfSuperpixels(); ++superPixelLabel) {
 
         SuperPixel superPixel = getSuperPixel(src, superPixelLabel, labels);
 
-//        Scalar color_mask_value = Scalar(0, 0, 0);
+        Scalar color_mask_value = Scalar(0, 0, 0);
 
         if (isRoad(src.rows, src.cols, offsets, superPixel.center)
             && calculateSuperPixelDensity(superPixel.points) < thresholds.density
             && superPixel.points.size() > 256) {
 
-            superPixel.neighbors = findNeighbors(superPixel.center, labels, superPixelEdge / 4);
+            int neighbourEdge = superPixelEdge / 2; // before was 4
+            superPixel.neighbors = findNeighbors(superPixel.center, labels, neighbourEdge);
 
             if (isSuperpixelOfInterest(src, labels, superPixel, thresholds)) {
-//                color_mask_value = Scalar(255, 255, 255);
+                color_mask_value = Scalar(255, 255, 255);
                 // Add the superpixel to the candidates vector
                 candidateSuperpixels.push_back(superPixel);
             }
         }
 
-//        meanColourMask.setTo(superPixel.meanColour, superPixel.mask);
-//        mask.setTo(color_mask_value, superPixel.mask);
+        meanColourMask.setTo(superPixel.meanColour, superPixel.mask);
+        mask.setTo(color_mask_value, superPixel.mask);
 
     }
 
-//    imshow("Src", src);
-//
-//    meanColourMask.setTo(Scalar(0, 0, 255), contour);
-//    imshow("Segmentation", meanColourMask);
-//
-//    Mat res;
-//    src.copyTo(res, mask);
-//    res.setTo(Scalar(0,0,255), contour);
-//
-//    imshow("Result", res);
-//
-//    waitKey();
+//    showSuperpixelingElaboration(superPixeler, src, mask, meanColourMask);
 
     return 1;
 }
@@ -178,13 +221,16 @@ int extractRegionsOfInterest(const Ptr<SuperpixelLSC> &superPixeler,
  * In order to isolate the pothole super pixel from car's bumper
  * 3. Select the super pixel that is darker than the average pixel value and lighter than a specified threshold
  * */
-std::vector<SuperPixel> extractPotholeRegionFromCandidate(const Mat &candidate, const Mat1b &exclusionMask,
+std::vector<SuperPixel> extractPotholeRegionFromCandidate(const Mat &candidate,
+                                                          const Mat1b &exclusionMask,
                                                           const ExtractionThresholds &thresholds) {
-    Mat res, labels;
+    Mat res;
+    Mat labels;
+    Mat mask;
     vector<SuperPixel> soi;
     vector<SuperPixel> products;
 
-    Ptr<SuperpixelLSC> superPixeler = initSuperPixelingLSC(candidate, 48); // or 32 are OK
+    Ptr<SuperpixelLSC> superPixeler = initSuperPixelingLSC(candidate, 32); // 32 or 48 are OK
 
     superPixeler->iterate(10);
     superPixeler->getLabels(labels);
@@ -192,13 +238,18 @@ std::vector<SuperPixel> extractPotholeRegionFromCandidate(const Mat &candidate, 
     for (int superPixelLabel = 0; superPixelLabel < superPixeler->getNumberOfSuperpixels(); ++superPixelLabel) {
 
         SuperPixel superPixel = getSuperPixel(candidate, exclusionMask, superPixelLabel, labels);
+        Scalar color_mask_value = Scalar(0, 0, 0);
 
-        superPixel.neighbors = findNeighbors(superPixel.center, labels, candidate.rows / 8);
+        int neighbourEdge = candidate.rows / 2;
+        superPixel.neighbors = findNeighbors(superPixel.center, labels, neighbourEdge);
 
         if (isSuperpixelOfInterest(candidate, labels, superPixel, thresholds)) {
+            color_mask_value = Scalar(255, 255, 255);
             // Add the superpixel to the candidates vector
             soi.push_back(superPixel);
         }
+
+        mask.setTo(color_mask_value, superPixel.mask);
     }
 
     auto el = getStructuringElement(MORPH_ELLIPSE, Point(5, 5));
@@ -246,6 +297,9 @@ std::vector<SuperPixel> extractPotholeRegionFromCandidate(const Mat &candidate, 
             }
         }
     }
+
+//    showSuperpixelingElaboration(superPixeler, candidate, mask);
+//    showElaborationStatusToTheUser(products);
 
     return products;
 }

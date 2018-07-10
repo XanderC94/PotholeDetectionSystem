@@ -66,6 +66,7 @@ vector<Features> getFeatures(const string &target) {
     cout << "Finished." << endl;
 
     /*--------------------------------- End Pre-Processing Phase ------------------------------*/
+//    showElaborationStatusToTheUser("Preprocessing Result", src);
 
     /*--------------------------------- First Segmentation Phase ------------------------------*/
 
@@ -75,9 +76,7 @@ vector<Features> getFeatures(const string &target) {
     extractRegionsOfInterest(superPixeler, src, candidateSuperPixels,
                              superPixelEdge, config.primaryThresholds, config.offsets);
     cout << "Finished." << endl;
-
     cout << "Found " << candidateSuperPixels.size() << " candidates." << endl;
-
     numberFirstSPCandidatesFound += candidateSuperPixels.size();
     /*--------------------------------- End First Segmentation Phase ------------------------------*/
 
@@ -89,6 +88,8 @@ vector<Features> getFeatures(const string &target) {
     cout << "Feature Extraction -- Finished." << endl;
 
     /*--------------------------------- End Feature Extraction Phase ------------------------------*/
+//
+//    showElaborationStatusToTheUser(features);
 
     return features;
 }
@@ -174,7 +175,8 @@ int askUserSupervisionBinaryClasses(const Features &candidateFeatures, const int
     Mat visual_image;
     resize(candidateFeatures.candidate,
            visual_image,
-           Size(candidateFeatures.candidate.cols * scaleFactor, candidateFeatures.candidate.rows * scaleFactor));
+           Size(candidateFeatures.candidate.cols * scaleFactor,
+                candidateFeatures.candidate.rows * scaleFactor));
 
     imshow("Is pothole?", visual_image);
     waitKey(1);

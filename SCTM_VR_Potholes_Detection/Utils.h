@@ -9,6 +9,12 @@
 using namespace cv;
 using namespace std;
 
+typedef struct Configuration {
+    RoadOffsets offsets;
+    ExtractionThresholds primaryThresholds;
+    ExtractionThresholds secondaryThresholds;
+} Configuration;
+
 void portable_mkdir(const char *args);
 
 string set_format(string of_file_name_path,
@@ -19,6 +25,8 @@ void saveFeaturesJSON(const vector<Features> &features, const string saveDirecto
                       const string saveFile);
 
 void loadFromJSON(const string target, vector<Features> &features, Mat &labels);
+
+Configuration loadProgramConfiguration(const string target);
 
 string extractFileName(const string file_path, const string sep);
 

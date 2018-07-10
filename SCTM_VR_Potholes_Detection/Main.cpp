@@ -15,25 +15,28 @@ using namespace mlutils;
 
 int numberFirstSPCandidatesFound = 0;
 
-const RoadOffsets offsets = {
-        .Horizon_Offset = 0.65,
-        .SLine_X_Right_Offset = 0.0,
-        .SLine_X_Left_Offset = 0.25,
-        .SLine_Y_Right_Offset = 0.9,
-        .SLine_Y_Left_Offset = 0.9,
-        .SLine_Right_Escape_Offset = 0.4,
-        .SLine_Left_Escape_Offset = 0.4
-};
+Configuration config;
 
-const ExtractionThresholds thresholds = {
-        .Density_Threshold = 0.65, // OK, do not change
-        .Variance_Threshold = 0.3,
-        .Gauss_RoadThreshold = 0.60,
-        .grayRatioThresholdMin = 1.15, // 1.25 is better if we aim to properly detect nearest holes to the vehicle,
-        // but will probably exclude far away holes and those holes near cars (see image of test n_89)
-        .grayRatioThresholdMax = 2.5,
-        .greenRatioThreshold = 1.25
-};
+void showHelper() {
+
+    cout << " Pothole Detection System Helper" << endl << endl;
+
+    cout << "\t -d == generate candidates inside the given folder" << endl;
+    cout << "\t\t Example: -d /x/y/z {-f}" << endl << endl;
+    cout << "\t\t NOTE: The optional -f parameter will enable user-driven feedback for each candidate found."
+         << endl << endl;
+
+    cout << "\t -t == train an SVM, Bayes or Multi Classifier using the generated data" << endl;
+    cout << "\t\t Example: -t -{svm, bayes, multi} /x/y/z/ model_name" << endl << endl;
+    cout << "\t\t NOTE: no path or extension for the model name is required, " << endl
+         << "\t\t it will be stored into ../svm/ or ../bayes/ inside the program folder." << endl << endl;
+
+    cout << "\t -c == classify the given image or set of images (folder path)" << endl;
+    cout << "\t\t Example: -c -{svm, bayes, multi} -{i, d} {/x/y/z, /x/y/z/image.something} model_name" << endl << endl;
+    cout << "\t\t NOTE: no path or extension for the model name is required, " << endl
+         << "\t\t it must be located inside the directories ../svm/ or ../bayes/ inside the program folder."
+         << endl;
+}
 
 vector<Features> getFeatures(const string &target) {
 
@@ -59,7 +62,7 @@ vector<Features> getFeatures(const string &target) {
     /*--------------------------------- Pre-Processing Phase ------------------------------*/
 
     cout << "Pre-Processing... ";
-    preprocessing(src, src, offsets.Horizon_Offset);
+    preprocessing(src, src, config.offsets.horizon);
     cout << "Finished." << endl;
 
     /*--------------------------------- End Pre-Processing Phase ------------------------------*/
@@ -71,7 +74,7 @@ vector<Features> getFeatures(const string &target) {
     // NB: Init once, use many times!
     auto superPixeler = initSuperPixelingLSC(src, superPixelEdge);
     extractRegionsOfInterest(superPixeler, src, candidateSuperPixels,
-                             superPixelEdge, thresholds, offsets);
+                             superPixelEdge, config.primaryThresholds, config.offsets);
     cout << "Finished." << endl;
     cout << "Found " << candidateSuperPixels.size() << " candidates." << endl;
     numberFirstSPCandidatesFound += candidateSuperPixels.size();
@@ -80,7 +83,8 @@ vector<Features> getFeatures(const string &target) {
     /*--------------------------------- Feature Extraction Phase ------------------------------*/
 
     cout << "Feature Extraction -- Started. " << endl;
-    auto features = extractFeatures(src, candidateSuperPixels, candidate_size, offsets, thresholds);
+    auto features = extractFeatures(src, candidateSuperPixels, candidate_size,
+                                    config.offsets, config.secondaryThresholds);
     cout << "Feature Extraction -- Finished." << endl;
 
     /*--------------------------------- End Feature Extraction Phase ------------------------------*/
@@ -108,19 +112,22 @@ Mat Classification(const string &method, const string &model_name, const vector<
             const auto std_model = "../bayes/" + model_name;
             myBayes::Classifier(features, std_labels, std_model);
 
-        } else if (method == "-both") {
+        } else if (method == "-multi") {
             /***************************** MULTI CLASSIFIER ********************************/
-            Mat svm_labels(static_cast<int>( features.size()), 1, CV_32SC1);
+            Mat svm_labels(static_cast<int>(features.size()), 1, CV_32SC1);
             const auto svm_model = "../svm/" + model_name;
             mySVM::Classifier(features, svm_labels, svm_model);
 
-            Mat bayes_labels(static_cast<int>( features.size()), 1, CV_32SC1);
+            Mat bayes_labels(static_cast<int>(features.size()), 1, CV_32SC1);
             const auto std_model = "../bayes/" + model_name;
             myBayes::Classifier(features, bayes_labels, std_model);
 
             std_labels = mergeMultiClassifierResults(svm_labels, bayes_labels);
         } else {
             cerr << "Undefined method " << method << endl;
+
+            showHelper();
+
             exit(-1);
         }
 
@@ -271,6 +278,7 @@ void classificationPhase(char*argv[]){
     portable_mkdir("../results");
     portable_mkdir("../results/neg");
     portable_mkdir("../results/pos");
+
     /*--------------------------------- Classification Phase ------------------------------*/
     int numberOfCandidatesFound = 0;
     if (target_type == "-d") { /// Whole folder
@@ -290,7 +298,9 @@ void classificationPhase(char*argv[]){
 }
 
 void trainingPhase(char*argv[]){
+
     auto method = string(argv[2]);
+    cout << "Training Method: " << method << endl;
 
     Mat labels(0, 0, CV_32SC1);
     vector<Features> candidates;
@@ -298,7 +308,7 @@ void trainingPhase(char*argv[]){
     loadFromJSON("../data/" + string(argv[3]), candidates, labels);
 
     /*--------------------------------- Training Phase ------------------------------*/
-    bool trainBoth = (method == "-both");
+    bool trainBoth = (method == "-multi");
 
     if (trainBoth || method == "-svm") {
 
@@ -307,8 +317,8 @@ void trainingPhase(char*argv[]){
         portable_mkdir("../svm/");
         const auto model = "../svm/" + string(argv[4]);
         mySVM::Training(candidates, labels, 1000, exp(-6), model);
-
     }
+
     if (trainBoth || method == "-bayes") {
 
         /***************************** Bayes CLASSIFIER ********************************/
@@ -316,33 +326,7 @@ void trainingPhase(char*argv[]){
         portable_mkdir("../bayes/");
         const auto std_model = "../bayes/" + string(argv[4]);
         myBayes::Training(candidates, labels, std_model);
-
-//                portable_mkdir("../bayes/hog/");
-//                const auto hog_model = "../bayes/hog/" + string(argv[4]);
-//                const Mat hog_data = mlutils::ConvertHOGFeatures(candidates, -1);
-//                myBayes::Training(hog_data, labels, hog_model);
     }
-}
-
-void showHelper() {
-
-    cout << " Pothole Detection System Helper" << endl << endl;
-
-    cout << "\t -d == generate candidates inside the given folder" << endl;
-    cout << "\t\t Example: -d /x/y/z {-f}" << endl << endl;
-    cout << "\t\t NOTE: The optional -f parameter will enable user-driven feedback for each candidate found."
-         << endl << endl;
-
-    cout << "\t -t == train an SVM or Bayes Classifier using the generated data" << endl;
-    cout << "\t\t Example: -t -{svm, bayes} /x/y/z/ model_name" << endl << endl;
-    cout << "\t\t NOTE: no path or extension for the model name is required, " << endl
-         << "\t\t it will be stored into ../svm/ or ../bayes/ inside the program folder." << endl << endl;
-
-    cout << "\t -c == classify the given image or set of images (folder path)" << endl;
-    cout << "\t\t Example: -c -{svm, bayes} -{i, d} {/x/y/z, /x/y/z/image.something} model_name" << endl << endl;
-    cout << "\t\t NOTE: no path or extension for the model name is required, " << endl
-         << "\t\t it must be located inside the directories ../svm/ or ../bayes/ inside the program folder."
-         << endl;
 }
 
 int main(int argc, char *argv[]) {
@@ -357,11 +341,11 @@ int main(int argc, char *argv[]) {
 
         auto mode = string(argv[1]);
 
-        cout << "First Segmentation Thresholds: " << endl;
-        printThresholds(thresholds);
-//        cout << "Feature Extraction Segmentation Thresholds: "<< endl;
-//        printThresholds(thresholds);
-        printOffsets(offsets);
+        config = loadProgramConfiguration("../config/config.json");
+
+        printThresholds(config.primaryThresholds);
+        printThresholds(config.secondaryThresholds);
+        printOffsets(config.offsets);
 
         if (mode == "-d" && argc > 2) {
             createCandidates(argv[2], argc > 3 && string(argv[3]) == "-f");

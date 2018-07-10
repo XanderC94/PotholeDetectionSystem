@@ -7,19 +7,26 @@
 using namespace std;
 
 void printOffsets(RoadOffsets of) {
-    cout << "ROAD OFFSETS" << endl
-         << "Horizon_Offset: " << of.Horizon_Offset << endl
-         << "SLine_X_Right_Offset: " << of.SLine_X_Right_Offset << endl
-         << "SLine_X_Left_Offset: " << of.SLine_X_Left_Offset << endl
-         << "SLine_Y_Offset: " << of.SLine_Y_Right_Offset << endl
-         << "SLine_Y_Offset: " << of.SLine_Y_Left_Offset << endl;
+    cout << "ROAD OFFSETS:" << endl
+         << "\thorizon: " << of.horizon << endl
+
+         << "\txRightOffset: " << of.xRightOffset << endl
+         << "\tyRightOffset: " << of.yRightOffset << endl
+         << "\trightEscapeOffset: " << of.rightEscapeOffset << endl
+
+         << "\txLeftOffset: " << of.xLeftOffset << endl
+         << "\tyLeftOffset: " << of.yLeftOffset << endl
+         << "\tleftEscapeOffset: " << of.leftEscapeOffset << endl
+         << endl;
 }
 
 void printThresholds(ExtractionThresholds thresholds) {
     cout << "THRESHOLDS" << endl
-         << "Density_Threshold: " << thresholds.Density_Threshold << endl
-         << "Variance_Threshold: " << thresholds.Variance_Threshold << endl
-         << "Gauss_RoadThreshold: " << thresholds.Gauss_RoadThreshold << endl
-         << "grayRatioThresholdMin: " << thresholds.grayRatioThresholdMin << endl
-         << "grayRatioThresholdMax: " << thresholds.grayRatioThresholdMax << endl;
+         << "\tdensity: " << thresholds.density << endl
+         << "\tvariance: " << thresholds.variance << endl
+         << "\tgauss: " << thresholds.gauss << endl
+         << "\tminGreyRatio: " << thresholds.minGreyRatio << endl
+         << "\tmaxGreyRatio: " << thresholds.maxGreyRatio << endl
+         << "\tminGreenRatio: " << thresholds.minGreenRatio << endl
+         << endl;
 }

@@ -21,11 +21,11 @@ bool isRoad(const int H, const int W, const RoadOffsets offsets, const Point2d c
     // => Gaussian 3D function
     // => Evaluates the pixels through an Analytic Rect Function : F(x) > 0 is over the rect, F(x) < 0 is under, F(x) = 0 it lies on.
 
-    bool isRoad = AnalyticRect2D(cv::Point2d(W * offsets.SLine_X_Left_Offset, H * offsets.SLine_Y_Left_Offset),
-                                 cv::Point2d(W * offsets.SLine_Left_Escape_Offset, 0.0), center) >= -0.01 &&
+    bool isRoad = AnalyticRect2D(cv::Point2d(W * offsets.xLeftOffset, H * offsets.yLeftOffset),
+                                 cv::Point2d(W * offsets.leftEscapeOffset, 0.0), center) >= -0.01 &&
                   AnalyticRect2D(
-                          cv::Point2d(W * (1.0 - offsets.SLine_X_Right_Offset), H * offsets.SLine_Y_Right_Offset),
-                          cv::Point2d(W * (1.0 - offsets.SLine_Right_Escape_Offset), 0.0), center) >= -0.01;
+                          cv::Point2d(W * (1.0 - offsets.xRightOffset), H * offsets.yRightOffset),
+                          cv::Point2d(W * (1.0 - offsets.rightEscapeOffset), 0.0), center) >= -0.01;
 
     return isRoad;
 }

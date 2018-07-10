@@ -8,10 +8,8 @@
 
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
-#include <rapidjson/ostreamwrapper.h>
 #include <rapidjson/istreamwrapper.h>
 #include <rapidjson/prettywriter.h>
-
 
 #include <unistd.h>
 #define getCurrentDir getcwd
@@ -60,6 +58,30 @@ void portable_mkdir(const char *args) {
 #else
     mkdir(args, S_IWUSR);
 #endif
+}
+
+vector<String> extractImagePath(const string targets) {
+
+    vector<String> res;
+    vector<String> fnJpg;
+    vector<String> fnPng;
+    vector<String> fnBmp;
+
+    glob(targets + "/*.jpg", fnJpg);
+    glob(targets + "/*.png", fnPng);
+    glob(targets + "/*.bmp", fnBmp);
+
+    for (auto jpgImage : fnJpg) {
+        res.push_back(jpgImage);
+    }
+    for (auto pngImage : fnPng) {
+        res.push_back(pngImage);
+    }
+    for (auto bmpImage : fnBmp) {
+        res.push_back(bmpImage);
+    }
+
+    return res;
 }
 
 string extractFileName(string file_path, const string sep = "/") {
@@ -161,87 +183,173 @@ void saveFeaturesJSON(const vector<Features> &features, const string saveDirecto
 
     portable_mkdir(("../" + saveDirectory).data());
 
-    ofstream json("../" + saveDirectory + "/" + saveFile + ".json", fstream::out | fstream::app);
+    ifstream iJson("../" + saveDirectory + "/" + saveFile + ".json", fstream::in);
 
-    OStreamWrapper wrapper(json);
-    PrettyWriter<OStreamWrapper> sw(wrapper);
+    std::string rawJson((std::istreambuf_iterator<char>(iJson)), std::istreambuf_iterator<char>());
 
-    sw.StartObject();
-    sw.Key("features");
-    sw.StartArray();
+    iJson.close();
+
+    Document doc;
+
+    doc.Parse(rawJson.data());
+
+    if (!doc.IsObject()) {
+        doc.SetObject(); // It's necessary else the doc will start as "null"
+        doc.AddMember("features", kArrayType, doc.GetAllocator());
+    }
+
+    assert(doc.HasMember("features"));
+    assert(doc["features"].IsArray());
 
     for (int i = 0; i < features.size(); ++i) {
 
-        const auto ft = features[i];
+        const Features ft = features[i];
 
-        const auto c_name = set_format(extractFileName(names[i]), "", false);
+        const string c_name = set_format(extractFileName(names[i]), "", false);
 
-        sw.StartObject();
-        sw.Key("class");
-        sw.Int(ft._class);
-        sw.Key("sample");
-        sw.String(c_name.data());
-        sw.Key("label");
-        sw.Int(ft.label);
-        sw.Key("id");
-        sw.Int(ft.id);
-        sw.Key("contrast");
-        sw.Double(ft.contrast);
-        sw.Key("avgGreyValue");
-        sw.Double(ft.averageGreyValue);
-        sw.Key("avgRGBValues");
-        sw.StartArray();
-        for (const double channel : ft.averageRGBValues.val) sw.Double(channel);
-        sw.EndArray();
-        sw.Key("skewness");
-        sw.Double(ft.skewness);
-        sw.Key("energy");
-        sw.Double(ft.energy);
-        sw.Key("entropy");
-        sw.Double(ft.entropy);
-        sw.Key("hog");
-        sw.StartArray();
+        Value obj(kObjectType);
 
-        for (unsigned i = 0; i < ft.hogDescriptors.cols; i++) sw.Double(ft.hogDescriptors.at<float>(0, i));
+        obj.AddMember("class", Value(ft._class), doc.GetAllocator());
 
-        sw.EndArray();
-        sw.EndObject();
+        Value sample;
+        // Do not move, do not change or I'll cut your hand
+        sample.SetString(StringRef(c_name.data()), static_cast<unsigned>(c_name.length()), doc.GetAllocator());
 
-        sw.Flush();
+        obj.AddMember("sample", sample, doc.GetAllocator());
+        obj.AddMember("label", Value(ft.label), doc.GetAllocator());
+        obj.AddMember("id", Value(ft.id), doc.GetAllocator());
+        obj.AddMember("contrast", Value(ft.contrast), doc.GetAllocator());
+        obj.AddMember("avgGreyValue", Value(ft.averageGreyValue), doc.GetAllocator());
+        Value rgb(kArrayType);
+        for (const double chVal : ft.averageRGBValues.val) rgb.PushBack(chVal, doc.GetAllocator());
+        obj.AddMember("avgRGBValues", rgb, doc.GetAllocator());
+        obj.AddMember("skewness", Value(ft.skewness), doc.GetAllocator());
+        obj.AddMember("energy", Value(ft.energy), doc.GetAllocator());
+        obj.AddMember("entropy", Value(ft.entropy), doc.GetAllocator());
+        Value hog(kArrayType);
+        for (const float descriptor : ft.hogDescriptors.row(0)) hog.PushBack(descriptor, doc.GetAllocator());
+        obj.AddMember("hog", hog, doc.GetAllocator());
+
+        doc["features"].PushBack(obj, doc.GetAllocator());
 
         imwrite("../" + saveDirectory + "/" + c_name + "_L" + to_string(ft.label) + "_" + to_string(ft.id) + ".bmp",
                 ft.candidate);
     }
 
-    sw.EndArray();
-    sw.EndObject();
+    StringBuffer buffer;
+    PrettyWriter<StringBuffer> writer(buffer);
+    doc.Accept(writer);
 
-    json.close();
+    ofstream oJson("../" + saveDirectory + "/" + saveFile + ".json", fstream::out);
 
+    oJson << buffer.GetString();
+
+    oJson.close();
 }
 
-vector<String> extractImagePath(const string targets) {
+Configuration loadProgramConfiguration(const string target) {
 
-    vector<String> res;
-    vector<String> fnJpg;
-    vector<String> fnPng;
-    vector<String> fnBmp;
+    RoadOffsets offsets;
+    ExtractionThresholds primary;
+    ExtractionThresholds secondary;
 
-    glob(targets + "/*.jpg", fnJpg);
-    glob(targets + "/*.png", fnPng);
-    glob(targets + "/*.bmp", fnBmp);
+    ifstream json(target, fstream::in);
 
-    for (auto jpgImage : fnJpg) {
-        res.push_back(jpgImage);
+    IStreamWrapper wrapper(json);
+
+    Document config;
+
+    config.ParseStream(wrapper);
+
+    if (json.is_open() && config.IsObject()) {
+
+        cout << "Opened file " << target << endl;
+
+        assert(config.HasMember("offsets"));
+        assert(config["offsets"].IsObject());
+
+        assert(config["offsets"].HasMember("horizon"));
+        assert(config["offsets"]["horizon"].IsDouble());
+
+        assert(config["offsets"].HasMember("xRightOffset"));
+        assert(config["offsets"]["xRightOffset"].IsDouble());
+        assert(config["offsets"].HasMember("yRightOffset"));
+        assert(config["offsets"]["yRightOffset"].IsDouble());
+        assert(config["offsets"].HasMember("rightEscapeOffset"));
+        assert(config["offsets"]["rightEscapeOffset"].IsDouble());
+
+        assert(config["offsets"].HasMember("xLeftOffset"));
+        assert(config["offsets"]["xLeftOffset"].IsDouble());
+        assert(config["offsets"].HasMember("yLeftOffset"));
+        assert(config["offsets"]["yLeftOffset"].IsDouble());
+        assert(config["offsets"].HasMember("leftEscapeOffset"));
+        assert(config["offsets"]["leftEscapeOffset"].IsDouble());
+
+        offsets.horizon = config["offsets"]["horizon"].GetDouble();
+        offsets.leftEscapeOffset = config["offsets"]["leftEscapeOffset"].GetDouble();
+        offsets.rightEscapeOffset = config["offsets"]["rightEscapeOffset"].GetDouble();
+        offsets.xLeftOffset = config["offsets"]["xLeftOffset"].GetDouble();
+        offsets.xRightOffset = config["offsets"]["xRightOffset"].GetDouble();
+        offsets.yLeftOffset = config["offsets"]["yLeftOffset"].GetDouble();
+        offsets.yRightOffset = config["offsets"]["yRightOffset"].GetDouble();
+
+        assert(config.HasMember("thresholds"));
+        assert(config["thresholds"].IsObject());
+
+        assert(config["thresholds"].HasMember("primary"));
+        assert(config["thresholds"]["primary"].IsObject());
+
+        assert(config["thresholds"]["primary"].HasMember("density"));
+        assert(config["thresholds"]["primary"]["density"].IsObject());
+        assert(config["thresholds"]["primary"].HasMember("variance"));
+        assert(config["thresholds"]["primary"]["variance"].IsObject());
+        assert(config["thresholds"]["primary"].HasMember("gauss"));
+        assert(config["thresholds"]["primary"]["gauss"].IsObject());
+        assert(config["thresholds"]["primary"].HasMember("minGreyRatio"));
+        assert(config["thresholds"]["primary"]["minGreyRatio"].IsObject());
+        assert(config["thresholds"]["primary"].HasMember("maxGreyRatio"));
+        assert(config["thresholds"]["primary"]["maxGreyRatio"].IsObject());
+        assert(config["thresholds"]["primary"].HasMember("minGreenRatio"));
+        assert(config["thresholds"]["primary"]["minGreenRatio"].IsObject());
+
+        primary.density = config["thresholds"]["primary"]["density"].GetDouble();
+        primary.variance = config["thresholds"]["primary"]["variance"].GetDouble();
+        primary.gauss = config["thresholds"]["primary"]["gauss"].GetDouble();
+        primary.minGreyRatio = config["thresholds"]["primary"]["minGreyRatio"].GetDouble();
+        primary.maxGreyRatio = config["thresholds"]["primary"]["maxGreyRatio"].GetDouble();
+        primary.minGreenRatio = config["thresholds"]["primary"]["minGreenRatio"].GetDouble();
+
+        assert(config["thresholds"].HasMember("secondary"));
+        assert(config["thresholds"]["secondary"].IsObject());
+
+        assert(config["thresholds"]["secondary"].HasMember("density"));
+        assert(config["thresholds"]["secondary"]["density"].IsObject());
+        assert(config["thresholds"]["secondary"].HasMember("variance"));
+        assert(config["thresholds"]["secondary"]["variance"].IsObject());
+        assert(config["thresholds"]["secondary"].HasMember("gauss"));
+        assert(config["thresholds"]["secondary"]["gauss"].IsObject());
+        assert(config["thresholds"]["secondary"].HasMember("minGreyRatio"));
+        assert(config["thresholds"]["secondary"]["minGreyRatio"].IsObject());
+        assert(config["thresholds"]["secondary"].HasMember("maxGreyRatio"));
+        assert(config["thresholds"]["secondary"]["maxGreyRatio"].IsObject());
+        assert(config["thresholds"]["secondary"].HasMember("minGreenRatio"));
+        assert(config["thresholds"]["secondary"]["minGreenRatio"].IsObject());
+
+        secondary.density = config["thresholds"]["secondary"]["density"].GetDouble();
+        secondary.variance = config["thresholds"]["secondary"]["variance"].GetDouble();
+        secondary.gauss = config["thresholds"]["secondary"]["gauss"].GetDouble();
+        secondary.minGreyRatio = config["thresholds"]["secondary"]["minGreyRatio"].GetDouble();
+        secondary.maxGreyRatio = config["thresholds"]["secondary"]["maxGreyRatio"].GetDouble();
+        secondary.minGreenRatio = config["thresholds"]["secondary"]["minGreenRatio"].GetDouble();
+
+    } else {
+        cerr << "Program configuration is missing... Check it's existence or create a new config.json"
+             << " under the ../config/ folder inside the program directory." << target << endl;
+
+        exit(-3);
     }
-    for (auto pngImage : fnPng) {
-        res.push_back(pngImage);
-    }
-    for (auto bmpImage : fnBmp) {
-        res.push_back(bmpImage);
-    }
 
-    return res;
+    return Configuration{offsets, primary, secondary};
 }
 
 void showElaborationStatusToTheUser(string showingWindowTitle, Mat processedImage){

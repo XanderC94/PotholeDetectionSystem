@@ -91,7 +91,7 @@ namespace mlutils {
 
         for (int i = 0; i < svmResult.cols; i++) {
             if (svmFindSomething(svmResult, i) && bayesFindSomething(bayesResult, i)) {
-                result.at<int>(0, i) = static_cast<int>(svmResult.at<float>(0, i));
+                result.at<int>(0, i) = ClassificationClasses::pothole;
             } else {
                 result.at<int>(0, i) = ClassificationClasses::streetSideWalkOrCar;
             }

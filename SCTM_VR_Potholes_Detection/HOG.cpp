@@ -12,7 +12,7 @@
 HOG calculateHOG(const Mat &src, const HOGConfig config) {
 
     Mat grayscale;
-    cv::HOGDescriptor hog(config.detenctionWindowSize,
+    cv::HOGDescriptor hog(config.detectionWindowSize,
                           config.blockSize,
                           config.blockStride,
                           config.cellSize,

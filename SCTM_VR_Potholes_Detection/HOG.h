@@ -12,7 +12,7 @@ using namespace std;
 
 typedef struct HOGConfig {
     const int binNumber;
-    const Size detenctionWindowSize;
+    const Size detectionWindowSize;
     const Size blockSize;
     const Size blockStride;
     const Size cellSize;
@@ -22,7 +22,7 @@ typedef struct HOGConfig {
 
 const HOGConfig defaultConfig = {
         9,
-        Size(64, 64),   //detenctionWindowSize
+        Size(64, 64),   //detectionWindowSize
         Size(16, 16),     //blockSize
         Size(16, 16),     //blockStride
         Size(2, 2),     //cellSize

@@ -46,9 +46,7 @@ packages/
 packages/*
 packages.config
 CppProperties.json
-CMakeLists.txt
 */cmake
-FindOpenCV.make
 *.user
 
 .idea*

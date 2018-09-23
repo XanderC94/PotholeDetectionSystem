@@ -9,16 +9,16 @@ Link to the Server-side project repository: https://github.com/XanderCVL/Pothole
 Link to the Client-side project repository: https://github.com/mattigabo/PotholeDetectionWebApp
 
 # Project Tree
-*
-|- build
-|- include
-|- src
-|- res
-|   |- bayes
-|   |- svm
-|   |- config
-|   |- features
-|   |- results
-|
-|- main.cpp
-|- CMakeList.txt
+/root \
+|- /build \
+|- /include \
+|- /src \
+|- /res \
+|   |- /bayes \
+|   |- /svm \
+|   |- /config \
+|   |- /features \
+|   |- /results \
+| \
+|- main.cpp \
+|- CMakeList.txt \

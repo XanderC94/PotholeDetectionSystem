@@ -8,6 +8,7 @@
 
 using namespace cv;
 using namespace std;
+using namespace phd::ontologies;
 
 namespace phd::ml::utils {
     Mat ConvertFeatures(const vector<Features> &features) {

@@ -2,10 +2,14 @@
 // Created by Xander_C on 30/06/2018.
 //
 
-#include "../include/phdetection/fe_utils.hpp"
-#include "../include/phdetection/hog.hpp"
+#include "phdetection/fe_utils.hpp"
+#include "phdetection/hog.hpp"
 
 using namespace phd::features;
+using namespace phd::ontologies;
+using namespace std;
+using namespace cv::ximgproc;
+using namespace cv;
 
 // In order to reduce computation complexity
 // calculate the contrast, entropy and energy with in the same loops

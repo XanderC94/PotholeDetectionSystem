@@ -11,6 +11,7 @@ using namespace cv;
 using namespace std;
 using namespace cv::ml;
 using namespace phd::io;
+using namespace phd::ontologies;
 
 int numberFirstSPCandidatesFound = 0;
 

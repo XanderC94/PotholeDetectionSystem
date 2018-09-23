@@ -7,40 +7,37 @@
 
 #include <opencv2/core.hpp>
 
-using namespace cv;
-using namespace std;
-
 namespace phd::features {
 
     typedef struct HOGConfig {
         const int binNumber;
-        const Size detectionWindowSize;
-        const Size blockSize;
-        const Size blockStride;
-        const Size cellSize;
-        const Size windowStride;
-        const Size padding;
+        const cv::Size detectionWindowSize;
+        const cv::Size blockSize;
+        const cv::Size blockStride;
+        const cv::Size cellSize;
+        const cv::Size windowStride;
+        const cv::Size padding;
     } HOGConfig;
 
     const HOGConfig defaultConfig = {
             9,
-            Size(64, 64),   //detectionWindowSize
-            Size(16, 16),     //blockSize
-            Size(16, 16),     //blockStride
-            Size(2, 2),     //cellSize
-            Size(16, 16),     //windowStride
-            Size(4, 4)      //padding
+            cv::Size(64, 64),   //detectionWindowSize
+            cv::Size(16, 16),     //blockSize
+            cv::Size(16, 16),     //blockStride
+            cv::Size(2, 2),     //cellSize
+            cv::Size(16, 16),     //windowStride
+            cv::Size(4, 4)      //padding
     };
 
     typedef struct HOG {
-        vector<float> descriptors = vector<float>();
-        vector<Point> locations = vector<Point>();;
+        std::vector<float> descriptors = std::vector<float>();
+        std::vector<cv::Point> locations = std::vector<cv::Point>();;
     } Hog;
 
     typedef struct GradientLine {
-        Point startPoint;
-        Point endPoint;
-        Scalar color;
+        cv::Point startPoint;
+        cv::Point endPoint;
+        cv::Scalar color;
         int thickness;
     } GradienLine;
 
@@ -61,31 +58,39 @@ namespace phd::features {
 
     typedef struct OrientedGradientInCell {
         OrientedGradient orientedGradientValue;
-        Point cellCenter;
+        cv::Point cellCenter;
     } OrientedGradientInCell;
 
-    Mat overlapOrientedGradientCellsOnImage(const Mat &origImg,
-                                            vector<OrientedGradientInCell> greaterOrientedGradientCells,
-                                            const Size cellSize,
-                                            const int scaleFactor,
-                                            const double viz_factor);
+    cv::Mat overlapOrientedGradientCellsOnImage(
+            const cv::Mat &origImg,
+            std::vector<OrientedGradientInCell> greaterOrientedGradientCells,
+            const cv::Size cellSize,
+            const int scaleFactor,
+            const double viz_factor
+        );
 
 
-    HOG calculateHOG(const Mat &src, const HOGConfig config = defaultConfig);
+    HOG calculateHOG(const cv::Mat &src, const HOGConfig config = defaultConfig);
 
-    vector<OrientedGradientInCell> computeHOGCells(const Mat origImg,
-                                                   const vector<float> &descriptorValues,
-                                                   const Size cellSize);
+    std::vector<OrientedGradientInCell> computeHOGCells(
+            const cv::Mat origImg,
+            const std::vector<float> &descriptorValues,
+            const cv::Size cellSize
+        );
 
-    vector<OrientedGradientInCell> computeGreaterHOGCells(const Mat origImg,
-                                                          const vector<float> &descriptorValues,
-                                                          const Size cellSize);
+    std::vector<OrientedGradientInCell> computeGreaterHOGCells(
+            const cv::Mat origImg,
+            const std::vector<float> &descriptorValues,
+            const cv::Size cellSize
+        );
 
-    vector<float> getHOGDescriptorOnPotholeCorner(vector<float> &descriptorValues);
+    std::vector<float> getHOGDescriptorOnPotholeCorner(std::vector<float> &descriptorValues);
 
-    vector<OrientedGradientInCell> selectNeighbourhoodCellsAtContour(Mat contoursMask,
-                                                                     vector<OrientedGradientInCell> orientedGradientsCells,
-                                                                     int neighbourhood = 2);
+    std::vector<OrientedGradientInCell> selectNeighbourhoodCellsAtContour(
+            cv::Mat contoursMask,
+            std::vector<OrientedGradientInCell> orientedGradientsCells,
+            int neighbourhood = 2
+        );
 }
 
 #endif //POTHOLEDETECTIONSYSTEM_HOG_H

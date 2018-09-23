@@ -6,17 +6,19 @@
 #define POTHOLEDETECTIONSYSTEM_FEATURESEXTRACTION_H
 
 #include <opencv2/core.hpp>
-
 #include "ontologies.hpp"
 
-using namespace cv;
-using namespace phd::ontologies;
+
 
 namespace phd::features {
-    vector<Features> extractFeatures(const Mat &src, const vector<SuperPixel> &candidateSuperPixels,
-                                     const Size &candidate_size,
-                                     const RoadOffsets &offsets,
-                                     const ExtractionThresholds &thresholds);
+
+    std::vector<phd::ontologies::Features> extractFeatures(
+            const cv::Mat &src,
+            const std::vector<phd::ontologies::SuperPixel> &candidateSuperPixels,
+            const cv::Size &candidate_size,
+            const phd::ontologies::RoadOffsets &offsets,
+            const phd::ontologies::ExtractionThresholds &thresholds
+        );
 }
 
 

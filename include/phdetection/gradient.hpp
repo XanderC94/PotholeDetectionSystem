@@ -7,20 +7,18 @@
 
 #include <opencv2/core.hpp>
 
-using namespace cv;
-
 namespace phd::features {
 
     typedef struct Gradient {
-        Mat x;
-        Mat y;
-        Mat magnitude;
-        Mat direction; //in degrees
+        cv::Mat x;
+        cv::Mat y;
+        cv::Mat magnitude;
+        cv::Mat direction; //in degrees
     } Gradient;
 
     void printDirection(Gradient gradient);
 
-    Gradient calculateGradient(Mat candidate);
+    Gradient calculateGradient(cv::Mat candidate);
 }
 
 #endif //POTHOLEDETECTIONSYSTEM_GRADIENTELABORATION_H

@@ -8,35 +8,26 @@
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
+#include <opencv2/ml.hpp>
 
-#include "segmentation.hpp"
-#include "features_extraction.hpp"
-#include "svm.hpp"
-#include "bayes.hpp"
 #include "io.hpp"
-#include "ml_utils.hpp"
-
-using namespace cv;
-using namespace std;
-using namespace cv::ml;
-using namespace phd::ml::utils;
 
 namespace phd {
 
     enum __Method { SVM, BAYES, MULTI };
 
-    const map<__Method, string> METHODS = {
-            pair<__Method, string>(SVM, "-svm"),
-            pair<__Method, string>(BAYES, "-bayes"),
-            pair<__Method, string>(MULTI, "-multi"),
+    const std::map<__Method, std::string> METHODS = {
+            std::pair<__Method, std::string>(SVM, "-svm"),
+            std::pair<__Method, std::string>(BAYES, "-bayes"),
+            std::pair<__Method, std::string>(MULTI, "-multi"),
     };
 
-    class UndefinedMethod : exception {
+    class UndefinedMethod : std::exception {
     private:
-        string error;
+        std::string error;
     public:
 
-        UndefinedMethod(const string msg) {
+        UndefinedMethod(const std::string msg) {
             this->error = msg;
         }
 
@@ -46,10 +37,12 @@ namespace phd {
 
     };
 
-    vector<Features> getFeatures(const string &target, const phd::io::Configuration &config);
+    std::vector<phd::ontologies::Features> getFeatures(const std::string &target, const phd::io::Configuration &config);
 
-    Mat classify(const string &method, const string &svm_model,
-                 const string &bayes_model, const vector<Features> &features);
+    std::vector<phd::ontologies::Features> getFeatures(cv::Mat &target, const phd::io::Configuration &config);
+
+    cv::Mat classify(const std::string &method, const std::string &svm_model,
+                 const std::string &bayes_model, const std::vector<phd::ontologies::Features> &features);
 }
 
 #endif //POTHOLEDETECTION_POTHOLEDETECTION_H

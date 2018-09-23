@@ -2,10 +2,13 @@
 // Created by Xander_C on 27/06/2018.
 //
 
-#include "../include/phdetection/bayes.hpp"
-#include "../include/phdetection/ml_utils.hpp"
+#include "phdetection/bayes.hpp"
+#include "phdetection/ml_utils.hpp"
 
 using namespace std;
+using namespace cv;
+using namespace std;
+using namespace phd::ontologies;
 
 namespace phd::ml::bayes {
 

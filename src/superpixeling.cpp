@@ -4,14 +4,16 @@
 
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
-#include <opencv2/ximgproc.hpp>
 #include <set>
-#include "../include/phdetection/superpixeling.hpp"
-#include "../include/phdetection/math.hpp"
+#include "phdetection/superpixeling.hpp"
+#include "phdetection/math.hpp"
 
 
 using namespace std;
+using namespace cv;
 using namespace cv::ximgproc;
+using namespace phd::ontologies;
+using namespace phd::math;
 
 namespace phd::superpixeling {
     bool isRoad(const int H, const int W, const RoadOffsets offsets, const Point2d center) {

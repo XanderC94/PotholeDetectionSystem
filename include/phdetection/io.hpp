@@ -29,7 +29,7 @@ namespace phd::io {
     void saveFeaturesJSON(const std::vector<phd::ontologies::Features> &features, const std::string saveDirectory, const std::vector<std::string> names,
                           const std::string saveFile);
 
-    void loadFromJSON(const std::string target, vector<phd::ontologies::Features> &features, Mat &labels);
+    void loadFromJSON(const std::string target, std::vector<phd::ontologies::Features> &features, cv::Mat &labels);
 
     Configuration loadProgramConfiguration(const std::string target);
 

@@ -2,13 +2,14 @@
 // Created by Matteo Gabellini on 15/06/2018.
 //
 
-#include "../../include/phdetection/gradient.hpp"
+#include "phdetection/gradient.hpp"
 
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 #include <iostream>
 
 using namespace std;
+using namespace cv;
 
 namespace phd::features {
 

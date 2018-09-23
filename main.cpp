@@ -153,7 +153,7 @@ int askUserSupervisionMultiClasses(const Features &candidateFeatures, const int 
 
 void createCandidates(const string &targets, const bool feedback, const Configuration &config) {
 
-    vector<String> fn = extractImagePath(targets);
+    vector<string> fn = extractImagePath(targets);
     vector<string> names;
     vector<Features> features;
 
@@ -198,7 +198,7 @@ void classificationPhase(char*argv[], const Configuration &config){
     int numberOfCandidatesFound = 0;
     if (target_type == "-d") { /// Whole folder
 
-        vector<String> fn = extractImagePath(target);
+        vector<string> fn = extractImagePath(target);
 
         cout << "Number of image found in the directory: " << fn.size() << endl;
         for (const auto &image : fn) {
@@ -215,7 +215,7 @@ void classificationPhase(char*argv[], const Configuration &config){
 void trainingPhase(char*argv[]){
 
     auto method = string(argv[2]);
-    cout << "Training Method: " << method << endl;
+//    cout << "Training Method: " << method << endl;
 
     Mat labels(0, 0, CV_32SC1);
     vector<Features> candidates;

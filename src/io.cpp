@@ -360,7 +360,7 @@ namespace phd::io {
 
         } else {
             cerr << "Program configuration is missing. Check it's existence or create a new config.json"
-                 << " under the ../res/config/ folder inside the program directory." << endl;
+                 << " under the ../res/config/ folder inside the program directory. " << endl;
 
             exit(-3);
         }

@@ -18,14 +18,6 @@ else ()
     set(RapidJSON_INCLUDE $ENV{RAPIDJSON_PATH}/include)
     set(PhD_INCLUDE ${PROJECT_SOURCE_DIR}/include)
 
-#    if(CMAKE_SYSTEM_NAME STREQUAL "windows")
-#        set(OPENCV_LIBS "${OPENCV_DIR}/x64/mingw/lib/libopencv_world340.dll.a")
-#    else ()
-#        find_package(OpenCv REQUIRED)
-#    endif(CMAKE_SYSTEM_NAME STREQUAL "windows")
-
-#    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake-modules")
-
     find_package(OpenCV REQUIRED)
 
     include_directories(

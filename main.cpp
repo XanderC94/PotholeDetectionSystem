@@ -2,6 +2,8 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 
+#include <libgen.h>
+
 #include "phdetection/svm.hpp"
 #include "phdetection/bayes.hpp"
 #include "phdetection/io.hpp"
@@ -17,11 +19,11 @@ int numberFirstSPCandidatesFound = 0;
 
 Configuration config;
 
-const string config_folder = "../res/config";
-const string data_folder = "../res/features";
-const string results_folder = "../res/results";
-const string svm_folder = "../res/svm";
-const string nbayes_folder = "../res/bayes";
+string config_folder = "/res/config";
+string data_folder = "/res/features";
+string results_folder = "/res/results";
+string svm_folder = "/res/svm";
+string nbayes_folder = "/res/bayes";
 
 void showHelper() {
 
@@ -71,7 +73,7 @@ Mat go(const string &method, const string &model_name, const string &image, cons
 
         imwrite(
                 folder +
-                extractFileName(set_format(image, "", false), "/") +
+                        getName(set_format(image, "", false)) +
                 "_L" + to_string(features[i].label) +
                 "_" + to_string(features[i].id) +
                 ".bmp",
@@ -248,6 +250,20 @@ void trainingPhase(char*argv[]){
 int main(int argc, char *argv[]) {
 
     cout << phd::io::GetCurrentWorkingDir() << endl;
+
+    const string root = phd::io::getParentDirectory(string(dirname(argv[0])));
+
+    config_folder = root + config_folder;
+    data_folder = root + data_folder;
+    results_folder = root + results_folder;
+    svm_folder = root + svm_folder;
+    nbayes_folder = root + nbayes_folder;
+
+    cout << config_folder << endl;
+    cout << data_folder << endl;
+    cout << results_folder << endl;
+    cout << svm_folder << endl;
+    cout << nbayes_folder << endl;
 
     // Save cpu tick count at the program start
     double timeElapsed = (double) getTickCount();

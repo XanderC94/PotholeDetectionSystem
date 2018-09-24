@@ -33,7 +33,9 @@ namespace phd::io {
 
     Configuration loadProgramConfiguration(const std::string target);
 
-    std::string extractFileName(const std::string file_path, const std::string sep);
+    std::string getName(std::string file_path);
+
+    std::string getParentDirectory(std::string path);
 
     std::vector<std::string> extractImagePath(const std::string targets);
 

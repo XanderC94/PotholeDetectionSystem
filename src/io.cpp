@@ -100,13 +100,20 @@ namespace phd::io {
         return res;
     }
 
-    string extractFileName(string file_path, const string sep = "/") {
+    string getName(string file_path) {
 
         std::replace(file_path.begin(), file_path.end(), '\\', '/');
 
-        auto offset = file_path.find_last_of(sep);
+        auto offset = file_path.find_last_of('/');
 
         return file_path.substr(offset + 1);
+    }
+
+    string getParentDirectory(string path) {
+        std::replace(path.begin(), path.end(), '\\', '/');
+        auto offset = path.find_last_of('/');
+
+        return path.substr(0, offset);
     }
 
     string set_format(string of_file_name_path, string to_new_format, bool use_separator) {
@@ -221,7 +228,7 @@ namespace phd::io {
 
             const Features ft = features[i];
 
-            const string c_name = set_format(extractFileName(names[i]), "", false);
+            const string c_name = set_format(getName(names[i]), "", false);
 
             Value obj(kObjectType);
 

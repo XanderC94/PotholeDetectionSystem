@@ -3,10 +3,14 @@
 #include "../include/phdetection/segmentation.hpp"
 #include "../include/phdetection/io.hpp"
 
+using namespace cv;
+using namespace cv::ximgproc;
+using namespace phd::ontologies;
 using namespace std;
 using namespace phd::superpixeling;
 
 namespace phd::segmentation {
+
     const int RESIZING_WIDTH = 640;
     const int RESIZING_HEIGHT = 480;
 

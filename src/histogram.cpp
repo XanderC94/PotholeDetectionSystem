@@ -1,8 +1,9 @@
-#include "../include/phdetection/histogram.hpp"
+#include "phdetection/histogram.hpp"
 
 #include <opencv2/imgproc.hpp>
 
 using namespace std;
+using namespace cv;
 
 namespace phd::features {
 

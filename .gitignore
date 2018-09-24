@@ -63,3 +63,5 @@ CppProperties.json
 /bayes*
 /Training/*
 /Training*
+/build/*
+/build*

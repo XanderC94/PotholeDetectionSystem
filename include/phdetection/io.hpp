@@ -5,42 +5,43 @@
 #include "ontologies.hpp"
 #include <opencv2/core.hpp>
 
-using namespace cv;
-using namespace std;
-
-using namespace phd::ontologies;
+//using namespace cv;
+//using namespace std;
+//
+//using namespace phd::ontologies;
 
 namespace phd::io {
+
     typedef struct Configuration {
-        RoadOffsets offsets;
-        ExtractionThresholds primaryThresholds;
-        ExtractionThresholds secondaryThresholds;
+        phd::ontologies::RoadOffsets offsets;
+        phd::ontologies::ExtractionThresholds primaryThresholds;
+        phd::ontologies::ExtractionThresholds secondaryThresholds;
     } Configuration;
 
     std::string GetCurrentWorkingDir(void);
 
     void portable_mkdir(const char *args);
 
-    string set_format(string of_file_name_path,
-                      string to_new_format,
+    std::string set_format(std::string of_file_name_path,
+                           std::string to_new_format,
                       bool use_separator = true);
 
-    void saveFeaturesJSON(const vector<Features> &features, const string saveDirectory, const vector<string> names,
-                          const string saveFile);
+    void saveFeaturesJSON(const std::vector<phd::ontologies::Features> &features, const std::string saveDirectory, const std::vector<std::string> names,
+                          const std::string saveFile);
 
-    void loadFromJSON(const string target, vector<Features> &features, Mat &labels);
+    void loadFromJSON(const std::string target, std::vector<phd::ontologies::Features> &features, cv::Mat &labels);
 
-    Configuration loadProgramConfiguration(const string target);
+    Configuration loadProgramConfiguration(const std::string target);
 
-    string extractFileName(const string file_path, const string sep);
+    std::string extractFileName(const std::string file_path, const std::string sep);
 
-    vector<String> extractImagePath(const string targets);
+    std::vector<std::string> extractImagePath(const std::string targets);
 
-    void showElaborationStatusToTheUser(string showingWindowTitle, Mat processedImage);
+    void showElaborationStatusToTheUser(std::string showingWindowTitle, cv::Mat processedImage);
 
-    void showElaborationStatusToTheUser(const vector<Features> candidatesFeatures);
+    void showElaborationStatusToTheUser(const std::vector<phd::ontologies::Features> candidatesFeatures);
 
-    void showElaborationStatusToTheUser(const vector<SuperPixel> superPixels);
+    void showElaborationStatusToTheUser(const std::vector<phd::ontologies::SuperPixel> superPixels);
 }
 
 #endif //POTHOLEDETECTIONSYSTEM_UTILIS_H

@@ -3,25 +3,24 @@
 
 #include <opencv2/core.hpp>
 
-using namespace cv;
-using namespace std;
+namespace phd::math {
+    double AnalyticRect2D(cv::Point from, cv::Point to, cv::Point evaluationPoint);
 
+    double GaussianEllipseFunction3D(cv::Point P,
+                                     cv::Point O = cv::Point(0.0, 0.0),
+                                     double SigmaX = 1.0,
+                                     double SigmaY = 1.0,
+                                     double A = 1.0,
+                                     double Theta = 0.0);
 
-double AnalyticRect2D(cv::Point from, cv::Point to, cv::Point evaluationPoint);
+    cv::Point2d calculateTopLeftCorner(cv::Point centroid, cv::Size candidate_size);
 
-double GaussianEllipseFunction3D(cv::Point P,
-                                 cv::Point O = cv::Point(0.0, 0.0),
-                                 double SigmaX = 1.0,
-                                 double SigmaY = 1.0,
-                                 double A = 1.0,
-                                 double Theta = 0.0);
+    cv::Point2d calculateBottomRightCorner(cv::Point centroid, cv::Mat sourceImage, cv::Size candidate_size);
 
-Point2d calculateTopLeftCorner(Point centroid, Size candidate_size);
+    float calculateSkewnessGrayImage(cv::Mat image, float averageColorVal);
 
-Point2d calculateBottomRightCorner(Point centroid, Mat sourceImage, Size candidate_size);
+    float calculateSkewnessGrayImageRegion(cv::Mat image,  std::vector<cv::Point> region, float averageGrayVal);
+}
 
-float calculateSkewnessGrayImage(Mat image, float averageColorVal);
-
-float calculateSkewnessGrayImageRegion(Mat image, vector<Point> region, float averageGrayVal);
 
 #endif //POTHOLEDETECTIONSYSTEM_MATHUTILS_H

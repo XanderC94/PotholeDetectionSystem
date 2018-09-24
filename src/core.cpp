@@ -2,22 +2,33 @@
 // Created by Xander on 19/9/2018.
 //
 
+
 #include "../include/phdetection/core.hpp"
+
+#include "phdetection/ml_utils.hpp"
+#include "phdetection/svm.hpp"
+#include "phdetection/bayes.hpp"
+#include "phdetection/segmentation.hpp"
+#include "phdetection/features_extraction.hpp"
+#include "phdetection/svm.hpp"
+#include "phdetection/bayes.hpp"
+
+using namespace cv;
+using namespace std;
+using namespace cv::ml;
+using namespace phd::ml::utils;
+using namespace phd::ontologies;
 
 namespace phd {
 
-    vector<Features> getFeatures(const string &target, const phd::io::Configuration &config) {
+    vector<Features> getFeatures(Mat &target, const phd::io::Configuration &config) {
 
         auto candidateSuperPixels = vector<SuperPixel>();
 
         auto candidate_size = Size(128, 128);
 
-        /*---------------------------------Load image------------------------*/
-
-        Mat src = imread(target, IMREAD_COLOR), tmp;
-
         /*
-        *	The src image will be:
+        *	The target image will be:
         *	1. Resized
         *	2. Cropped under the Horizon Line
         *   3. Segmented with superpixeling
@@ -30,19 +41,19 @@ namespace phd {
         /*--------------------------------- Pre-Processing Phase ------------------------------*/
 
         cout << "Pre-Processing... ";
-        phd::segmentation::preprocessing(src, src, config.offsets.horizon);
+        phd::segmentation::preprocessing(target, target, config.offsets.horizon);
         cout << "Finished." << endl;
 
         /*--------------------------------- End Pre-Processing Phase ------------------------------*/
-//    showElaborationStatusToTheUser("Preprocessing Result", src);
+//    showElaborationStatusToTheUser("Preprocessing Result", target);
 
         /*--------------------------------- First Segmentation Phase ------------------------------*/
 
         cout << "Segmentation... " << endl;
         // NB: Init once, use many times!
-        auto superPixeler = phd::superpixeling::initSuperPixelingLSC(src, superPixelEdge);
-        phd::segmentation::extractRegionsOfInterest(superPixeler, src, candidateSuperPixels,
-                                 superPixelEdge, config.primaryThresholds, config.offsets);
+        auto superPixeler = phd::superpixeling::initSuperPixelingLSC(target, superPixelEdge);
+        phd::segmentation::extractRegionsOfInterest(superPixeler, target, candidateSuperPixels,
+                                                    superPixelEdge, config.primaryThresholds, config.offsets);
         cout << "Finished." << endl;
         cout << "Found " << candidateSuperPixels.size() << " candidates." << endl;
 //    numberFirstSPCandidatesFound += candidateSuperPixels.size();
@@ -51,8 +62,8 @@ namespace phd {
         /*--------------------------------- Feature Extraction Phase ------------------------------*/
 
         cout << "Feature Extraction -- Started. " << endl;
-        auto features = phd::features::extractFeatures(src, candidateSuperPixels, candidate_size,
-                                        config.offsets, config.secondaryThresholds);
+        auto features = phd::features::extractFeatures(target, candidateSuperPixels, candidate_size,
+                                                       config.offsets, config.secondaryThresholds);
         cout << "Feature Extraction -- Finished." << endl;
 
         /*--------------------------------- End Feature Extraction Phase ------------------------------*/
@@ -60,6 +71,14 @@ namespace phd {
 //    showElaborationStatusToTheUser(features);
 
         return features;
+    }
+
+    vector<Features> getFeatures(const string &target, const phd::io::Configuration &config) {
+        /*---------------------------------Load image------------------------*/
+
+        Mat src = imread(target, IMREAD_COLOR);
+
+        return getFeatures(src, config);
     }
 
     Mat classify(const string &method, const string &svm_model,

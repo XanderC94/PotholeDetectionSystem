@@ -9,15 +9,19 @@
 #include <opencv2/ml.hpp>
 #include "ontologies.hpp"
 
-using namespace cv;
-using namespace std;
-using namespace phd::ontologies;
-
 namespace phd::ml::bayes {
 
-    void Classifier(const vector<Features> &features, Mat &labels, const string model_path);
+    void Classifier(
+            const std::vector<phd::ontologies::Features> &features,
+            cv::Mat &labels,
+            const std::string model_path
+        );
 
-    void Training(const vector<Features> &features, const Mat &labels, const string model_path);
+    void Training(
+            const std::vector<phd::ontologies::Features> &features,
+            const cv::Mat &labels,
+            const std::string model_path
+        );
 
 }
 

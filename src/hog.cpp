@@ -2,15 +2,17 @@
 // Created by Xander_C on 15/06/2018.
 //
 
-#include "../include/phdetection/hog.hpp"
+#include "phdetection/hog.hpp"
 
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/ml.hpp>
 #include <opencv2/objdetect.hpp>
 
-namespace phd::features {
+using namespace cv;
+using namespace std;
 
+namespace phd::features {
 
     HOG calculateHOG(const Mat &src, const HOGConfig config) {
 

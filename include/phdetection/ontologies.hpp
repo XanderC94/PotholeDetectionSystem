@@ -7,9 +7,6 @@
 #include <opencv2/core.hpp>
 #include <set>
 
-using namespace cv;
-using namespace std;
-
 namespace phd::ontologies {
 
     typedef struct RoadOffsets {
@@ -38,39 +35,39 @@ namespace phd::ontologies {
         int _class;
         int label;
         int id;
-        Mat candidate;
-        Mat histogram;
+        cv::Mat candidate;
+        cv::Mat histogram;
         float averageGreyValue;
-        Scalar averageRGBValues;
+        cv::Scalar averageRGBValues;
         float contrast;
         float entropy;
         float skewness;
         float energy;
-        Mat1f hogDescriptors;
+        cv::Mat1f hogDescriptors;
     } Features;
 
     typedef struct SuperPixel {
         int label;
-        vector<cv::Point> points;
-        Point2d center;
-        Mat selection;
-        Mat1b mask;
-        Mat contour;
-        Scalar meanColour;
+        std::vector<cv::Point> points;
+        cv::Point2d center;
+        cv::Mat selection;
+        cv::Mat1b mask;
+        cv::Mat contour;
+        cv::Scalar meanColour;
         std::set<int> neighbors;
     } SuperPixel;
 
     typedef struct FeaturesVectors {
-        vector<float> averageGreyLevels = vector<float>();
-        vector<float> averageRedLevels = vector<float>();
-        vector<float> averageGreenLevels = vector<float>();
-        vector<float> averageBlueLevels = vector<float>();
-        vector<Mat> histograms = vector<Mat>();
-        vector<float> contrasts = vector<float>();
-        vector<float> entropies = vector<float>();
-        vector<float> skewnesses = vector<float>();
-        vector<float> energies = vector<float>();
-        vector<Mat1f> hogDescriptors = vector<Mat1f>();
+        std::vector<float> averageGreyLevels = std::vector<float>();
+        std::vector<float> averageRedLevels = std::vector<float>();
+        std::vector<float> averageGreenLevels = std::vector<float>();
+        std::vector<float> averageBlueLevels = std::vector<float>();
+        std::vector<cv::Mat> histograms = std::vector<cv::Mat>();
+        std::vector<float> contrasts = std::vector<float>();
+        std::vector<float> entropies = std::vector<float>();
+        std::vector<float> skewnesses = std::vector<float>();
+        std::vector<float> energies = std::vector<float>();
+        std::vector<cv::Mat1f> hogDescriptors = std::vector<cv::Mat1f>();
     } FeaturesVectors;
 
     enum ClassificationClasses {

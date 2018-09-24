@@ -2,10 +2,13 @@
 // Created by Xander_C on 5/06/2018.
 //
 
-#include "../include/phdetection/svm.hpp"
-#include "../include/phdetection/ml_utils.hpp"
+#include "phdetection/svm.hpp"
+#include "phdetection/ml_utils.hpp"
 
+using namespace cv;
 using namespace cv::ml;
+using namespace std;
+using namespace phd::ontologies;
 
 namespace phd::ml::svm {
 

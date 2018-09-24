@@ -2,17 +2,20 @@
 // Created by Matteo Gabellini on 02/06/2018.
 //
 
-#include "../include/phdetection/features_extraction.hpp"
-#include "../include/phdetection/math.hpp"
-#include "../include/phdetection/histogram.hpp"
-#include "../include/phdetection/fe_utils.hpp"
-#include "../include/phdetection/io.hpp"
-#include "../include/phdetection/ontologies.hpp"
+#include "phdetection/features_extraction.hpp"
+#include "phdetection/math.hpp"
+#include "phdetection/histogram.hpp"
+#include "phdetection/fe_utils.hpp"
+#include "phdetection/io.hpp"
+#include "phdetection/ontologies.hpp"
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 
 using namespace std;
 using namespace cv::ximgproc;
+using namespace cv;
+using namespace phd::ontologies;
+using namespace phd::math;
 
 namespace phd::features {
     /* *

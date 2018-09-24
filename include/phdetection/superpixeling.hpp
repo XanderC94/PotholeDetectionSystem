@@ -10,35 +10,32 @@
 #include <opencv2/ximgproc.hpp>
 #include "ontologies.hpp"
 
-using namespace cv;
-using namespace cv::ximgproc;
-using namespace phd::ontologies;
-
 namespace phd::superpixeling {
-    vector<vector<cv::Point>> getContours(const Mat &mask);
 
-    Mat getContoursMask(const Mat &mask);
+    std::vector<std::vector<cv::Point>> getContours(const cv::Mat &mask);
 
-    SuperPixel getSuperPixel(const Mat &src, int superPixelLabel,
-                             const Mat &labels);
+    cv::Mat getContoursMask(const cv::Mat &mask);
 
-    SuperPixel getSuperPixel(const Mat &src, int superPixelLabel,
-                             const Mat &labels, const RoadOffsets offsets);
+    phd::ontologies::SuperPixel getSuperPixel(const cv::Mat &src, int superPixelLabel,
+                             const cv::Mat &labels);
 
-    SuperPixel getSuperPixel(const Mat &src, const Mat1b &roadMask,
-                             const int superPixelLabel, const Mat &labels);
+    phd::ontologies::SuperPixel getSuperPixel(const cv::Mat &src, int superPixelLabel,
+                             const cv::Mat &labels, const phd::ontologies::RoadOffsets offsets);
 
-    bool isRoad(const int H, const int W, const RoadOffsets offsets, const Point2d center);
+    phd::ontologies::SuperPixel getSuperPixel(const cv::Mat &src, const cv::Mat1b &roadMask,
+                             const int superPixelLabel, const cv::Mat &labels);
 
-    Ptr<SuperpixelLSC> initSuperPixelingLSC(const Mat &src, const int superPixelEdge);
+    bool isRoad(const int H, const int W, const phd::ontologies::RoadOffsets offsets, const cv::Point2d center);
 
-    Ptr<SuperpixelSLIC> initSuperPixelingSLIC(const Mat &src, const int superPixelEdge, const float ruler);
+    cv::Ptr<cv::ximgproc::SuperpixelLSC> initSuperPixelingLSC(const cv::Mat &src, const int superPixelEdge);
 
-    Point2d calculateSuperPixelCenter(vector<cv::Point> pixelOfTheSuperPixel);
+    cv::Ptr<cv::ximgproc::SuperpixelSLIC> initSuperPixelingSLIC(const cv::Mat &src, const int superPixelEdge, const float ruler);
 
-    Point2d calculateSuperPixelVariance(vector<cv::Point> superPixel, Point2d center);
+    cv::Point2d calculateSuperPixelCenter(std::vector<cv::Point> pixelOfTheSuperPixel);
 
-    double calculateSuperPixelDensity(vector<cv::Point> superPixel);
+    cv::Point2d calculateSuperPixelVariance(std::vector<cv::Point> superPixel, cv::Point2d center);
+
+    double calculateSuperPixelDensity(std::vector<cv::Point> superPixel);
 }
 
 #endif //POTHOLEDETECTIONSYSTEM_SUPERPIXELINGUTILS_H

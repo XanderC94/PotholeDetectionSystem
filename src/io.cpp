@@ -30,6 +30,8 @@
 
 using namespace rapidjson;
 using namespace cv;
+using namespace phd::ontologies;
+using namespace std;
 
 namespace phd::io {
 
@@ -76,9 +78,9 @@ namespace phd::io {
 #endif
     }
 
-    vector<String> extractImagePath(const string targets) {
+    vector<string> extractImagePath(const string targets) {
 
-        vector<String> res;
+        vector<string> res;
         vector<String> fnJpg;
         vector<String> fnPng;
         vector<String> fnBmp;
@@ -88,13 +90,13 @@ namespace phd::io {
         glob(targets + "/*.bmp", fnBmp);
 
         for (auto jpgImage : fnJpg) {
-            res.push_back(jpgImage);
+            res.push_back(string(jpgImage.c_str()));
         }
         for (auto pngImage : fnPng) {
-            res.push_back(pngImage);
+            res.push_back(string(pngImage.c_str()));
         }
         for (auto bmpImage : fnBmp) {
-            res.push_back(bmpImage);
+            res.push_back(string(bmpImage.c_str()));
         }
 
         return res;

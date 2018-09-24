@@ -8,18 +8,24 @@
 #include "segmentation.hpp"
 #include <opencv2/core.hpp>
 
-using namespace std;
-using namespace cv::ximgproc;
-
 void calculateContrastEntropyEnergy(float &outContrast,
                                     float &outEntropy,
                                     float &outEnergy,
-                                    const SuperPixel &candidateSuperPixel,
-                                    const Mat &candidateGrayScale);
+                                    const phd::ontologies::SuperPixel &candidateSuperPixel,
+                                    const cv::Mat &candidateGrayScale);
 
-Mat1f extractHogParams(const Mat &sample, const Mat &candidateGrayScale, const SuperPixel &candidateSuperPixel);
+cv::Mat1f extractHogParams(
+        const cv::Mat &sample,
+        const cv::Mat &candidateGrayScale,
+        const phd::ontologies::SuperPixel &candidateSuperPixel
+    );
 
-Mat1b createExclusionMask(const Mat &src, const Mat &sample, const Point2d &tlc,
-                          const RoadOffsets &offsets, const ExtractionThresholds &thresholds);
+cv::Mat1b createExclusionMask(
+        const cv::Mat &src,
+        const cv::Mat &sample,
+        const cv::Point2d &tlc,
+        const phd::ontologies::RoadOffsets &offsets,
+        const phd::ontologies::ExtractionThresholds &thresholds
+    );
 
 #endif //POTHOLEDETECTIONSYSTEM_FEATURESEXTRACTIONUTILS_H

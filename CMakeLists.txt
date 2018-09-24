@@ -15,7 +15,11 @@ else ()
     # Init OPENCV Environment
     set(OPENCV_DIR $ENV{OPENCV}/install)
     set(OPENCV_INCLUDE "${OPENCV_DIR}/include")
-    set(OPENCV_LIBS "${OPENCV_DIR}/x64/mingw/lib/libopencv_world340.dll.a")
+    if(CMAKE_SYSTEM_NAME STREQUAL "windows")
+        set(OPENCV_LIBS "${OPENCV_DIR}/x64/mingw/lib/libopencv_world340.dll.a")
+    else ()
+        find_package(OpenCv REQUIRED)
+    endif(CMAKE_SYSTEM_NAME STREQUAL "windows")
     set(RAPIDJSON_INCLUDE "$ENV{RAPIDJSON}/include")
 
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake-modules")
@@ -73,7 +77,11 @@ else ()
     )
 
     # linking library with opencv
-    target_link_libraries(PotholeDetectionLib PUBLIC ${OPENCV_LIBS})
+    if(CMAKE_SYSTEM_NAME STREQUAL "windows")
+        target_link_libraries(PotholeDetectionLib PUBLIC ${OPENCV_LIBS})
+    else ()
+        target_link_libraries(PotholeDetectionLib PUBLIC ${OpenCV_LIBS})
+    endif(CMAKE_SYSTEM_NAME STREQUAL "windows")
 
     # create executable binary
     add_executable(PotholeDetection main.cpp)

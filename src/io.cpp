@@ -1,4 +1,4 @@
-#include "../include/phdetection/io.hpp"
+#include "phdetection/io.hpp"
 #include <sys/stat.h>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
@@ -12,8 +12,7 @@
 #include <rapidjson/istreamwrapper.h>
 #include <rapidjson/prettywriter.h>
 
-#define WINDOWS defined(_WIN32) || defined(_WIN32_WINNT) || defined(_WIN64)
-#ifdef WINDOWS
+#if defined(_WIN32) || defined(_WIN32_WINNT) || defined(_WIN64)
 #include <direct.h>
 #define GetCurrentDir _getcwd
 #else

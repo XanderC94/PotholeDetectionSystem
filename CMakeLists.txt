@@ -10,22 +10,22 @@ elseif("$ENV{RAPIDJSON}" STREQUAL "")
     message("ERROR: The RAPIDJSON environmental/global variable is not set or is empty")
     return(0)
 else ()
+
     message("$ENV{OPENCV}")
     message("$ENV{RAPIDJSON}")
-    # Init OPENCV Environment
-    set(OPENCV_DIR $ENV{OPENCV}/install)
-    set(OPENCV_INCLUDE "${OPENCV_DIR}/include")
-    set(OPENCV_LIBS "${OPENCV_DIR}/x64/mingw/lib/libopencv_world340.dll.a")
-    set(RAPIDJSON_INCLUDE "$ENV{RAPIDJSON}/include")
 
-    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake-modules")
+    set(OPENCV_DIR $ENV{OPENCV}/install)
+    set(RAPIDJSON_INCLUDE $ENV{RAPIDJSON}/include)
+    set(PHD_INCLUDE ${PROJECT_SOURCE_DIR}/include)
+
+#    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake-modules")
 
     find_package(OPENCV REQUIRED)
 
     include_directories(
-            ${OPENCV_INCLUDE}
+            ${OpenCV_INCLUDE_DIRS}
             ${RAPIDJSON_INCLUDE}
-            ${PROJECT_SOURCE_DIR}/include
+            ${PHD_INCLUDE}
     )
 
     # Create Library
@@ -67,21 +67,16 @@ else ()
             VERSION ${PROJECT_VERSION}
             PREFIX "lib"
             OUTPUT_NAME "phd_world"
-#            SUFFIX ".dll"
-#            SUFFIX ".lib.a"
             PUBLIC_HEADER "${PUBLIC_HEADERS}"
     )
 
     # linking library with opencv
-    target_link_libraries(PotholeDetectionLib PUBLIC ${OPENCV_LIBS})
+    target_link_libraries(PotholeDetectionLib PUBLIC ${OpenCV_LIBS})
 
     # create executable binary
     add_executable(PotholeDetection main.cpp)
 
-    target_link_libraries(PotholeDetection PUBLIC
-#            ${OPENCV_LIBS}
-            PotholeDetectionLib
-    )
+    target_link_libraries(PotholeDetection PUBLIC PotholeDetectionLib)
 
     install(TARGETS         PotholeDetectionLib PotholeDetection
             ARCHIVE         DESTINATION         "lib/static"

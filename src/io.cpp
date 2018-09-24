@@ -12,7 +12,15 @@
 #include <rapidjson/istreamwrapper.h>
 #include <rapidjson/prettywriter.h>
 
-#if defined(_WIN32) || defined(_WIN32_WINNT) || defined(_WIN64)
+#ifdef _WIN32
+#define WINDOWS
+#elseif _WIN32_WINNT
+#define WINDOWS
+#elseif _WIN64
+#define WINDOWS
+#endif
+
+#ifdef WINDOWS
 #include <direct.h>
 #define GetCurrentDir _getcwd
 #else

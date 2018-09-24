@@ -12,11 +12,9 @@
 #include <rapidjson/istreamwrapper.h>
 #include <rapidjson/prettywriter.h>
 
-#ifdef _WIN32
+#if defined(_WIN32)
 #define WINDOWS
-#elseif _WIN32_WINNT
-#define WINDOWS
-#elseif _WIN64
+#elif defined(_WIN64)
 #define WINDOWS
 #endif
 

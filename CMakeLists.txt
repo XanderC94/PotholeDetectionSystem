@@ -3,35 +3,35 @@ project(PotholeDetection)
 set(PROJECT_VERSION 0.0.2a)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 # Where to find CMake modules and OpenCV
-if ("$ENV{OPENCV}" STREQUAL "")
-    message("ERROR: The OPENCV environmental/global variable is not set or is empty")
+if ("$ENV{OPENCV_PATH}" STREQUAL "")
+    message("ERROR: The Open Computer Vision environmental/global variable is not set or is empty")
     return(0)
-elseif("$ENV{RAPIDJSON}" STREQUAL "")
-    message("ERROR: The RAPIDJSON environmental/global variable is not set or is empty")
+elseif("$ENV{RAPIDJSON_PATH}" STREQUAL "")
+    message("ERROR: The RapidJSON environmental/global variable is not set or is empty")
     return(0)
 else ()
 
-    message("$ENV{OPENCV}")
-    message("$ENV{RAPIDJSON}")
+    message("$ENV{OPENCV_PATH}")
+    message("$ENV{RAPIDJSON_PATH}")
 
-    set(OPENCV_DIR $ENV{OPENCV}/install)
-    set(RAPIDJSON_INCLUDE $ENV{RAPIDJSON}/include)
-    set(PHD_INCLUDE ${PROJECT_SOURCE_DIR}/include)
+    set(OpenCV_DIR $ENV{OPENCV_PATH}/install)
+    set(RapidJSON_INCLUDE $ENV{RAPIDJSON_PATH}/include)
+    set(PhD_INCLUDE ${PROJECT_SOURCE_DIR}/include)
 
-    if(CMAKE_SYSTEM_NAME STREQUAL "windows")
-        set(OPENCV_LIBS "${OPENCV_DIR}/x64/mingw/lib/libopencv_world340.dll.a")
-    else ()
-        find_package(OpenCv REQUIRED)
-    endif(CMAKE_SYSTEM_NAME STREQUAL "windows")
+#    if(CMAKE_SYSTEM_NAME STREQUAL "windows")
+#        set(OPENCV_LIBS "${OPENCV_DIR}/x64/mingw/lib/libopencv_world340.dll.a")
+#    else ()
+#        find_package(OpenCv REQUIRED)
+#    endif(CMAKE_SYSTEM_NAME STREQUAL "windows")
 
 #    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake-modules")
 
-    find_package(OPENCV REQUIRED)
+    find_package(OpenCV REQUIRED)
 
     include_directories(
             ${OpenCV_INCLUDE_DIRS}
-            ${RAPIDJSON_INCLUDE}
-            ${PHD_INCLUDE}
+            ${RapidJSON_INCLUDE}
+            ${PhD_INCLUDE}
     )
 
     # Create Library

@@ -13,7 +13,7 @@ else ()
 
     message("Open Computer Vision: $ENV{OpenCV_DIR}")
 
-    set(RapidJSON_DIR "lib/RapidJSON")
+    set(RapidJSON_DIR "${PROJECT_SOURCE_DIR}/lib/RapidJSON")
 
 #    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake-modules")
 
@@ -21,9 +21,9 @@ else ()
 #    find_package(RapidJSON REQUIRED)
 
     include_directories(
-            ${OpenCV_INCLUDE_DIRS}
-            ${RapidJSON_DIR} #/include
-            ${PROJECT_SOURCE_DIR}/include
+            "${OpenCV_INCLUDE_DIRS}"
+            "${RapidJSON_DIR}/include"
+            "${PROJECT_SOURCE_DIR}/include"
     )
 
     # Create Library

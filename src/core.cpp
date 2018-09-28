@@ -88,17 +88,17 @@ namespace phd {
 
         if (!features.empty()) {
 
-            if (method == "-svm") {
+            if (method == METHODS.at(__Method::SVM)) {
 
                 /***************************** SVM CLASSIFIER ********************************/
                 phd::ml::svm::Classifier(features, std_labels, svm_model);
 
-            } else if (method == "-bayes") {
+            } else if (method == METHODS.at(__Method::BAYES)) {
 
                 /***************************** Bayes CLASSIFIER ********************************/
                 phd::ml::bayes::Classifier(features, std_labels, bayes_model);
 
-            } else if (method == "-multi") {
+            } else if (method == METHODS.at(__Method::MULTI)) {
                 /***************************** MULTI CLASSIFIER ********************************/
                 Mat svm_labels(static_cast<int>(features.size()), 1, CV_32SC1);
                 phd::ml::svm::Classifier(features, svm_labels, svm_model);

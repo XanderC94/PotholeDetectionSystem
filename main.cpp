@@ -25,63 +25,33 @@ string results_folder = "/res/results";
 string svm_folder = "/res/svm";
 string nbayes_folder = "/res/bayes";
 
+typedef struct ARGS {
+    string mode;
+    string target_type;
+    string target;
+    bool user_feedback;
+    string method;
+    string bayes_model;
+    string svm_model;
+} ARGS;
+
 void showHelper() {
 
     cout << " Pothole Detection System Helper" << endl << endl;
 
-    cout << "\t -d == generate candidates inside the given folder" << endl;
-    cout << "\t\t Example: -d /x/y/z {-f}" << endl << endl;
-    cout << "\t\t NOTE: The optional -f parameter will enable user-driven feedback for each candidate found."
+    cout << " -g == generate candidates inside the given folder" << endl << endl;
+    cout << "Example: -g -{i, d} {/path/to/image.abc, /path/to/images/} {-uf}" << endl << endl;
+    cout << "NOTE: The optional -uf parameter will enable user-driven feedback for each candidate found." << endl;
+    cout << "NOTE: This will create a features.json features file under ../res/features/ ."
          << endl << endl;
 
-    cout << "\t -t == train an SVM, Bayes or Multi Classifier using the generated data" << endl;
-    cout << "\t\t Example: -t -{svm, bayes, multi} /x/y/z/ model_name" << endl << endl;
-    cout << "\t\t NOTE: no path or extension for the model name is required, " << endl
-         << "\t\t it will be stored into ../res/svm/ or ../res/bayes/ inside the program folder." << endl << endl;
+    cout << " -t == train an SVM, Bayes or Multi Classifier using the generated data" << endl << endl;
+    cout << "Example: -t -ft /path/to/features.json "
+            << "-{svm, bayes, multi} -b /path/to/bayes/model.yml -s /path/to/svm/model.yml" << endl << endl;
 
-    cout << "\t -c == classify the given image or set of images (folder path)" << endl;
-    cout << "\t\t Example: -c -{svm, bayes, multi} -{i, d} {/x/y/z, /x/y/z/image.something} model_name" << endl << endl;
-    cout << "\t\t NOTE: no path or extension for the model name is required, " << endl
-         << "\t\t it must be located inside the directories ../res/svm/ or ../res/bayes/ inside the program folder."
-         << endl;
-}
-
-Mat go(const string &method, const string &model_name, const string &image, const Configuration &config) {
-
-    cout << endl << "---------------" << image << endl;
-
-    auto features = phd::getFeatures(image, config);
-
-    cv::Mat labels;
-
-    try {
-        labels = phd::classify(method, svm_folder + "/" + model_name, nbayes_folder + "/" + model_name, features);
-    } catch(phd::UndefinedMethod &ex)  {
-        cerr << "ERROR: " << ex.what() << endl;
-        exit(-1);
-    }
-
-    cout << "LABELS: " << labels << endl;
-
-    for (int i = 0; i < features.size(); ++i) {
-
-        string folder = results_folder + "/neg/";
-
-        if (labels.at<int>(0, i) > 0 || labels.at<float>(0, i) > 0) {
-            folder = results_folder + "/pos/";
-        }
-
-        imwrite(
-                folder +
-                        getName(set_format(image, "", false)) +
-                "_L" + to_string(features[i].label) +
-                "_" + to_string(features[i].id) +
-                ".bmp",
-                features[i].candidate
-        );
-    }
-
-    return labels;
+    cout << " -c == classify the given image or set of images (folder path)" << endl << endl;
+    cout << "Example: -c -{i, d} {/path/to/image.abc, /path/to/images/} "
+         << "-{svm, bayes, multi} -b /path/to/bayes/model.yml -s /path/to/svm/model.yml" << endl << endl;
 }
 
 /*
@@ -154,44 +124,94 @@ int askUserSupervisionMultiClasses(const Features &candidateFeatures, const int 
     return result;
 }
 
-void createCandidates(const string &targets, const bool feedback, const Configuration &config) {
+void _create_candidates_stub(
+        const std::string image,
+        const bool user_feedback,
+        const Configuration &config,
+        vector<Features> &features,
+        vector<string> &names) {
 
-    vector<string> fn = extractImagePath(targets);
+    auto ft = phd::getFeatures(image, config);
+
+    for (auto f : ft) {
+        names.push_back(image);
+        if (user_feedback) {
+            //f._class = askUserSupervisionBinaryClasses(f);
+            f._class = askUserSupervisionMultiClasses(f);
+            cout << " Image " << image << " L" << f.label
+                 << " labeled as " << (f._class == 1 ? "pothole." : "not pothole.")
+                 << endl;
+        }
+
+        features.push_back(f);
+    }
+}
+
+void createCandidates(const ARGS args, const Configuration &config) {
+
     vector<string> names;
     vector<Features> features;
 
-    for (auto image : fn) {
+    if (args.target_type == "-d") {
+        vector<string> fn = extractImagePath(args.target);
 
-        cout << endl << "---------------" << image << endl;
+        for (auto image : fn) {
 
-        auto ft = phd::getFeatures(image, config);
+            cout << endl << "---------------" << image << endl;
 
-        for (auto f : ft) {
-            names.push_back(image);
-            if (feedback) {
-                //f._class = askUserSupervisionBinaryClasses(f);
-                f._class = askUserSupervisionMultiClasses(f);
-                cout << " Image " << image << " L" << f.label
-                     << " labeled as " << (f._class == 1 ? "pothole." : "not pothole.")
-                     << endl;
-            }
-
-            features.push_back(f);
+            _create_candidates_stub(image, args.user_feedback, config, features, names);
         }
+    } else if (args.target_type == "-i") {
+
+        _create_candidates_stub(args.target, args.user_feedback, config, features, names);
     }
 
-    saveFeaturesJSON(features, data_folder, names, "features");
+    saveFeaturesJSON(features, names, data_folder + "/features.json");
 
 }
 
-void classificationPhase(char*argv[], const Configuration &config){
+Mat _classifier_stub(const string &method, const string &bayes_model, const string &svm_model, const string &image,
+                     const Configuration &config) {
 
-    auto method = string(argv[2]);
-    auto target_type = string(argv[3]);
-    auto target = string(argv[4]);
-    auto model_name = string(argv[5]);
+    cout << endl << "---------------" << image << endl;
 
-    cout << "classify Method: " << method << endl;
+    auto features = phd::getFeatures(image, config);
+
+    cv::Mat labels;
+
+    try {
+        labels = phd::classify(method, svm_model, bayes_model, features);
+    } catch(phd::UndefinedMethod &ex)  {
+        cerr << "ERROR: " << ex.what() << endl;
+        exit(-1);
+    }
+
+    cout << "LABELS: " << labels << endl;
+
+    for (int i = 0; i < features.size(); ++i) {
+
+        string folder = results_folder + "/neg/";
+
+        if (labels.at<int>(0, i) > 0 || labels.at<float>(0, i) > 0) {
+            folder = results_folder + "/pos/";
+        }
+
+        imwrite(
+                folder +
+                getName(set_format(image, "", false)) +
+                "_L" + to_string(features[i].label) +
+                "_" + to_string(features[i].id) +
+                ".bmp",
+                features[i].candidate
+        );
+    }
+
+    return labels;
+}
+
+void classificationPhase(const ARGS args, const Configuration &config){
+
+    cout << "classify Method: " << args.method << endl;
 
     portable_mkdir(results_folder.data());
     portable_mkdir((results_folder + "/neg").data());
@@ -199,57 +219,114 @@ void classificationPhase(char*argv[], const Configuration &config){
 
     /*--------------------------------- classify Phase ------------------------------*/
     int numberOfCandidatesFound = 0;
-    if (target_type == "-d") { /// Whole folder
+    if (args.target_type == "-d") { /// Whole folder
 
-        vector<string> fn = extractImagePath(target);
+        vector<string> fn = extractImagePath(args.target);
 
         cout << "Number of image found in the directory: " << fn.size() << endl;
         for (const auto &image : fn) {
-            numberOfCandidatesFound += go(method, model_name, image, config).cols;
+            numberOfCandidatesFound += _classifier_stub(args.method, args.bayes_model, args.svm_model, image, config).cols;
         }
-    } else if (target_type == "-i") { /// Single Image
-        numberOfCandidatesFound += go(method, model_name, target, config).cols;
+    } else if (args.target_type == "-i") { /// Single Image
+        numberOfCandidatesFound += _classifier_stub(args.method, args.bayes_model, args.svm_model, args.target, config).cols;
+    } else {
+        cerr << "Unknown target type " << args.target_type << endl;
+        exit(-1);
     }
 
     cout << "Candidates at first segmentation found: " << numberFirstSPCandidatesFound << endl;
     cout << "Candidates found: " << numberOfCandidatesFound << endl;
 }
 
-void trainingPhase(char*argv[]){
+void trainingPhase(const ARGS args, const Configuration config){
 
-    auto method = string(argv[2]);
-//    cout << "Training Method: " << method << endl;
+    cout << "Training Method: " << args.method << endl;
 
     Mat labels(0, 0, CV_32SC1);
     vector<Features> candidates;
 
-    loadFromJSON(data_folder + "/" + string(argv[3]), candidates, labels);
+    loadFromJSON(args.target, candidates, labels);
 
     /*--------------------------------- Training Phase ------------------------------*/
-    bool trainBoth = (method == "-multi");
+    bool trainBoth = (args.method == "-multi");
 
-    if (trainBoth || method == "-svm") {
+    if (trainBoth || args.method == "-svm") {
 
         /***************************** SVM CLASSIFIER ********************************/
 
         portable_mkdir(svm_folder.data());
-        const auto model = svm_folder + "/" + string(argv[4]);
-        phd::ml::svm::Training(candidates, labels, 1000, exp(-6), model);
+        phd::ml::svm::Training(candidates, labels, 1000, exp(-6), args.svm_model);
     }
 
-    if (trainBoth || method == "-bayes") {
+    if (trainBoth || args.method == "-bayes") {
 
         /***************************** Bayes CLASSIFIER ********************************/
 
         portable_mkdir(nbayes_folder.data());
-        const auto std_model = nbayes_folder + "/" + string(argv[4]);
-        phd::ml::bayes::Training(candidates, labels, std_model);
+        phd::ml::bayes::Training(candidates, labels, args.bayes_model);
     }
 }
 
+
+ARGS parseCommandLineArguments(int argc, char*argv[]) {
+
+    auto mode = string(argv[1]);
+    auto target_type = string(argv[2]);
+    auto targets = string(argv[3]);
+    auto method = string();
+    auto bayes_model = string();
+    auto svm_model = string();
+    auto user_feedback = false;
+
+    if (mode == "-g") {
+        user_feedback = argc > 4 && string(argv[4]) == "-uf";
+    } else if (mode == "-c" || mode == "-t"){
+        method = string(argv[4]);
+
+        if (method == "-bayes") {
+            int idx = string(argv[5]) == "-b" ? 6 : 5;
+            bayes_model = string(argv[idx]);
+        } else if(method == "-svm") {
+            int idx = string(argv[5]) == "-s" ? 6 : 5;
+            svm_model = string(argv[6]);
+        } else if (method == "-multi" && argc > 7 && (
+                (string(argv[5]) == "-b" && string(argv[7]) == "-s") ||
+                (string(argv[7]) == "-b" && string(argv[5]) == "-s"))) {
+
+            if (string(argv[5]) == "-b") {
+                bayes_model = string(argv[6]);
+                svm_model = string(argv[8]);
+            } else {
+                bayes_model = string(argv[8]);
+                svm_model = string(argv[6]);
+            }
+        } else {
+            showHelper();
+            exit(-1);
+        }
+
+    } else {
+        showHelper();
+        exit(-1);
+    }
+
+    cout << "FOUND: " << endl
+        << "Mode:" << mode << endl
+        << "TT:" << target_type << endl
+        << "Target:" << targets << endl
+        << "feedback:" << user_feedback << endl
+        << "Method:" << method << endl
+        << "SVM:" << bayes_model << endl
+        << "BAYES:" << svm_model << endl << endl;
+
+
+    return ARGS {mode, target_type, targets, user_feedback, method, bayes_model, svm_model};
+}
+
+
 int main(int argc, char *argv[]) {
 
-    cout << phd::io::GetCurrentWorkingDir() << endl;
+//    cout << phd::io::GetCurrentWorkingDir() << endl;
 
     const string root = phd::io::getParentDirectory(string(dirname(argv[0])));
 
@@ -259,21 +336,19 @@ int main(int argc, char *argv[]) {
     svm_folder = root + svm_folder;
     nbayes_folder = root + nbayes_folder;
 
-    cout << config_folder << endl;
-    cout << data_folder << endl;
-    cout << results_folder << endl;
-    cout << svm_folder << endl;
-    cout << nbayes_folder << endl;
+//    cout << config_folder << endl;
+//    cout << data_folder << endl;
+//    cout << results_folder << endl;
+//    cout << svm_folder << endl;
+//    cout << nbayes_folder << endl;
 
     // Save cpu tick count at the program start
     double timeElapsed = (double) getTickCount();
 
-    if (argc < 2) {
+    if (argc < 3) {
         showHelper();
         return 0;
     } else {
-
-        auto mode = string(argv[1]);
 
         config = loadProgramConfiguration(config_folder + "/config.json");
 
@@ -281,12 +356,16 @@ int main(int argc, char *argv[]) {
         printThresholds(config.secondaryThresholds);
         printOffsets(config.offsets);
 
-        if (mode == "-d" && argc > 2) {
-            createCandidates(argv[2], argc > 3 && string(argv[3]) == "-f", config);
-        } else if (mode == "-c" && argc > 5) {
-            classificationPhase(argv, config);
-        } else if (mode == "-t" && argc >= 4) {
-            trainingPhase(argv);
+        const auto args = parseCommandLineArguments(argc, argv);
+
+
+
+        if (args.mode == "-g" && argc > 2) {
+            createCandidates(args, config);
+        } else if (args.mode == "-c" && argc > 6) {
+            classificationPhase(args, config);
+        } else if (args.mode == "-t" && argc >= 5) {
+            trainingPhase(args, config);
         } else {
             showHelper();
         }

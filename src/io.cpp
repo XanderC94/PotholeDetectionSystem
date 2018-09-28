@@ -1,4 +1,4 @@
-#include "phdetection/io.hpp"
+#include <phdetection/io.hpp>
 #include <sys/stat.h>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
@@ -6,6 +6,7 @@
 #include <iostream>
 #include <fstream>
 #include <stdio.h>
+#include <libgen.h>
 
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
@@ -42,14 +43,14 @@ namespace phd::io {
 
     void portable_mkdir(const char *args) {
 
-#if defined(_WIN32) || defined(_WIN32_WINNT) || defined(_WIN64)
+#ifdef WINDOWS
         mkdir(args);
 #else
         mkdir(args, S_IWUSR);
 #endif
     }
 
-    vector<string> extractImagePath(const string targets) {
+    vector<string> extractImagePath(const string& targets) {
 
         vector<string> res;
         vector<String> fnJpg;
@@ -98,7 +99,7 @@ namespace phd::io {
                                          (use_separator ? "." : "") + to_new_format);
     }
 
-    void loadFromJSON(const string target, vector<Features> &features, Mat &labels) {
+    void loadFromJSON(const string& target, vector<Features> &features, Mat &labels) {
 
         ifstream json(target, fstream::in);
 
@@ -174,12 +175,15 @@ namespace phd::io {
 
     }
 
-    void saveFeaturesJSON(const vector<Features> &features, const string saveDirectory, const vector<string> names,
-                          const string saveFile) {
+    void saveFeaturesJSON(const vector<Features> &features, const vector<string>& names, const string &saveFile) {
 
-        portable_mkdir(saveDirectory.data());
+        vector<char> tmp(saveFile.begin(), saveFile.end());
 
-        ifstream iJson(saveDirectory + "/" + saveFile + ".json", fstream::in);
+        const auto directory = string(dirname(tmp.data()));
+
+        portable_mkdir(directory.data());
+
+        ifstream iJson(saveFile, fstream::in);
 
         std::string rawJson((std::istreambuf_iterator<char>(iJson)), std::istreambuf_iterator<char>());
 
@@ -228,7 +232,7 @@ namespace phd::io {
 
             doc["features"].PushBack(obj, doc.GetAllocator());
 
-            imwrite(saveDirectory + "/" + c_name + "_L" + to_string(ft.label) + "_" + to_string(ft.id) + ".bmp",
+            imwrite(directory + "/" + c_name + "_L" + to_string(ft.label) + "_" + to_string(ft.id) + ".bmp",
                     ft.candidate);
         }
 
@@ -236,14 +240,14 @@ namespace phd::io {
         PrettyWriter<StringBuffer> writer(buffer);
         doc.Accept(writer);
 
-        ofstream oJson(saveDirectory + "/" + saveFile + ".json", fstream::out);
+        ofstream oJson(saveFile, fstream::out);
 
         oJson << buffer.GetString();
 
         oJson.close();
     }
 
-    Configuration loadProgramConfiguration(const string target) {
+    Configuration loadProgramConfiguration(const string& target) {
 
         RoadOffsets offsets;
         ExtractionThresholds primary;
@@ -380,5 +384,10 @@ namespace phd::io {
             cout << "Type 'c' to continue" << endl;
             cin >> response;
         }
+    }
+
+    bool exists (const std::string& name) {
+        struct stat buffer;
+        return (stat (name.c_str(), &buffer) == 0);
     }
 }

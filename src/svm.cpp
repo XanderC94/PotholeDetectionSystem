@@ -4,6 +4,7 @@
 
 #include "phdetection/svm.hpp"
 #include "phdetection/ml_utils.hpp"
+#include <phdetection/io.hpp>
 
 using namespace cv;
 using namespace cv::ml;
@@ -39,15 +40,22 @@ namespace phd::ml::svm {
                   const int max_iter, const double epsilon, const string model_path) {
 
         const Mat dataFeatures = phd::ml::utils::ConvertFeaturesForSVM(features, 0);
+
         cout << "FT size " << dataFeatures.rows << "*" << dataFeatures.cols << endl;
 
         cout << "SVM Initialization..." << endl;
 
         Ptr<SVM> svm = SVM::create();
 
-        try {
-            svm = svm->load(model_path);
-        } catch (Exception &ex) {
+
+        if (phd::io::exists(model_path)) {
+            try {
+                svm = svm->load(model_path);
+            } catch (cv::Exception ex) {
+                cerr << ex.what() << endl;
+            }
+
+        } else {
             cerr << "No saved model has been found... Training will start from scratch." << endl;
         }
 

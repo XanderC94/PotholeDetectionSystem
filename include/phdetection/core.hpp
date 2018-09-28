@@ -14,12 +14,12 @@
 
 namespace phd {
 
-    enum __Method { SVM, BAYES, MULTI };
+    enum __Method { SVM = 0, BAYES = 1, MULTI = 2};
 
-    const std::map<__Method, std::string> METHODS = {
-            std::pair<__Method, std::string>(SVM, "-svm"),
-            std::pair<__Method, std::string>(BAYES, "-bayes"),
-            std::pair<__Method, std::string>(MULTI, "-multi"),
+    const std::map<int, std::string> METHODS = {
+            std::pair<int, std::string>(SVM, "-svm"),
+            std::pair<int, std::string>(BAYES, "-bayes"),
+            std::pair<int, std::string>(MULTI, "-multi"),
     };
 
     class UndefinedMethod : std::exception {

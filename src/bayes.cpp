@@ -2,8 +2,9 @@
 // Created by Xander_C on 27/06/2018.
 //
 
-#include "phdetection/bayes.hpp"
-#include "phdetection/ml_utils.hpp"
+#include <phdetection/bayes.hpp>
+#include <phdetection/ml_utils.hpp>
+#include <phdetection/io.hpp>
 
 using namespace std;
 using namespace cv;
@@ -34,27 +35,26 @@ namespace phd::ml::bayes {
         bayes->clear();
     }
 
-    int handleError(int status, const char *func_name,
-                    const char *err_msg, const char *file_name,
-                    int line, void *userdata) {
-        //Do nothing -- will suppress console output
-        return 0;   //Return value is not used
-    }
-
     void Training(const vector<Features> &features, const Mat &labels, const string model_path) {
 
-        cv::redirectError(handleError);
         const Mat dataFeatures = phd::ml::utils::ConvertFeaturesForBayes(features);
+
+        cout << "FT size " << dataFeatures.rows << "*" << dataFeatures.cols << endl;
+
+        cout << "Bayes Initialization..." << endl;
 
         auto bayes = cv::ml::NormalBayesClassifier::create();
 
-        try {
-            bayes = bayes->load(model_path);
-        } catch (const exception ex) {
+        if (phd::io::exists(model_path)) {
+            try {
+                bayes = bayes->load(model_path);
+            } catch (cv::Exception ex) {
+                cerr << ex.what() << endl;
+            }
+
+        } else {
             cerr << "No saved model has been found... Training will start from scratch." << endl;
         }
-
-        cv::redirectError(nullptr);
 
         auto train_data = cv::ml::TrainData::create(dataFeatures, cv::ml::ROW_SAMPLE, labels);
 

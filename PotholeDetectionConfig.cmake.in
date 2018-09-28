@@ -1,0 +1,20 @@
+################################################################################
+# PotholeDetection source dir
+set(PotholeDetection_SOURCE_DIR "@PROJECT_SOURCE_DIR@")
+
+################################################################################
+# PotholeDetection build dir
+set(PotholeDetection_DIR "${PotholeDetection_SOURCE_DIR}/build")
+
+################################################################################
+# Compute paths
+get_filename_component(PotholeDetection_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+
+set(PotholeDetection_INCLUDE_DIRS  "${PotholeDetection_DIR}/include")
+file(GLOB PotholeDetection_LIBS  "${PotholeDetection_DIR}/lib/static/lib*")
+set(PotholeDetection_BINS  "${PotholeDetection_DIR}/bin")
+
+message(STATUS "Pothole Detection found.")
+message(STATUS "\t Headers: ${PotholeDetection_INCLUDE_DIRS}")
+message(STATUS "\t Libraries: ${PotholeDetection_LIBS}")
+message(STATUS "\t Binaries: ${PotholeDetection_BINS}")

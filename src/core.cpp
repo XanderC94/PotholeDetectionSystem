@@ -84,7 +84,7 @@ namespace phd {
     Mat classify(const string &method, const string &svm_model,
                  const string &bayes_model, const vector<Features> &features) {
 
-        Mat std_labels(static_cast<int>( features.size()), 1, CV_32SC1);
+        Mat std_labels(static_cast<int>(features.size()), 1, CV_32SC1);
 
         if (!features.empty()) {
 

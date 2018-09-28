@@ -1,29 +1,27 @@
-cmake_minimum_required(VERSION 2.6)
-project(PotholeDetection)
-set(PROJECT_VERSION 0.0.2a)
+cmake_minimum_required(VERSION 3.10)
+project(PotholeDetection  VERSION 0.0.2)
+
+EXPORT( PACKAGE ${PROJECT_NAME})
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+
 # Where to find CMake modules and OpenCV
-if ("$ENV{OPENCV_PATH}" STREQUAL "")
+if ("$ENV{OpenCV_DIR}" STREQUAL "")
     message("ERROR: The Open Computer Vision environmental/global variable is not set or is empty")
-    return(0)
-elseif("$ENV{RAPIDJSON_PATH}" STREQUAL "")
-    message("ERROR: The RapidJSON environmental/global variable is not set or is empty")
     return(0)
 else ()
 
-    message("$ENV{OPENCV_PATH}")
-    message("$ENV{RAPIDJSON_PATH}")
+    message("Open Computer Vision: $ENV{OpenCV_DIR}")
 
-    set(OpenCV_DIR $ENV{OPENCV_PATH}/install)
-    set(RapidJSON_INCLUDE $ENV{RAPIDJSON_PATH}/include)
-    set(PhD_INCLUDE ${PROJECT_SOURCE_DIR}/include)
+    set(RapidJSON_DIR "lib/RapidJSON")
 
     find_package(OpenCV REQUIRED)
+    find_package(RapidJSON REQUIRED)
 
     include_directories(
             ${OpenCV_INCLUDE_DIRS}
-            ${RapidJSON_INCLUDE}
-            ${PhD_INCLUDE}
+            ${RapidJSON_INCLUDE_DIR}
+            ${PROJECT_SOURCE_DIR}/include
     )
 
     # Create Library
@@ -81,6 +79,16 @@ else ()
             LIBRARY         DESTINATION         "lib/shared"
             RUNTIME         DESTINATION         "bin"
             PUBLIC_HEADER   DESTINATION         "include/phdetection"
+    )
+
+    CONFIGURE_FILE(
+            ${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}Config.cmake.in
+            ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake @ONLY
+    )
+
+    CONFIGURE_FILE(
+            ${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}Config.cmake.in
+            ${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}Config.cmake @ONLY
     )
 
     return(1)

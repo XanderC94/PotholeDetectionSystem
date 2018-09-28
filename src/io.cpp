@@ -40,33 +40,6 @@ namespace phd::io {
         return current_working_dir;
     }
 
-    int resize_all_in(const string parent, const string folder, const int width, const int height) {
-
-        vector<String> fn;
-        glob(folder + "/*", fn);
-
-        cout << "Found " << fn.size() << " images..." << endl;
-
-        for (int i = 0; i < fn.size(); i++) {
-            string file_name = fn[i];
-            Mat img = imread(file_name, IMREAD_COLOR);
-
-            if (img.empty()) {
-                cerr << "invalid image: " << file_name << endl;
-                continue;
-            } else {
-                cout << "Loaded image " << file_name << endl;
-
-                Mat dst;
-                resize(img, dst, Size(width, height));
-
-                imwrite(parent + "/scaled/" + file_name.substr(file_name.find_last_of("\\")), dst);
-            }
-        }
-
-        return 1;
-    }
-
     void portable_mkdir(const char *args) {
 
 #if defined(_WIN32) || defined(_WIN32_WINNT) || defined(_WIN64)

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.1)
 project(PotholeDetection  VERSION 0.0.2)
 
-EXPORT( PACKAGE ${PROJECT_NAME})
+EXPORT(PACKAGE ${PROJECT_NAME})
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 
@@ -15,12 +15,14 @@ else ()
 
     set(RapidJSON_DIR "lib/RapidJSON")
 
+#    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake-modules")
+
     find_package(OpenCV REQUIRED)
-    find_package(RapidJSON REQUIRED)
+#    find_package(RapidJSON REQUIRED)
 
     include_directories(
             ${OpenCV_INCLUDE_DIRS}
-            ${RapidJSON_INCLUDE_DIR}
+            ${RapidJSON_DIR} #/include
             ${PROJECT_SOURCE_DIR}/include
     )
 

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.1)
 project(PotholeDetection  VERSION 0.0.2)
 
 EXPORT( PACKAGE ${PROJECT_NAME})

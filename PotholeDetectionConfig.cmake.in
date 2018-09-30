@@ -4,7 +4,7 @@ set(PotholeDetection_SOURCE_DIR "@PROJECT_SOURCE_DIR@")
 
 ################################################################################
 # PotholeDetection build dir
-set(PotholeDetection_DIR "${PotholeDetection_SOURCE_DIR}/build")
+set(PotholeDetection_DIR "@CMAKE_INSTALL_PREFIX@")
 
 ################################################################################
 # Compute paths

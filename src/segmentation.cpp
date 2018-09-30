@@ -20,10 +20,14 @@ namespace phd::segmentation {
 
         float aspectRatio = static_cast<float>(src.cols) / static_cast<float>(src.rows);
 
+        cout << endl << src.rows << ", " << src.cols << endl;
+
         float newHeight = sqrtf(MAX_AREA / aspectRatio);
         float newWidth = newHeight * aspectRatio;
 
         Size scale(static_cast<int>(newWidth), static_cast<int>(newHeight));
+
+        cout << endl << scale.height << ", " << scale.width << endl;
 
         resize(src, processedImage, scale);
 

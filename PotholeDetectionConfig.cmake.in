@@ -11,7 +11,7 @@ set(PotholeDetection_DIR "@CMAKE_INSTALL_PREFIX@")
 get_filename_component(PotholeDetection_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
 
 set(PotholeDetection_INCLUDE_DIRS  "${PotholeDetection_DIR}/include")
-file(GLOB PotholeDetection_LIBS  "${PotholeDetection_DIR}/lib/static/lib*")
+file(GLOB PotholeDetection_LIBS  "${PotholeDetection_DIR}/lib/static/lib*" "${PotholeDetection_DIR}/lib/shared/lib*")
 set(PotholeDetection_BINS  "${PotholeDetection_DIR}/bin")
 
 message(STATUS "Pothole Detection found.")

@@ -336,11 +336,11 @@ int main(int argc, char *argv[]) {
     svm_folder = root + svm_folder;
     nbayes_folder = root + nbayes_folder;
 
-//    cout << config_folder << endl;
-//    cout << data_folder << endl;
-//    cout << results_folder << endl;
-//    cout << svm_folder << endl;
-//    cout << nbayes_folder << endl;
+    cout << config_folder << endl;
+    cout << data_folder << endl;
+    cout << results_folder << endl;
+    cout << svm_folder << endl;
+    cout << nbayes_folder << endl;
 
     // Save cpu tick count at the program start
     double timeElapsed = (double) getTickCount();

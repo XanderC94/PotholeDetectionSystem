@@ -1,7 +1,7 @@
 #include <opencv2/photo.hpp>
 #include <iostream>
-#include "../include/phdetection/segmentation.hpp"
-#include "../include/phdetection/io.hpp"
+#include <phdetection/segmentation.hpp>
+#include <phdetection/io.hpp>
 
 using namespace cv;
 using namespace cv::ximgproc;
@@ -19,15 +19,12 @@ namespace phd::segmentation {
     void preprocessing(Mat &src, Mat &processedImage, const double Horizon_Offset) {
 
         float aspectRatio = static_cast<float>(src.cols) / static_cast<float>(src.rows);
-
-        cout << endl << src.rows << ", " << src.cols << endl;
-
         float newHeight = sqrtf(MAX_AREA / aspectRatio);
         float newWidth = newHeight * aspectRatio;
 
         Size scale(static_cast<int>(newWidth), static_cast<int>(newHeight));
 
-        cout << endl << scale.height << ", " << scale.width << endl;
+//        cout << endl << scale.height << ", " << scale.width << endl;
 
         resize(src, processedImage, scale);
 

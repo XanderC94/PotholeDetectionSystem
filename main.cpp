@@ -4,10 +4,10 @@
 
 #include <libgen.h>
 
-#include "phdetection/svm.hpp"
-#include "phdetection/bayes.hpp"
-#include "phdetection/io.hpp"
-#include "phdetection/core.hpp"
+#include <phdetection/svm.hpp>
+#include <phdetection/bayes.hpp>
+#include <phdetection/io.hpp>
+#include <phdetection/core.hpp>
 
 using namespace cv;
 using namespace std;
@@ -357,9 +357,7 @@ int main(int argc, char *argv[]) {
         printOffsets(config.offsets);
 
         const auto args = parseCommandLineArguments(argc, argv);
-
-
-
+        
         if (args.mode == "-g" && argc > 2) {
             createCandidates(args, config);
         } else if (args.mode == "-c" && argc > 6) {

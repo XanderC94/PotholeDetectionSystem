@@ -78,6 +78,8 @@ namespace phd {
 
         Mat src = imread(target, IMREAD_COLOR);
 
+        cout << src.rows << ", " << src.cols << endl;
+
         return getFeatures(src, config);
     }
 

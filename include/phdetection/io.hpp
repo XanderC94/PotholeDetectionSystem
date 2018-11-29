@@ -46,6 +46,10 @@ namespace phd::io {
     void showElaborationStatusToTheUser(const std::vector<phd::ontologies::SuperPixel> superPixels);
 
     bool exists (const std::string& name);
+
+    bool is_file(const char* path);
+
+    bool is_dir(const char* path);
 }
 
 #endif //POTHOLEDETECTIONSYSTEM_UTILIS_H

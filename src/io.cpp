@@ -49,7 +49,19 @@ namespace phd::io {
         mkdir(args, S_IWUSR);
 #endif
     }
-
+    
+    bool is_file(const char* path) {
+        struct stat buf;
+        stat(path, &buf);
+        return S_ISREG(buf.st_mode);
+    }
+    
+    bool is_dir(const char* path) {
+        struct stat buf;
+        stat(path, &buf);
+        return S_ISDIR(buf.st_mode);
+    }
+    
     vector<string> extractImagePath(const string& targets) {
 
         vector<string> res;
@@ -266,6 +278,7 @@ namespace phd::io {
             cout << "Opened file " << target << endl;
 
             assert(config.HasMember("offsets"));
+
             assert(config["offsets"].IsObject());
 
             assert(config["offsets"].HasMember("horizon"));

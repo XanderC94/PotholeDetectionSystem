@@ -10,46 +10,48 @@
 //
 //using namespace phd::ontologies;
 
-namespace phd::io {
+namespace phd{
+    namespace io {
 
-    typedef struct Configuration {
-        phd::ontologies::RoadOffsets offsets;
-        phd::ontologies::ExtractionThresholds primaryThresholds;
-        phd::ontologies::ExtractionThresholds secondaryThresholds;
-    } Configuration;
+        typedef struct Configuration {
+            phd::ontologies::RoadOffsets offsets;
+            phd::ontologies::ExtractionThresholds primaryThresholds;
+            phd::ontologies::ExtractionThresholds secondaryThresholds;
+        } Configuration;
 
-    std::string GetCurrentWorkingDir(void);
+        std::string GetCurrentWorkingDir(void);
 
-    void portable_mkdir(const char *args);
+        void portable_mkdir(const char *args);
 
-    std::string set_format(std::string of_file_name_path,
-                           std::string to_new_format,
-                      bool use_separator = true);
+        std::string set_format(std::string of_file_name_path,
+                std::string to_new_format,
+                bool use_separator = true);
 
-    void saveFeaturesJSON(const std::vector<phd::ontologies::Features> &features, const std::vector<std::string>& names,
-                          const std::string& saveFile);
+        void saveFeaturesJSON(const std::vector<phd::ontologies::Features> &features, const std::vector<std::string>& names,
+                const std::string& saveFile);
 
-    void loadFromJSON(const std::string& target, std::vector<phd::ontologies::Features> &features, cv::Mat &labels);
+        void loadFromJSON(const std::string& target, std::vector<phd::ontologies::Features> &features, cv::Mat &labels);
 
-    Configuration loadProgramConfiguration(const std::string& target);
+        Configuration loadProgramConfiguration(const std::string& target);
 
-    std::string getName(std::string file_path);
+        std::string getName(std::string file_path);
 
-    std::string getParentDirectory(std::string path);
+        std::string getParentDirectory(std::string path);
 
-    std::vector<std::string> extractImagePath(const std::string& targets);
+        std::vector<std::string> extractImagePath(const std::string& targets);
 
-    void showElaborationStatusToTheUser(std::string showingWindowTitle, cv::Mat processedImage);
+        void showElaborationStatusToTheUser(std::string showingWindowTitle, cv::Mat processedImage);
 
-    void showElaborationStatusToTheUser(const std::vector<phd::ontologies::Features> candidatesFeatures);
+        void showElaborationStatusToTheUser(const std::vector<phd::ontologies::Features> candidatesFeatures);
 
-    void showElaborationStatusToTheUser(const std::vector<phd::ontologies::SuperPixel> superPixels);
+        void showElaborationStatusToTheUser(const std::vector<phd::ontologies::SuperPixel> superPixels);
 
-    bool exists (const std::string& name);
+        bool exists (const std::string& name);
 
-    bool is_file(const char* path);
+        bool is_file(const char* path);
 
-    bool is_dir(const char* path);
+        bool is_dir(const char* path);
+    }
 }
 
 #endif //POTHOLEDETECTIONSYSTEM_UTILIS_H

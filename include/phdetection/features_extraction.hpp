@@ -10,15 +10,17 @@
 
 
 
-namespace phd::features {
+namespace phd {
+    namespace features {
 
-    std::vector<phd::ontologies::Features> extractFeatures(
-            const cv::Mat &src,
-            const std::vector<phd::ontologies::SuperPixel> &candidateSuperPixels,
-            const cv::Size &candidate_size,
-            const phd::ontologies::RoadOffsets &offsets,
-            const phd::ontologies::ExtractionThresholds &thresholds
+        std::vector<phd::ontologies::Features> extractFeatures(
+                const cv::Mat &src,
+                const std::vector<phd::ontologies::SuperPixel> &candidateSuperPixels,
+                const cv::Size &candidate_size,
+                const phd::ontologies::RoadOffsets &offsets,
+                const phd::ontologies::ExtractionThresholds &thresholds
         );
+    }
 }
 
 

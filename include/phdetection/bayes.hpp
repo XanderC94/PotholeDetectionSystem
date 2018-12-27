@@ -9,20 +9,24 @@
 #include <opencv2/ml.hpp>
 #include "ontologies.hpp"
 
-namespace phd::ml::bayes {
+namespace phd {
+    namespace ml {
+        namespace bayes {
 
-    void Classifier(
-            const std::vector<phd::ontologies::Features> &features,
-            cv::Mat &labels,
-            const std::string model_path
-        );
+                void Classifier(
+                        const std::vector<phd::ontologies::Features> &features,
+                        cv::Mat &labels,
+                        const std::string model_path
+                        );
 
-    void Training(
-            const std::vector<phd::ontologies::Features> &features,
-            const cv::Mat &labels,
-            const std::string model_path
-        );
+                void Training(
+                        const std::vector<phd::ontologies::Features> &features,
+                        const cv::Mat &labels,
+                        const std::string model_path
+                        );
 
+        }
+    }
 }
 
 #endif //POTHOLEDETECTIONSYSTEM_BAYES_H

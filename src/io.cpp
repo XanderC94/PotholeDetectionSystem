@@ -273,91 +273,95 @@ namespace phd::io {
 
         config.ParseStream(wrapper);
 
-        if (json.is_open() && config.IsObject()) {
+        if (json.is_open()){
+            if(config.IsObject()) {
 
-            cout << "Opened file " << target << endl;
+                cout << "Opened file " << target << endl;
 
-            assert(config.HasMember("offsets"));
+                assert(config.HasMember("offsets"));
 
-            assert(config["offsets"].IsObject());
+                assert(config["offsets"].IsObject());
 
-            assert(config["offsets"].HasMember("horizon"));
-            assert(config["offsets"]["horizon"].IsDouble());
+                assert(config["offsets"].HasMember("horizon"));
+                assert(config["offsets"]["horizon"].IsDouble());
 
-            assert(config["offsets"].HasMember("xRightOffset"));
-            assert(config["offsets"]["xRightOffset"].IsDouble());
-            assert(config["offsets"].HasMember("yRightOffset"));
-            assert(config["offsets"]["yRightOffset"].IsDouble());
-            assert(config["offsets"].HasMember("rightEscapeOffset"));
-            assert(config["offsets"]["rightEscapeOffset"].IsDouble());
+                assert(config["offsets"].HasMember("xRightOffset"));
+                assert(config["offsets"]["xRightOffset"].IsDouble());
+                assert(config["offsets"].HasMember("yRightOffset"));
+                assert(config["offsets"]["yRightOffset"].IsDouble());
+                assert(config["offsets"].HasMember("rightEscapeOffset"));
+                assert(config["offsets"]["rightEscapeOffset"].IsDouble());
 
-            assert(config["offsets"].HasMember("xLeftOffset"));
-            assert(config["offsets"]["xLeftOffset"].IsDouble());
-            assert(config["offsets"].HasMember("yLeftOffset"));
-            assert(config["offsets"]["yLeftOffset"].IsDouble());
-            assert(config["offsets"].HasMember("leftEscapeOffset"));
-            assert(config["offsets"]["leftEscapeOffset"].IsDouble());
+                assert(config["offsets"].HasMember("xLeftOffset"));
+                assert(config["offsets"]["xLeftOffset"].IsDouble());
+                assert(config["offsets"].HasMember("yLeftOffset"));
+                assert(config["offsets"]["yLeftOffset"].IsDouble());
+                assert(config["offsets"].HasMember("leftEscapeOffset"));
+                assert(config["offsets"]["leftEscapeOffset"].IsDouble());
 
-            offsets.horizon = config["offsets"]["horizon"].GetDouble();
-            offsets.leftEscapeOffset = config["offsets"]["leftEscapeOffset"].GetDouble();
-            offsets.rightEscapeOffset = config["offsets"]["rightEscapeOffset"].GetDouble();
-            offsets.xLeftOffset = config["offsets"]["xLeftOffset"].GetDouble();
-            offsets.xRightOffset = config["offsets"]["xRightOffset"].GetDouble();
-            offsets.yLeftOffset = config["offsets"]["yLeftOffset"].GetDouble();
-            offsets.yRightOffset = config["offsets"]["yRightOffset"].GetDouble();
+                offsets.horizon = config["offsets"]["horizon"].GetDouble();
+                offsets.leftEscapeOffset = config["offsets"]["leftEscapeOffset"].GetDouble();
+                offsets.rightEscapeOffset = config["offsets"]["rightEscapeOffset"].GetDouble();
+                offsets.xLeftOffset = config["offsets"]["xLeftOffset"].GetDouble();
+                offsets.xRightOffset = config["offsets"]["xRightOffset"].GetDouble();
+                offsets.yLeftOffset = config["offsets"]["yLeftOffset"].GetDouble();
+                offsets.yRightOffset = config["offsets"]["yRightOffset"].GetDouble();
 
-            assert(config.HasMember("thresholds"));
-            assert(config["thresholds"].IsObject());
+                assert(config.HasMember("thresholds"));
+                assert(config["thresholds"].IsObject());
 
-            assert(config["thresholds"].HasMember("primary"));
-            assert(config["thresholds"]["primary"].IsObject());
+                assert(config["thresholds"].HasMember("primary"));
+                assert(config["thresholds"]["primary"].IsObject());
 
-            assert(config["thresholds"]["primary"].HasMember("density"));
-            assert(config["thresholds"]["primary"]["density"].IsDouble());
-            assert(config["thresholds"]["primary"].HasMember("variance"));
-            assert(config["thresholds"]["primary"]["variance"].IsDouble());
-            assert(config["thresholds"]["primary"].HasMember("gauss"));
-            assert(config["thresholds"]["primary"]["gauss"].IsDouble());
-            assert(config["thresholds"]["primary"].HasMember("minGreyRatio"));
-            assert(config["thresholds"]["primary"]["minGreyRatio"].IsDouble());
-            assert(config["thresholds"]["primary"].HasMember("maxGreyRatio"));
-            assert(config["thresholds"]["primary"]["maxGreyRatio"].IsDouble());
-            assert(config["thresholds"]["primary"].HasMember("minGreenRatio"));
-            assert(config["thresholds"]["primary"]["minGreenRatio"].IsDouble());
+                assert(config["thresholds"]["primary"].HasMember("density"));
+                assert(config["thresholds"]["primary"]["density"].IsDouble());
+                assert(config["thresholds"]["primary"].HasMember("variance"));
+                assert(config["thresholds"]["primary"]["variance"].IsDouble());
+                assert(config["thresholds"]["primary"].HasMember("gauss"));
+                assert(config["thresholds"]["primary"]["gauss"].IsDouble());
+                assert(config["thresholds"]["primary"].HasMember("minGreyRatio"));
+                assert(config["thresholds"]["primary"]["minGreyRatio"].IsDouble());
+                assert(config["thresholds"]["primary"].HasMember("maxGreyRatio"));
+                assert(config["thresholds"]["primary"]["maxGreyRatio"].IsDouble());
+                assert(config["thresholds"]["primary"].HasMember("minGreenRatio"));
+                assert(config["thresholds"]["primary"]["minGreenRatio"].IsDouble());
 
-            primary.density = config["thresholds"]["primary"]["density"].GetDouble();
-            primary.variance = config["thresholds"]["primary"]["variance"].GetDouble();
-            primary.gauss = config["thresholds"]["primary"]["gauss"].GetDouble();
-            primary.minGreyRatio = config["thresholds"]["primary"]["minGreyRatio"].GetDouble();
-            primary.maxGreyRatio = config["thresholds"]["primary"]["maxGreyRatio"].GetDouble();
-            primary.minGreenRatio = config["thresholds"]["primary"]["minGreenRatio"].GetDouble();
+                primary.density = config["thresholds"]["primary"]["density"].GetDouble();
+                primary.variance = config["thresholds"]["primary"]["variance"].GetDouble();
+                primary.gauss = config["thresholds"]["primary"]["gauss"].GetDouble();
+                primary.minGreyRatio = config["thresholds"]["primary"]["minGreyRatio"].GetDouble();
+                primary.maxGreyRatio = config["thresholds"]["primary"]["maxGreyRatio"].GetDouble();
+                primary.minGreenRatio = config["thresholds"]["primary"]["minGreenRatio"].GetDouble();
 
-            assert(config["thresholds"].HasMember("secondary"));
-            assert(config["thresholds"]["secondary"].IsObject());
+                assert(config["thresholds"].HasMember("secondary"));
+                assert(config["thresholds"]["secondary"].IsObject());
 
-            assert(config["thresholds"]["secondary"].HasMember("density"));
-            assert(config["thresholds"]["secondary"]["density"].IsDouble());
-            assert(config["thresholds"]["secondary"].HasMember("variance"));
-            assert(config["thresholds"]["secondary"]["variance"].IsDouble());
-            assert(config["thresholds"]["secondary"].HasMember("gauss"));
-            assert(config["thresholds"]["secondary"]["gauss"].IsDouble());
-            assert(config["thresholds"]["secondary"].HasMember("minGreyRatio"));
-            assert(config["thresholds"]["secondary"]["minGreyRatio"].IsDouble());
-            assert(config["thresholds"]["secondary"].HasMember("maxGreyRatio"));
-            assert(config["thresholds"]["secondary"]["maxGreyRatio"].IsDouble());
-            assert(config["thresholds"]["secondary"].HasMember("minGreenRatio"));
-            assert(config["thresholds"]["secondary"]["minGreenRatio"].IsDouble());
+                assert(config["thresholds"]["secondary"].HasMember("density"));
+                assert(config["thresholds"]["secondary"]["density"].IsDouble());
+                assert(config["thresholds"]["secondary"].HasMember("variance"));
+                assert(config["thresholds"]["secondary"]["variance"].IsDouble());
+                assert(config["thresholds"]["secondary"].HasMember("gauss"));
+                assert(config["thresholds"]["secondary"]["gauss"].IsDouble());
+                assert(config["thresholds"]["secondary"].HasMember("minGreyRatio"));
+                assert(config["thresholds"]["secondary"]["minGreyRatio"].IsDouble());
+                assert(config["thresholds"]["secondary"].HasMember("maxGreyRatio"));
+                assert(config["thresholds"]["secondary"]["maxGreyRatio"].IsDouble());
+                assert(config["thresholds"]["secondary"].HasMember("minGreenRatio"));
+                assert(config["thresholds"]["secondary"]["minGreenRatio"].IsDouble());
 
-            secondary.density = config["thresholds"]["secondary"]["density"].GetDouble();
-            secondary.variance = config["thresholds"]["secondary"]["variance"].GetDouble();
-            secondary.gauss = config["thresholds"]["secondary"]["gauss"].GetDouble();
-            secondary.minGreyRatio = config["thresholds"]["secondary"]["minGreyRatio"].GetDouble();
-            secondary.maxGreyRatio = config["thresholds"]["secondary"]["maxGreyRatio"].GetDouble();
-            secondary.minGreenRatio = config["thresholds"]["secondary"]["minGreenRatio"].GetDouble();
+                secondary.density = config["thresholds"]["secondary"]["density"].GetDouble();
+                secondary.variance = config["thresholds"]["secondary"]["variance"].GetDouble();
+                secondary.gauss = config["thresholds"]["secondary"]["gauss"].GetDouble();
+                secondary.minGreyRatio = config["thresholds"]["secondary"]["minGreyRatio"].GetDouble();
+                secondary.maxGreyRatio = config["thresholds"]["secondary"]["maxGreyRatio"].GetDouble();
+                secondary.minGreenRatio = config["thresholds"]["secondary"]["minGreenRatio"].GetDouble();
 
+            } else {
+                cerr << "The root element of the json file is not a json object. Check for possible syntactic errors" << endl;
+                exit(-3);
+            }
         } else {
-            cerr << "Program configuration is missing. Check it's existence or create a new config.json"
-                 << " under the " << target << " folder inside the program directory. " << endl;
+            cerr << "Error during the opening of the json file " << target << endl;
 
             exit(-3);
         }
